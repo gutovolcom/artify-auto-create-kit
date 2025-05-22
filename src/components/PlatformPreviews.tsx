@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EventData } from "@/pages/Index";
 import { Loader2, Image } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useEffect, useState } from "react";
 
 interface PlatformPreviewsProps {
   eventData: EventData;
@@ -16,6 +17,18 @@ export const PlatformPreviews = ({
   onGenerate,
   isGenerating,
 }: PlatformPreviewsProps) => {
+  const [backgroundImage, setBackgroundImage] = useState<string>("/placeholder.svg");
+
+  // Update background image when KV image changes
+  useEffect(() => {
+    if (eventData.kvImageId) {
+      const selectedElement = document.querySelector(`[data-image-id="${eventData.kvImageId}"] img`) as HTMLImageElement;
+      if (selectedElement && selectedElement.src) {
+        setBackgroundImage(selectedElement.src);
+      }
+    }
+  }, [eventData.kvImageId]);
+
   // Platform-specific configurations
   const platforms = {
     youtube: {
@@ -41,12 +54,6 @@ export const PlatformPreviews = ({
     eventData.date &&
     eventData.kvImageId &&
     eventData.platforms.length > 0;
-
-  // Get image URL based on KV image ID
-  const getKvImageUrl = () => {
-    // In a real app, this would fetch the actual image
-    return "/placeholder.svg";
-  };
 
   return (
     <div className="space-y-6">
@@ -105,69 +112,82 @@ export const PlatformPreviews = ({
                       <div className="text-xs">{platform.aspectRatio}</div>
                     </div>
                   ) : (
-                    <div className="absolute inset-0 bg-red-600 text-white">
-                      {/* High-quality preview layout similar to reference image */}
-                      <div className="relative w-full h-full flex flex-col">
-                        {/* Logo area */}
-                        <div className="absolute top-5 left-5 flex items-center">
-                          <div className="w-12 h-12 rounded-md bg-blue-500 mr-2 flex items-center justify-center overflow-hidden">
-                            <div className="w-full h-full bg-yellow-400 relative">
-                              <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-blue-700 rounded-full"></div>
+                    <div className="absolute inset-0 text-white">
+                      {/* Use the selected template image as background */}
+                      <div 
+                        className="relative w-full h-full flex flex-col" 
+                        style={{
+                          backgroundImage: `url(${backgroundImage})`,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center'
+                        }}
+                      >
+                        {/* Semi-transparent overlay for better text visibility */}
+                        <div className="absolute inset-0 bg-red-600 opacity-70"></div>
+                        
+                        {/* Content overlaid on the background */}
+                        <div className="relative z-10 w-full h-full flex flex-col">
+                          {/* Logo area */}
+                          <div className="absolute top-5 left-5 flex items-center">
+                            <div className="w-12 h-12 rounded-md bg-blue-500 mr-2 flex items-center justify-center overflow-hidden">
+                              <div className="w-full h-full bg-yellow-400 relative">
+                                <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-blue-700 rounded-full"></div>
+                              </div>
+                            </div>
+                            <div className="text-3xl font-bold tracking-wide">
+                              {eventData.title.toUpperCase()}
                             </div>
                           </div>
-                          <div className="text-3xl font-bold tracking-wide">
-                            {eventData.title.toUpperCase()}
-                          </div>
-                        </div>
-                        
-                        {/* Course topic */}
-                        <div className="absolute top-1/3 left-5 transform -translate-y-1/2">
-                          <div className="text-xl font-bold mb-1">
-                            EM FOCO: {eventData.subtitle || "Tema da Aula"}
-                          </div>
-                          <div className="text-xl">
-                            {eventData.date} {eventData.time && `- ${eventData.time}`}
+                          
+                          {/* Course topic */}
+                          <div className="absolute top-1/3 left-5 transform -translate-y-1/2">
+                            <div className="text-xl font-bold mb-1">
+                              EM FOCO: {eventData.subtitle || "Tema da Aula"}
+                            </div>
+                            <div className="text-xl">
+                              {eventData.date} {eventData.time && `- ${eventData.time}`}
+                            </div>
+                            
+                            {/* Teacher name */}
+                            {eventData.teacherImages.length > 0 && (
+                              <div className="text-xl mt-1">
+                                {eventData.teacherImages.length === 1 ? "Professor" : "Professores"}: 
+                                {eventData.teacherImages.map((_, index) => 
+                                  ` Nome do Professor ${index + 1}`
+                                ).join(", ")}
+                              </div>
+                            )}
                           </div>
                           
-                          {/* Teacher name */}
+                          {/* Company logo at bottom */}
+                          <div className="absolute bottom-5 left-5">
+                            <div className="text-3xl font-bold tracking-wide">LOGO</div>
+                          </div>
+                          
+                          {/* Teacher image */}
                           {eventData.teacherImages.length > 0 && (
-                            <div className="text-xl mt-1">
-                              {eventData.teacherImages.length === 1 ? "Professor" : "Professores"}: 
-                              {eventData.teacherImages.map((_, index) => 
-                                ` Nome do Professor ${index + 1}`
-                              ).join(", ")}
+                            <div className="absolute right-0 bottom-0 h-full w-2/5 flex items-end">
+                              <div className="relative w-full h-4/5">
+                                {eventData.teacherImages.map((image, idx) => (
+                                  <div 
+                                    key={idx}
+                                    className="absolute bottom-0 right-0 h-full w-full"
+                                    style={{
+                                      right: `${idx * 20}px`,
+                                      zIndex: eventData.teacherImages.length - idx
+                                    }}
+                                  >
+                                    <img 
+                                      src={image} 
+                                      alt={`Professor ${idx + 1}`}
+                                      className="h-full w-auto object-contain object-bottom"
+                                    />
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
-                        
-                        {/* Company logo at bottom */}
-                        <div className="absolute bottom-5 left-5">
-                          <div className="text-3xl font-bold tracking-wide">LOGO</div>
-                        </div>
-                        
-                        {/* Teacher image */}
-                        {eventData.teacherImages.length > 0 && (
-                          <div className="absolute right-0 bottom-0 h-full w-2/5 flex items-end">
-                            <div className="relative w-full h-4/5">
-                              {eventData.teacherImages.map((image, idx) => (
-                                <div 
-                                  key={idx}
-                                  className="absolute bottom-0 right-0 h-full w-full"
-                                  style={{
-                                    right: `${idx * 20}px`,
-                                    zIndex: eventData.teacherImages.length - idx
-                                  }}
-                                >
-                                  <img 
-                                    src={image} 
-                                    alt={`Professor ${idx + 1}`}
-                                    className="h-full w-auto object-contain object-bottom"
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   )}

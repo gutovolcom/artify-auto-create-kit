@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Image } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { EventData } from "@/pages/Index";
+import { useEffect, useState } from "react";
 
 interface GeneratedGalleryProps {
   images: string[];
@@ -11,6 +12,18 @@ interface GeneratedGalleryProps {
 }
 
 export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) => {
+  const [backgroundImage, setBackgroundImage] = useState<string>("/placeholder.svg");
+
+  // Update background image when KV image changes
+  useEffect(() => {
+    if (eventData.kvImageId) {
+      const selectedElement = document.querySelector(`[data-image-id="${eventData.kvImageId}"] img`) as HTMLImageElement;
+      if (selectedElement && selectedElement.src) {
+        setBackgroundImage(selectedElement.src);
+      }
+    }
+  }, [eventData.kvImageId]);
+
   if (images.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center">
@@ -47,8 +60,19 @@ export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) =
                 <div key={index} className="w-[250px] shrink-0 space-y-3">
                   <div className="overflow-hidden rounded-md border">
                     <div className="relative">
-                      {/* Real preview with styling matching the reference image */}
-                      <div className="aspect-[4/3] h-auto w-full bg-red-600 text-white">
+                      {/* Background image with overlay */}
+                      <div 
+                        className="aspect-[4/3] h-auto w-full text-white"
+                        style={{
+                          backgroundImage: `url(${backgroundImage})`,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center'
+                        }}
+                      >
+                        {/* Semi-transparent overlay */}
+                        <div className="absolute inset-0 bg-red-600 opacity-70"></div>
+                        
+                        {/* Content overlay */}
                         <div className="relative w-full h-full flex flex-col p-3">
                           {/* Logo area */}
                           <div className="flex items-center mb-2">

@@ -8,6 +8,7 @@ interface GeneratedImage {
   platform: string;
   format: string;
   url: string;
+  bgImageUrl?: string; // Add background image URL
 }
 
 export const useImageGenerator = () => {
@@ -36,15 +37,18 @@ export const useImageGenerator = () => {
         const platform = platformConfigs[platformId];
         
         if (platform) {
+          // Find selected template image
+          const selectedKvImage = document.querySelector(`[data-image-id="${eventData.kvImageId}"] img`) as HTMLImageElement;
+          const bgImageUrl = selectedKvImage ? selectedKvImage.src : "/placeholder.svg";
+          
           for (const format of platform.formats) {
             // In a real implementation, this would be the URL returned from the backend
-            // For now, we'll use placeholder.svg, but in a real app this would be 
-            // actual generated image URLs with the styling we're showing in the preview
+            // For now, we'll use the selected template image
             newGeneratedImages.push({
               platform: platformId,
               format,
-              // We're using the same placeholder for simulation
               url: "/placeholder.svg", 
+              bgImageUrl: bgImageUrl,
             });
           }
         }

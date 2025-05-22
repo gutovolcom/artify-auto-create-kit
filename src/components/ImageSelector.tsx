@@ -127,6 +127,7 @@ export const ImageSelector = ({ selectedImageId, onSelect }: ImageSelectorProps)
                     : "hover:border-blue-300"
                 )}
                 onClick={() => onSelect(image.id)}
+                data-image-id={image.id} // Add data attribute for image ID
               >
                 <div className="aspect-video relative">
                   <img
