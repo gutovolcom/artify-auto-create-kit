@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { EventData } from "@/pages/Index";
 import { platformConfigs } from "@/lib/platformConfigs";
+import { toast } from "sonner";
 
 interface GeneratedImage {
   platform: string;
@@ -17,6 +18,7 @@ export const useImageGenerator = () => {
   const generateImages = async (eventData: EventData) => {
     if (!eventData.title || !eventData.date || !eventData.kvImageId) {
       setError("Informações incompletas. Preencha todos os campos obrigatórios.");
+      toast.error("Preencha todos os campos obrigatórios");
       return [];
     }
 
@@ -35,10 +37,14 @@ export const useImageGenerator = () => {
         
         if (platform) {
           for (const format of platform.formats) {
+            // In a real implementation, this would be the URL returned from the backend
+            // For now, we'll use placeholder.svg, but in a real app this would be 
+            // actual generated image URLs with the styling we're showing in the preview
             newGeneratedImages.push({
               platform: platformId,
               format,
-              url: "/placeholder.svg", // This would be the URL of the generated image
+              // We're using the same placeholder for simulation
+              url: "/placeholder.svg", 
             });
           }
         }
@@ -48,9 +54,12 @@ export const useImageGenerator = () => {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       
       setGeneratedImages(newGeneratedImages);
+      toast.success("Imagens geradas com sucesso!");
       return newGeneratedImages;
     } catch (err) {
-      setError("Erro ao gerar imagens. Tente novamente.");
+      const errorMessage = "Erro ao gerar imagens. Tente novamente.";
+      setError(errorMessage);
+      toast.error(errorMessage);
       return [];
     } finally {
       setIsGenerating(false);
@@ -59,7 +68,9 @@ export const useImageGenerator = () => {
 
   const downloadZip = async () => {
     if (generatedImages.length === 0) {
-      setError("Nenhuma imagem para exportar.");
+      const errorMessage = "Nenhuma imagem para exportar.";
+      setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     }
 
@@ -70,9 +81,12 @@ export const useImageGenerator = () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       
       // Simulated successful download
+      toast.success("Arquivo ZIP baixado com sucesso!");
       return true;
     } catch (err) {
-      setError("Erro ao criar arquivo ZIP. Tente novamente.");
+      const errorMessage = "Erro ao criar arquivo ZIP. Tente novamente.";
+      setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsGenerating(false);

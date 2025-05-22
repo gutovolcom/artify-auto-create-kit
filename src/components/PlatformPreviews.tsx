@@ -42,6 +42,12 @@ export const PlatformPreviews = ({
     eventData.kvImageId &&
     eventData.platforms.length > 0;
 
+  // Get image URL based on KV image ID
+  const getKvImageUrl = () => {
+    // In a real app, this would fetch the actual image
+    return "/placeholder.svg";
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -84,15 +90,14 @@ export const PlatformPreviews = ({
               </CardHeader>
               <CardContent>
                 <div
-                  className="bg-gray-100 border rounded-md relative overflow-hidden"
+                  className="relative overflow-hidden rounded-md"
                   style={{
                     aspectRatio:
                       platformId === "instagram" ? "1" : platformId === "youtube" ? "16/9" : "1.91/1",
                   }}
                 >
-                  {/* Placeholder for the generated image */}
                   {!isFormComplete ? (
-                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 flex-col">
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 flex-col bg-gray-100">
                       <Image className="h-12 w-12 opacity-50 mb-2" />
                       <div className="text-sm font-medium">
                         {platform.dimensions}
@@ -100,35 +105,70 @@ export const PlatformPreviews = ({
                       <div className="text-xs">{platform.aspectRatio}</div>
                     </div>
                   ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
-                      <h4 className="font-bold text-sm mb-1 text-black">
-                        {eventData.title}
-                      </h4>
-                      {eventData.date && (
-                        <p className="text-xs text-gray-700 mb-3">
-                          {eventData.date} {eventData.time && `• ${eventData.time}`}
-                        </p>
-                      )}
-                      
-                      {/* Teacher images */}
-                      {eventData.teacherImages.length > 0 && (
-                        <div className="flex -space-x-2 mb-3">
-                          {eventData.teacherImages.slice(0, 3).map((image, index) => (
-                            <Avatar 
-                              key={index} 
-                              className="border-2 border-white w-10 h-10"
-                            >
-                              <AvatarImage src={image} alt={`Professor ${index + 1}`} />
-                              <AvatarFallback>P{index + 1}</AvatarFallback>
-                            </Avatar>
-                          ))}
-                          {eventData.teacherImages.length > 3 && (
-                            <div className="w-10 h-10 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs">
-                              +{eventData.teacherImages.length - 3}
+                    <div className="absolute inset-0 bg-red-600 text-white">
+                      {/* High-quality preview layout similar to reference image */}
+                      <div className="relative w-full h-full flex flex-col">
+                        {/* Logo area */}
+                        <div className="absolute top-5 left-5 flex items-center">
+                          <div className="w-12 h-12 rounded-md bg-blue-500 mr-2 flex items-center justify-center overflow-hidden">
+                            <div className="w-full h-full bg-yellow-400 relative">
+                              <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-blue-700 rounded-full"></div>
+                            </div>
+                          </div>
+                          <div className="text-3xl font-bold tracking-wide">
+                            {eventData.title.toUpperCase()}
+                          </div>
+                        </div>
+                        
+                        {/* Course topic */}
+                        <div className="absolute top-1/3 left-5 transform -translate-y-1/2">
+                          <div className="text-xl font-bold mb-1">
+                            EM FOCO: {eventData.subtitle || "Tema da Aula"}
+                          </div>
+                          <div className="text-xl">
+                            {eventData.date} {eventData.time && `- ${eventData.time}`}
+                          </div>
+                          
+                          {/* Teacher name */}
+                          {eventData.teacherImages.length > 0 && (
+                            <div className="text-xl mt-1">
+                              {eventData.teacherImages.length === 1 ? "Professor" : "Professores"}: 
+                              {eventData.teacherImages.map((_, index) => 
+                                ` Nome do Professor ${index + 1}`
+                              ).join(", ")}
                             </div>
                           )}
                         </div>
-                      )}
+                        
+                        {/* Company logo at bottom */}
+                        <div className="absolute bottom-5 left-5">
+                          <div className="text-3xl font-bold tracking-wide">LOGO</div>
+                        </div>
+                        
+                        {/* Teacher image */}
+                        {eventData.teacherImages.length > 0 && (
+                          <div className="absolute right-0 bottom-0 h-full w-2/5 flex items-end">
+                            <div className="relative w-full h-4/5">
+                              {eventData.teacherImages.map((image, idx) => (
+                                <div 
+                                  key={idx}
+                                  className="absolute bottom-0 right-0 h-full w-full"
+                                  style={{
+                                    right: `${idx * 20}px`,
+                                    zIndex: eventData.teacherImages.length - idx
+                                  }}
+                                >
+                                  <img 
+                                    src={image} 
+                                    alt={`Professor ${idx + 1}`}
+                                    className="h-full w-auto object-contain object-bottom"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

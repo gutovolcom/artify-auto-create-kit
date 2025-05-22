@@ -47,32 +47,47 @@ export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) =
                 <div key={index} className="w-[250px] shrink-0 space-y-3">
                   <div className="overflow-hidden rounded-md border">
                     <div className="relative">
-                      <img
-                        src={image}
-                        alt={`Generated image ${index + 1}`}
-                        className="aspect-[4/3] h-auto w-full object-cover"
-                      />
-                      
-                      {/* Overlay content to represent the generated image */}
-                      <div className="absolute inset-0 p-3 flex flex-col items-center justify-center">
-                        <h4 className="font-bold text-sm text-center text-white bg-black/50 p-1 rounded mb-1 w-full">
-                          {eventData.title}
-                        </h4>
-                        
-                        {/* Show teacher images if available */}
-                        {eventData.teacherImages.length > 0 && (
-                          <div className="flex -space-x-2 mt-auto">
-                            {eventData.teacherImages.slice(0, 3).map((image, idx) => (
-                              <Avatar 
-                                key={idx} 
-                                className="border-2 border-white w-8 h-8"
-                              >
-                                <AvatarImage src={image} alt={`Professor ${idx + 1}`} />
-                                <AvatarFallback>P{idx + 1}</AvatarFallback>
-                              </Avatar>
-                            ))}
+                      {/* Real preview with styling matching the reference image */}
+                      <div className="aspect-[4/3] h-auto w-full bg-red-600 text-white">
+                        <div className="relative w-full h-full flex flex-col p-3">
+                          {/* Logo area */}
+                          <div className="flex items-center mb-2">
+                            <div className="w-8 h-8 rounded-md bg-blue-500 mr-2 flex items-center justify-center overflow-hidden">
+                              <div className="w-full h-full bg-yellow-400 relative">
+                                <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-blue-700 rounded-full"></div>
+                              </div>
+                            </div>
+                            <div className="text-lg font-bold tracking-wide">
+                              {eventData.title.toUpperCase()}
+                            </div>
                           </div>
-                        )}
+                          
+                          {/* Course topic */}
+                          <div className="mb-2">
+                            <div className="text-sm font-bold">
+                              EM FOCO: {eventData.subtitle || "Tema da Aula"}
+                            </div>
+                            <div className="text-xs">
+                              {eventData.date} {eventData.time && `- ${eventData.time}`}
+                            </div>
+                          </div>
+                          
+                          {/* Company logo at bottom */}
+                          <div className="mt-auto">
+                            <div className="text-lg font-bold tracking-wide">LOGO</div>
+                          </div>
+                          
+                          {/* Teacher image if available */}
+                          {eventData.teacherImages.length > 0 && (
+                            <div className="absolute right-1 bottom-1 h-2/3 w-1/3">
+                              <img 
+                                src={eventData.teacherImages[0]} 
+                                alt="Professor"
+                                className="h-full w-auto object-contain object-bottom"
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
