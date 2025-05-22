@@ -8,6 +8,8 @@ import { TeacherUploader } from "@/components/TeacherUploader";
 import { PlatformPreviews } from "@/components/PlatformPreviews";
 import { GeneratedGallery } from "@/components/GeneratedGallery";
 import { ExportButton } from "@/components/ExportButton";
+import { useImageGenerator } from "@/hooks/useImageGenerator";
+import { toast } from "sonner";
 
 export interface EventData {
   title: string;
@@ -30,25 +32,26 @@ const Index = () => {
     platforms: ["youtube", "instagram", "linkedin"],
   });
   
-  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [activeTab, setActiveTab] = useState("input");
+  const { generatedImages, isGenerating, generateImages, downloadZip } = useImageGenerator();
   
   const updateEventData = (data: Partial<EventData>) => {
     setEventData((prev) => ({ ...prev, ...data }));
   };
   
-  const handleGenerate = () => {
-    setIsGenerating(true);
-    // In a real app, this would call an API to generate the images
-    setTimeout(() => {
-      // Simulate generated images
-      setGeneratedImages([
-        "/placeholder.svg",
-        "/placeholder.svg",
-        "/placeholder.svg"
-      ]);
-      setIsGenerating(false);
-    }, 1500);
+  const handleGenerate = async () => {
+    const images = await generateImages(eventData);
+    if (images.length > 0) {
+      toast.success("Imagens geradas com sucesso!");
+      setActiveTab("export");
+    }
+  };
+
+  const handleExport = async () => {
+    const success = await downloadZip();
+    if (success) {
+      toast.success("Arquivo ZIP baixado com sucesso!");
+    }
   };
 
   return (
@@ -60,7 +63,7 @@ const Index = () => {
           Gerador Automático de Artes para Redes Sociais
         </h1>
         
-        <Tabs defaultValue="input" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="input">1. Dados do Evento</TabsTrigger>
             <TabsTrigger value="preview">2. Pré-visualização</TabsTrigger>
@@ -94,9 +97,9 @@ const Index = () => {
           </TabsContent>
           
           <TabsContent value="export">
-            <GeneratedGallery images={generatedImages} />
+            <GeneratedGallery images={generatedImages.map(img => img.url)} eventData={eventData} />
             <div className="mt-8 flex justify-center">
-              <ExportButton disabled={generatedImages.length === 0} />
+              <ExportButton onClick={handleExport} disabled={generatedImages.length === 0} />
             </div>
           </TabsContent>
         </Tabs>

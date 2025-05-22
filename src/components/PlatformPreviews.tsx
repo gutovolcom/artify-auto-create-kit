@@ -2,7 +2,8 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EventData } from "@/pages/Index";
-import { Loader2 } from "lucide-react";
+import { Loader2, Image } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface PlatformPreviewsProps {
   eventData: EventData;
@@ -90,39 +91,43 @@ export const PlatformPreviews = ({
                   }}
                 >
                   {/* Placeholder for the generated image */}
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-400 flex-col">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="48"
-                      height="48"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="opacity-50 mb-2"
-                    >
-                      <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                      <circle cx="9" cy="9" r="2" />
-                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                    </svg>
-                    <div className="text-sm font-medium">
-                      {platform.dimensions}
+                  {!isFormComplete ? (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-400 flex-col">
+                      <Image className="h-12 w-12 opacity-50 mb-2" />
+                      <div className="text-sm font-medium">
+                        {platform.dimensions}
+                      </div>
+                      <div className="text-xs">{platform.aspectRatio}</div>
                     </div>
-                    <div className="text-xs">{platform.aspectRatio}</div>
-                  </div>
-
-                  {/* Preview content - this would be replaced with actual content */}
-                  {isFormComplete && (
+                  ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
                       <h4 className="font-bold text-sm mb-1 text-black">
                         {eventData.title}
                       </h4>
                       {eventData.date && (
-                        <p className="text-xs text-gray-700">
+                        <p className="text-xs text-gray-700 mb-3">
                           {eventData.date} {eventData.time && `• ${eventData.time}`}
                         </p>
+                      )}
+                      
+                      {/* Teacher images */}
+                      {eventData.teacherImages.length > 0 && (
+                        <div className="flex -space-x-2 mb-3">
+                          {eventData.teacherImages.slice(0, 3).map((image, index) => (
+                            <Avatar 
+                              key={index} 
+                              className="border-2 border-white w-10 h-10"
+                            >
+                              <AvatarImage src={image} alt={`Professor ${index + 1}`} />
+                              <AvatarFallback>P{index + 1}</AvatarFallback>
+                            </Avatar>
+                          ))}
+                          {eventData.teacherImages.length > 3 && (
+                            <div className="w-10 h-10 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center text-xs">
+                              +{eventData.teacherImages.length - 3}
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
