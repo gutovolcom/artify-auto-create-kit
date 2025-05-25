@@ -2,9 +2,7 @@
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Download, Image } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { EventData } from "@/pages/Index";
-import { useEffect, useState } from "react";
 
 interface GeneratedGalleryProps {
   images: string[];
@@ -12,18 +10,6 @@ interface GeneratedGalleryProps {
 }
 
 export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) => {
-  const [backgroundImage, setBackgroundImage] = useState<string>("/placeholder.svg");
-
-  // Update background image when KV image changes
-  useEffect(() => {
-    if (eventData.kvImageId) {
-      const selectedElement = document.querySelector(`[data-image-id="${eventData.kvImageId}"] img`) as HTMLImageElement;
-      if (selectedElement && selectedElement.src) {
-        setBackgroundImage(selectedElement.src);
-      }
-    }
-  }, [eventData.kvImageId]);
-
   if (images.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center">
@@ -46,80 +32,53 @@ export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) =
     linkedin: "LinkedIn",
   };
 
+  const handleDownload = (imageUrl: string, platformName: string, index: number) => {
+    // Create download link
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = `${eventData.title}_${platformName}_${index + 1}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-8">
       <div className="space-y-4">
         <h3 className="text-xl font-semibold">Artes Geradas</h3>
         <ScrollArea className="w-full whitespace-nowrap rounded-md border">
           <div className="flex w-max space-x-6 p-4">
-            {images.map((image, index) => {
+            {images.map((imageUrl, index) => {
               const platformId = eventData.platforms[index % eventData.platforms.length];
               const platformName = platforms[platformId as keyof typeof platforms];
               
               return (
-                <div key={index} className="w-[250px] shrink-0 space-y-3">
+                <div key={index} className="w-[300px] shrink-0 space-y-3">
                   <div className="overflow-hidden rounded-md border">
                     <div className="relative">
-                      {/* Background image with overlay */}
-                      <div 
-                        className="aspect-[4/3] h-auto w-full text-white"
+                      {/* Display the generated image directly */}
+                      <img 
+                        src={imageUrl}
+                        alt={`${platformName} - ${eventData.title}`}
+                        className="w-full h-auto object-cover"
                         style={{
-                          backgroundImage: `url(${backgroundImage})`,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center'
+                          aspectRatio: platformId === "instagram" ? "1" : 
+                                      platformId === "youtube" ? "16/9" : "1.91/1"
                         }}
-                      >
-                        {/* Semi-transparent overlay */}
-                        <div className="absolute inset-0 bg-red-600 opacity-70"></div>
-                        
-                        {/* Content overlay */}
-                        <div className="relative w-full h-full flex flex-col p-3">
-                          {/* Logo area */}
-                          <div className="flex items-center mb-2">
-                            <div className="w-8 h-8 rounded-md bg-blue-500 mr-2 flex items-center justify-center overflow-hidden">
-                              <div className="w-full h-full bg-yellow-400 relative">
-                                <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-blue-700 rounded-full"></div>
-                              </div>
-                            </div>
-                            <div className="text-lg font-bold tracking-wide">
-                              {eventData.title.toUpperCase()}
-                            </div>
-                          </div>
-                          
-                          {/* Course topic */}
-                          <div className="mb-2">
-                            <div className="text-sm font-bold">
-                              EM FOCO: {eventData.subtitle || "Tema da Aula"}
-                            </div>
-                            <div className="text-xs">
-                              {eventData.date} {eventData.time && `- ${eventData.time}`}
-                            </div>
-                          </div>
-                          
-                          {/* Company logo at bottom */}
-                          <div className="mt-auto">
-                            <div className="text-lg font-bold tracking-wide">LOGO</div>
-                          </div>
-                          
-                          {/* Teacher image if available */}
-                          {eventData.teacherImages.length > 0 && (
-                            <div className="absolute right-1 bottom-1 h-2/3 w-1/3">
-                              <img 
-                                src={eventData.teacherImages[0]} 
-                                alt="Professor"
-                                className="h-full w-auto object-contain object-bottom"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      />
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
                     <div className="text-sm">
                       <p className="font-medium">{platformName}</p>
+                      <p className="text-gray-500 text-xs">{eventData.title}</p>
                     </div>
-                    <Button variant="outline" size="icon" className="h-8 w-8">
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={() => handleDownload(imageUrl, platformName, index)}
+                    >
                       <Download className="h-4 w-4" />
                       <span className="sr-only">Download</span>
                     </Button>

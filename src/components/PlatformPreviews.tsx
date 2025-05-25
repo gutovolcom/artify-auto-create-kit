@@ -1,9 +1,7 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EventData } from "@/pages/Index";
 import { Loader2, Image } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useEffect, useState } from "react";
 
 interface PlatformPreviewsProps {
@@ -122,70 +120,129 @@ export const PlatformPreviews = ({
                           backgroundPosition: 'center'
                         }}
                       >
-                        {/* Semi-transparent overlay for better text visibility */}
-                        <div className="absolute inset-0 bg-red-600 opacity-70"></div>
-                        
-                        {/* Content overlaid on the background */}
+                        {/* Content overlaid on the background - adapted for YouTube format */}
                         <div className="relative z-10 w-full h-full flex flex-col">
-                          {/* Logo area */}
-                          <div className="absolute top-5 left-5 flex items-center">
-                            <div className="w-12 h-12 rounded-md bg-blue-500 mr-2 flex items-center justify-center overflow-hidden">
-                              <div className="w-full h-full bg-yellow-400 relative">
-                                <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-blue-700 rounded-full"></div>
+                          {platformId === 'youtube' ? (
+                            // YouTube-specific layout following the drawYouTubeFormat style
+                            <>
+                              {/* Event title */}
+                              <div className="absolute" style={{ left: '120px', top: '120px' }}>
+                                <div className="text-4xl font-black text-white tracking-wide">
+                                  {eventData.title.toUpperCase()}
+                                </div>
                               </div>
-                            </div>
-                            <div className="text-3xl font-bold tracking-wide">
-                              {eventData.title.toUpperCase()}
-                            </div>
-                          </div>
-                          
-                          {/* Course topic */}
-                          <div className="absolute top-1/3 left-5 transform -translate-y-1/2">
-                            <div className="text-xl font-bold mb-1">
-                              EM FOCO: {eventData.subtitle || "Tema da Aula"}
-                            </div>
-                            <div className="text-xl">
-                              {eventData.date} {eventData.time && `- ${eventData.time}`}
-                            </div>
-                            
-                            {/* Teacher name */}
-                            {eventData.teacherImages.length > 0 && (
-                              <div className="text-xl mt-1">
-                                {eventData.teacherImages.length === 1 ? "Professor" : "Professores"}: 
-                                {eventData.teacherImages.map((_, index) => 
-                                  ` Nome do Professor ${index + 1}`
-                                ).join(", ")}
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Company logo at bottom */}
-                          <div className="absolute bottom-5 left-5">
-                            <div className="text-3xl font-bold tracking-wide">LOGO</div>
-                          </div>
-                          
-                          {/* Teacher image */}
-                          {eventData.teacherImages.length > 0 && (
-                            <div className="absolute right-0 bottom-0 h-full w-2/5 flex items-end">
-                              <div className="relative w-full h-4/5">
-                                {eventData.teacherImages.map((image, idx) => (
-                                  <div 
-                                    key={idx}
-                                    className="absolute bottom-0 right-0 h-full w-full"
-                                    style={{
-                                      right: `${idx * 20}px`,
-                                      zIndex: eventData.teacherImages.length - idx
-                                    }}
-                                  >
-                                    <img 
-                                      src={image} 
-                                      alt={`Professor ${idx + 1}`}
-                                      className="h-full w-auto object-contain object-bottom"
-                                    />
+                              
+                              {/* Class theme box */}
+                              <div className="absolute" style={{ left: '120px', top: '200px' }}>
+                                <div className="bg-red-600 px-4 py-2 rounded-lg">
+                                  <div className="text-lg font-bold text-white">
+                                    {eventData.subtitle || "Tema da Aula"}
                                   </div>
-                                ))}
+                                </div>
                               </div>
-                            </div>
+                              
+                              {/* Date */}
+                              <div className="absolute" style={{ left: '120px', top: '300px' }}>
+                                <div className="text-lg text-white">
+                                  {eventData.date} {eventData.time && `- ${eventData.time}`}
+                                </div>
+                              </div>
+                              
+                              {/* Professor name */}
+                              <div className="absolute" style={{ left: '120px', top: '350px' }}>
+                                <div className="text-lg text-white">
+                                  Professor
+                                </div>
+                              </div>
+                              
+                              {/* Teacher images positioned on the right */}
+                              {eventData.teacherImages.length > 0 && (
+                                <div className="absolute right-8 bottom-0 h-3/4 flex items-end">
+                                  {eventData.teacherImages.map((image, idx) => (
+                                    <div 
+                                      key={idx}
+                                      className="h-full"
+                                      style={{
+                                        marginRight: idx > 0 ? '-20px' : '0',
+                                        zIndex: eventData.teacherImages.length - idx,
+                                        width: eventData.teacherImages.length === 1 ? '250px' : 
+                                               eventData.teacherImages.length === 2 ? '180px' : '150px'
+                                      }}
+                                    >
+                                      <img 
+                                        src={image} 
+                                        alt={`Professor ${idx + 1}`}
+                                        className="h-full w-full object-contain object-bottom"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            // Other platforms - keep existing layout
+                            <>
+                              {/* Logo area */}
+                              <div className="absolute top-5 left-5 flex items-center">
+                                <div className="w-12 h-12 rounded-md bg-blue-500 mr-2 flex items-center justify-center overflow-hidden">
+                                  <div className="w-full h-full bg-yellow-400 relative">
+                                    <div className="absolute top-0 left-0 w-1/2 h-1/2 bg-blue-700 rounded-full"></div>
+                                  </div>
+                                </div>
+                                <div className="text-3xl font-bold tracking-wide">
+                                  {eventData.title.toUpperCase()}
+                                </div>
+                              </div>
+                              
+                              {/* Course topic */}
+                              <div className="absolute top-1/3 left-5 transform -translate-y-1/2">
+                                <div className="text-xl font-bold mb-1">
+                                  EM FOCO: {eventData.subtitle || "Tema da Aula"}
+                                </div>
+                                <div className="text-xl">
+                                  {eventData.date} {eventData.time && `- ${eventData.time}`}
+                                </div>
+                                
+                                {/* Teacher name */}
+                                {eventData.teacherImages.length > 0 && (
+                                  <div className="text-xl mt-1">
+                                    {eventData.teacherImages.length === 1 ? "Professor" : "Professores"}: 
+                                    {eventData.teacherImages.map((_, index) => 
+                                      ` Nome do Professor ${index + 1}`
+                                    ).join(", ")}
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Company logo at bottom */}
+                              <div className="absolute bottom-5 left-5">
+                                <div className="text-3xl font-bold tracking-wide">LOGO</div>
+                              </div>
+                              
+                              {/* Teacher image */}
+                              {eventData.teacherImages.length > 0 && (
+                                <div className="absolute right-0 bottom-0 h-full w-2/5 flex items-end">
+                                  <div className="relative w-full h-4/5">
+                                    {eventData.teacherImages.map((image, idx) => (
+                                      <div 
+                                        key={idx}
+                                        className="absolute bottom-0 right-0 h-full w-full"
+                                        style={{
+                                          right: `${idx * 20}px`,
+                                          zIndex: eventData.teacherImages.length - idx
+                                        }}
+                                      >
+                                        <img 
+                                          src={image} 
+                                          alt={`Professor ${idx + 1}`}
+                                          className="h-full w-auto object-contain object-bottom"
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>

@@ -1,14 +1,14 @@
-
 import { useState } from "react";
 import { EventData } from "@/pages/Index";
 import { platformConfigs } from "@/lib/platformConfigs";
 import { toast } from "sonner";
+import { renderCanvasWithTemplate } from "@/utils/canvasRenderer";
 
 interface GeneratedImage {
   platform: string;
   format: string;
   url: string;
-  bgImageUrl?: string; // Add background image URL
+  bgImageUrl?: string;
 }
 
 export const useImageGenerator = () => {
@@ -27,29 +27,41 @@ export const useImageGenerator = () => {
     setError(null);
 
     try {
-      // In a real app, this would be an API call to generate images
-      // Here we'll simulate the generation with a timeout
+      // Get the selected template image
+      const selectedKvImage = document.querySelector(`[data-image-id="${eventData.kvImageId}"] img`) as HTMLImageElement;
+      if (!selectedKvImage) {
+        throw new Error("Template image not found");
+      }
       
+      const bgImageUrl = selectedKvImage.src;
       const newGeneratedImages: GeneratedImage[] = [];
       
-      // For each selected platform, generate images in their formats
+      // Generate images for each selected platform
       for (const platformId of eventData.platforms) {
         const platform = platformConfigs[platformId];
         
         if (platform) {
-          // Find selected template image
-          const selectedKvImage = document.querySelector(`[data-image-id="${eventData.kvImageId}"] img`) as HTMLImageElement;
-          const bgImageUrl = selectedKvImage ? selectedKvImage.src : "/placeholder.svg";
-          
           for (const format of platform.formats) {
-            // In a real implementation, this would be the URL returned from the backend
-            // For now, we'll use the selected template image
-            newGeneratedImages.push({
-              platform: platformId,
-              format,
-              url: "/placeholder.svg", 
-              bgImageUrl: bgImageUrl,
-            });
+            try {
+              // Use the canvas renderer to create the image with the selected template
+              const generatedImageUrl = await renderCanvasWithTemplate(
+                bgImageUrl,
+                eventData,
+                platform.dimensions.width,
+                platform.dimensions.height,
+                platformId
+              );
+              
+              newGeneratedImages.push({
+                platform: platformId,
+                format,
+                url: generatedImageUrl,
+                bgImageUrl: bgImageUrl,
+              });
+            } catch (error) {
+              console.error(`Error generating image for ${platformId} ${format}:`, error);
+              // Continue with other images even if one fails
+            }
           }
         }
       }
