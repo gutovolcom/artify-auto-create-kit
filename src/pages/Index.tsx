@@ -1,5 +1,7 @@
 
 import { useState } from "react";
+import { LoginForm } from "@/components/LoginForm";
+import { AdminPanel } from "@/components/AdminPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Navbar } from "@/components/Navbar";
 import { EventForm } from "@/components/EventForm";
@@ -29,6 +31,7 @@ export interface EventData {
 }
 
 const Index = () => {
+  const [userType, setUserType] = useState<'user' | 'admin' | null>(null);
   const [eventData, setEventData] = useState<EventData>({
     title: "",
     subtitle: "",
@@ -69,9 +72,39 @@ const Index = () => {
     }
   };
 
+  const handleLogin = (type: 'user' | 'admin') => {
+    setUserType(type);
+  };
+
+  const handleLogout = () => {
+    setUserType(null);
+  };
+
+  // Show login form if not authenticated
+  if (!userType) {
+    return <LoginForm onLogin={handleLogin} />;
+  }
+
+  // Show admin panel for admin users
+  if (userType === 'admin') {
+    return <AdminPanel onLogout={handleLogout} />;
+  }
+
+  // Show user interface for regular users
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
+      
+      <div className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-4 py-2 flex justify-end">
+          <button
+            onClick={handleLogout}
+            className="text-sm text-gray-600 hover:text-gray-800"
+          >
+            Sair
+          </button>
+        </div>
+      </div>
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-center mb-8 text-blue-800">
