@@ -206,12 +206,12 @@ export const renderCanvasWithTemplate = async (
         ctx,
         professorImages,
         eventData.title,
-        eventData.subtitle || 'Tema da Aula',
-        'Professor Name', // This should come from eventData when available
+        eventData.classTheme || eventData.subtitle || 'Tema da Aula',
+        eventData.teacherName || 'Professor Name',
         eventData.date,
-        '#FFFFFF', // fontColor
-        '#FF0000', // boxColor  
-        '#FFFFFF', // boxFontColor
+        eventData.fontColor || '#FFFFFF',
+        eventData.boxColor || '#dd303e',
+        eventData.boxFontColor || '#FFFFFF',
         width,
         height,
         [] // additionalThemes - can be expanded later
@@ -225,9 +225,9 @@ export const renderCanvasWithTemplate = async (
       ctx.font = 'bold 48px Arial';
       ctx.fillText(eventData.title, 60, 100);
       
-      if (eventData.subtitle) {
+      if (eventData.classTheme || eventData.subtitle) {
         ctx.font = '32px Arial';
-        ctx.fillText(`EM FOCO: ${eventData.subtitle}`, 60, 150);
+        ctx.fillText(`EM FOCO: ${eventData.classTheme || eventData.subtitle}`, 60, 150);
       }
       
       ctx.fillText(`${eventData.date} ${eventData.time || ''}`, 60, 200);

@@ -51,7 +51,8 @@ export const PlatformPreviews = ({
     eventData.title &&
     eventData.date &&
     eventData.kvImageId &&
-    eventData.platforms.length > 0;
+    eventData.platforms.length > 0 &&
+    eventData.classTheme;
 
   return (
     <div className="space-y-6">
@@ -80,6 +81,7 @@ export const PlatformPreviews = ({
             {!eventData.title && <li>Título do evento</li>}
             {!eventData.date && <li>Data do evento</li>}
             {!eventData.kvImageId && <li>Imagem principal (KV)</li>}
+            {!eventData.classTheme && <li>Tema da aula</li>}
             {eventData.platforms.length === 0 && <li>Pelo menos uma plataforma</li>}
           </ul>
         </div>

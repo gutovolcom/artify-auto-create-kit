@@ -10,6 +10,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface EventFormProps {
   eventData: EventData;
@@ -22,6 +29,23 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
     { id: "instagram", label: "Instagram" },
     { id: "linkedin", label: "LinkedIn" },
   ];
+
+  const backgroundColorOptions = [
+    { id: "red", label: "Vermelho", color: "#dd303e", textColor: "#FFFFFF" },
+    { id: "white", label: "Branco", color: "#FFFFFF", textColor: "#dd303e" },
+    { id: "transparent", label: "Sem fundo (transparente)", color: "transparent", textColor: eventData.fontColor || "#000000" },
+  ];
+
+  const handleBackgroundColorChange = (value: string) => {
+    const selectedOption = backgroundColorOptions.find(option => option.id === value);
+    if (selectedOption) {
+      updateEventData({ 
+        boxColor: selectedOption.color,
+        boxFontColor: selectedOption.textColor,
+        backgroundColorType: value
+      });
+    }
+  };
 
   return (
     <Card>
@@ -40,14 +64,83 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="subtitle">Subtítulo/Descrição</Label>
+          <Label htmlFor="classTheme">Tema da aula</Label>
           <Textarea
-            id="subtitle"
-            placeholder="Uma breve descrição do evento..."
-            value={eventData.subtitle}
-            onChange={(e) => updateEventData({ subtitle: e.target.value })}
-            rows={3}
+            id="classTheme"
+            placeholder="Insira o tema da aula"
+            value={eventData.classTheme || ""}
+            onChange={(e) => updateEventData({ classTheme: e.target.value })}
+            rows={2}
+            maxLength={22}
           />
+          <div className="text-xs text-gray-500 text-right">
+            {(eventData.classTheme || "").length}/22
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Cor de fundo do texto</Label>
+          <Select value={eventData.backgroundColorType || "red"} onValueChange={handleBackgroundColorChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a cor de fundo" />
+            </SelectTrigger>
+            <SelectContent>
+              {backgroundColorOptions.map((option) => (
+                <SelectItem key={option.id} value={option.id}>
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-4 h-4 rounded border"
+                      style={{ 
+                        backgroundColor: option.color === "transparent" ? "#f0f0f0" : option.color,
+                        border: option.color === "#FFFFFF" ? "1px solid #ccc" : "none"
+                      }}
+                    />
+                    {option.label}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {eventData.backgroundColorType === "transparent" && (
+          <div className="space-y-2">
+            <Label htmlFor="fontColor">Cor do texto</Label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                id="fontColor"
+                value={eventData.fontColor || "#000000"}
+                onChange={(e) => updateEventData({ fontColor: e.target.value })}
+                className="w-10 h-10 rounded border cursor-pointer"
+              />
+              <Input
+                value={eventData.fontColor || "#000000"}
+                onChange={(e) => updateEventData({ fontColor: e.target.value })}
+                placeholder="#000000"
+                className="flex-1"
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label>Foto do professor</Label>
+          <Select value={eventData.selectedTeacherId || ""} onValueChange={(value) => updateEventData({ selectedTeacherId: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Digite para filtrar fotos" />
+            </SelectTrigger>
+            <SelectContent>
+              {eventData.teacherImages.map((image, index) => (
+                <SelectItem key={index} value={index.toString()}>
+                  <div className="flex items-center gap-2">
+                    <img src={image} alt={`Professor ${index + 1}`} className="w-6 h-6 rounded-full object-cover" />
+                    Professor {index + 1}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         <div className="grid grid-cols-2 gap-4">

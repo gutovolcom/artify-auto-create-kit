@@ -19,6 +19,13 @@ export interface EventData {
   kvImageId: string | null;
   teacherImages: string[];
   platforms: string[];
+  classTheme?: string;
+  boxColor?: string;
+  boxFontColor?: string;
+  fontColor?: string;
+  backgroundColorType?: string;
+  selectedTeacherId?: string;
+  teacherName?: string;
 }
 
 const Index = () => {
@@ -30,6 +37,13 @@ const Index = () => {
     kvImageId: null,
     teacherImages: [],
     platforms: ["youtube", "instagram", "linkedin"],
+    classTheme: "",
+    boxColor: "#dd303e",
+    boxFontColor: "#FFFFFF",
+    fontColor: "#000000",
+    backgroundColorType: "red",
+    selectedTeacherId: "",
+    teacherName: "",
   });
   
   const [activeTab, setActiveTab] = useState("input");
