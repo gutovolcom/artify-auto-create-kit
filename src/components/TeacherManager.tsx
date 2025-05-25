@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { usePersistedState } from "@/hooks/usePersistedState";
 
 interface Teacher {
   id: string;
@@ -15,7 +15,7 @@ interface Teacher {
 }
 
 export const TeacherManager = () => {
-  const [teachers, setTeachers] = useState<Teacher[]>([
+  const [teachers, setTeachers] = usePersistedState<Teacher[]>("admin_teachers", [
     { id: "1", name: "Prof. Ana Silva", photo: "/api/placeholder/150/150" },
     { id: "2", name: "Prof. João Santos", photo: "/api/placeholder/150/150" },
     { id: "3", name: "Prof. Maria Costa", photo: "/api/placeholder/150/150" },

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { usePersistedState } from "@/hooks/usePersistedState";
 
 interface Template {
   id: string;
@@ -30,7 +30,7 @@ const formatSpecs = {
 };
 
 export const TemplateManager = () => {
-  const [templates, setTemplates] = useState<Template[]>([
+  const [templates, setTemplates] = usePersistedState<Template[]>("admin_templates", [
     {
       id: "1",
       name: "Template Padrão",
