@@ -47,22 +47,19 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
     }
   };
 
+  // Mock teacher data - in a real app this would come from an API/database
+  const mockTeachers = [
+    { id: "1", name: "Prof. Ana Silva", photo: "/api/placeholder/150/150" },
+    { id: "2", name: "Prof. João Santos", photo: "/api/placeholder/150/150" },
+    { id: "3", name: "Prof. Maria Costa", photo: "/api/placeholder/150/150" },
+  ];
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Informações do Evento</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="title">Título do Evento</Label>
-          <Input
-            id="title"
-            placeholder="Ex: Workshop de Marketing Digital"
-            value={eventData.title}
-            onChange={(e) => updateEventData({ title: e.target.value })}
-          />
-        </div>
-        
         <div className="space-y-2">
           <Label htmlFor="classTheme">Tema da aula</Label>
           <Textarea
@@ -126,16 +123,16 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
 
         <div className="space-y-2">
           <Label>Foto do professor</Label>
-          <Select value={eventData.selectedTeacherId || ""} onValueChange={(value) => updateEventData({ selectedTeacherId: value })}>
+          <Select value={eventData.professorPhotos || ""} onValueChange={(value) => updateEventData({ professorPhotos: value })}>
             <SelectTrigger>
-              <SelectValue placeholder="Digite para filtrar fotos" />
+              <SelectValue placeholder="Selecione o professor" />
             </SelectTrigger>
             <SelectContent>
-              {eventData.teacherImages.map((image, index) => (
-                <SelectItem key={index} value={index.toString()}>
+              {mockTeachers.map((teacher) => (
+                <SelectItem key={teacher.id} value={teacher.id}>
                   <div className="flex items-center gap-2">
-                    <img src={image} alt={`Professor ${index + 1}`} className="w-6 h-6 rounded-full object-cover" />
-                    Professor {index + 1}
+                    <img src={teacher.photo} alt={teacher.name} className="w-6 h-6 rounded-full object-cover" />
+                    {teacher.name}
                   </div>
                 </SelectItem>
               ))}

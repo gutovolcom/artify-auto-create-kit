@@ -4,7 +4,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Navbar } from "@/components/Navbar";
 import { EventForm } from "@/components/EventForm";
 import { ImageSelector } from "@/components/ImageSelector";
-import { TeacherUploader } from "@/components/TeacherUploader";
 import { PlatformPreviews } from "@/components/PlatformPreviews";
 import { GeneratedGallery } from "@/components/GeneratedGallery";
 import { ExportButton } from "@/components/ExportButton";
@@ -26,6 +25,7 @@ export interface EventData {
   backgroundColorType?: string;
   selectedTeacherId?: string;
   teacherName?: string;
+  professorPhotos?: string;
 }
 
 const Index = () => {
@@ -44,6 +44,7 @@ const Index = () => {
     backgroundColorType: "red",
     selectedTeacherId: "",
     teacherName: "",
+    professorPhotos: "",
   });
   
   const [activeTab, setActiveTab] = useState("input");
@@ -88,10 +89,6 @@ const Index = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-6">
                 <EventForm eventData={eventData} updateEventData={updateEventData} />
-                <TeacherUploader 
-                  teacherImages={eventData.teacherImages} 
-                  updateTeacherImages={(images) => updateEventData({ teacherImages: images })} 
-                />
               </div>
               <div>
                 <ImageSelector 
