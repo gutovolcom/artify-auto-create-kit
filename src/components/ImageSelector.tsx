@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { PlusCircle, FileImage } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { usePersistedState } from "@/hooks/usePersistedState";
 
 interface TemplateImage {
   id: string;
@@ -14,15 +15,18 @@ interface TemplateImage {
   name: string;
 }
 
-// Default KV images
-const defaultKvImages: TemplateImage[] = [
-  { id: "kv1", url: "/placeholder.svg", name: "Template 1" },
-  { id: "kv2", url: "/placeholder.svg", name: "Template 2" },
-  { id: "kv3", url: "/placeholder.svg", name: "Template 3" },
-  { id: "kv4", url: "/placeholder.svg", name: "Template 4" },
-  { id: "kv5", url: "/placeholder.svg", name: "Template 5" },
-  { id: "kv6", url: "/placeholder.svg", name: "Template 6" },
-];
+interface Template {
+  id: string;
+  name: string;
+  formats: {
+    youtube: string;
+    feed: string;
+    stories: string;
+    bannerGCO: string;
+    ledStudio: string;
+    LP: string;
+  };
+}
 
 interface ImageSelectorProps {
   selectedImageId: string | null;
@@ -30,7 +34,16 @@ interface ImageSelectorProps {
 }
 
 export const ImageSelector = ({ selectedImageId, onSelect }: ImageSelectorProps) => {
-  const [kvImages, setKvImages] = useState<TemplateImage[]>(defaultKvImages);
+  // Get templates from admin panel storage
+  const [adminTemplates] = usePersistedState<Template[]>("admin_templates", []);
+  
+  // Convert admin templates to the format expected by ImageSelector
+  const templateImages: TemplateImage[] = adminTemplates.map(template => ({
+    id: template.id,
+    url: template.formats.youtube, // Use YouTube format as the preview image
+    name: template.name,
+  }));
+
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [templateName, setTemplateName] = useState("");
 
@@ -52,21 +65,9 @@ export const ImageSelector = ({ selectedImageId, onSelect }: ImageSelectorProps)
       return;
     }
     
-    // Create URL for loaded image
-    const imageUrl = URL.createObjectURL(file);
-    const newTemplate: TemplateImage = {
-      id: `template-${Date.now()}`,
-      url: imageUrl,
-      name: templateName.trim(),
-    };
-    
-    setKvImages([...kvImages, newTemplate]);
+    toast.info("Para adicionar templates, use o painel administrativo");
     setTemplateName("");
     setShowUploadForm(false);
-    toast.success("Template adicionado com sucesso!");
-    
-    // Auto-select the newly added template
-    onSelect(newTemplate.id);
   };
 
   return (
@@ -76,73 +77,49 @@ export const ImageSelector = ({ selectedImageId, onSelect }: ImageSelectorProps)
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={() => setShowUploadForm(!showUploadForm)}
+          onClick={() => toast.info("Para adicionar templates, use o painel administrativo")}
         >
           <PlusCircle className="h-4 w-4 mr-2" />
           Adicionar Template
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
-        {showUploadForm && (
-          <div className="p-4 border rounded-md bg-slate-50 mb-4">
-            <div className="space-y-3">
-              <div>
-                <Input
-                  placeholder="Nome do Template"
-                  value={templateName}
-                  onChange={(e) => setTemplateName(e.target.value)}
-                  className="mb-3"
-                />
-                <label 
-                  htmlFor="template-upload" 
-                  className="flex items-center justify-center border-2 border-dashed border-gray-300 rounded-md p-6 cursor-pointer hover:border-blue-400 transition-colors"
+        {templateImages.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <FileImage className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Nenhum template disponível</p>
+            <p className="text-sm">Templates devem ser criados no painel administrativo</p>
+          </div>
+        ) : (
+          <ScrollArea className="h-[400px] pr-4">
+            <div className="grid grid-cols-2 gap-4">
+              {templateImages.map((image) => (
+                <div
+                  key={image.id}
+                  className={cn(
+                    "border cursor-pointer rounded-md overflow-hidden transition-all",
+                    selectedImageId === image.id
+                      ? "ring-2 ring-blue-600 ring-offset-2"
+                      : "hover:border-blue-300"
+                  )}
+                  onClick={() => onSelect(image.id)}
+                  data-image-id={image.id}
                 >
-                  <div className="flex flex-col items-center space-y-2">
-                    <FileImage className="h-8 w-8 text-blue-500" />
-                    <span className="text-sm font-medium">Selecione uma imagem para o template</span>
-                    <span className="text-xs text-gray-500">PNG, JPG ou GIF (max 5MB)</span>
+                  <div className="aspect-video relative">
+                    <img
+                      src={image.url}
+                      alt={image.name}
+                      className="object-cover w-full h-full"
+                    />
                   </div>
-                  <Input 
-                    id="template-upload" 
-                    type="file" 
-                    className="hidden" 
-                    accept="image/*"
-                    onChange={handleAddTemplate}
-                  />
-                </label>
-              </div>
+                  <div className="p-2 text-center text-sm font-medium">
+                    {image.name}
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
+          </ScrollArea>
         )}
-
-        <ScrollArea className="h-[400px] pr-4">
-          <div className="grid grid-cols-2 gap-4">
-            {kvImages.map((image) => (
-              <div
-                key={image.id}
-                className={cn(
-                  "border cursor-pointer rounded-md overflow-hidden transition-all",
-                  selectedImageId === image.id
-                    ? "ring-2 ring-blue-600 ring-offset-2"
-                    : "hover:border-blue-300"
-                )}
-                onClick={() => onSelect(image.id)}
-                data-image-id={image.id} // Add data attribute for image ID
-              >
-                <div className="aspect-video relative">
-                  <img
-                    src={image.url}
-                    alt={image.name}
-                    className="object-cover w-full h-full"
-                  />
-                </div>
-                <div className="p-2 text-center text-sm font-medium">
-                  {image.name}
-                </div>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
       </CardContent>
     </Card>
   );

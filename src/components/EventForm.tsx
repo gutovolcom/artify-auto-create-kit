@@ -17,6 +17,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { usePersistedState } from "@/hooks/usePersistedState";
+
+interface Teacher {
+  id: string;
+  name: string;
+  photo: string;
+}
 
 interface EventFormProps {
   eventData: EventData;
@@ -24,6 +31,9 @@ interface EventFormProps {
 }
 
 export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
+  // Get teachers from admin panel storage
+  const [adminTeachers] = usePersistedState<Teacher[]>("admin_teachers", []);
+
   const platforms = [
     { id: "youtube", label: "YouTube" },
     { id: "instagram", label: "Instagram" },
@@ -46,13 +56,6 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
       });
     }
   };
-
-  // Mock teacher data - in a real app this would come from an API/database
-  const mockTeachers = [
-    { id: "1", name: "Prof. Ana Silva", photo: "/api/placeholder/150/150" },
-    { id: "2", name: "Prof. João Santos", photo: "/api/placeholder/150/150" },
-    { id: "3", name: "Prof. Maria Costa", photo: "/api/placeholder/150/150" },
-  ];
 
   return (
     <Card>
@@ -123,21 +126,27 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
 
         <div className="space-y-2">
           <Label>Foto do professor</Label>
-          <Select value={eventData.professorPhotos || ""} onValueChange={(value) => updateEventData({ professorPhotos: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o professor" />
-            </SelectTrigger>
-            <SelectContent>
-              {mockTeachers.map((teacher) => (
-                <SelectItem key={teacher.id} value={teacher.id}>
-                  <div className="flex items-center gap-2">
-                    <img src={teacher.photo} alt={teacher.name} className="w-6 h-6 rounded-full object-cover" />
-                    {teacher.name}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {adminTeachers.length === 0 ? (
+            <div className="text-sm text-gray-500 p-3 bg-gray-50 rounded-md">
+              Nenhum professor cadastrado. Cadastre professores no painel administrativo.
+            </div>
+          ) : (
+            <Select value={eventData.professorPhotos || ""} onValueChange={(value) => updateEventData({ professorPhotos: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o professor" />
+              </SelectTrigger>
+              <SelectContent>
+                {adminTeachers.map((teacher) => (
+                  <SelectItem key={teacher.id} value={teacher.id}>
+                    <div className="flex items-center gap-2">
+                      <img src={teacher.photo} alt={teacher.name} className="w-6 h-6 rounded-full object-cover" />
+                      {teacher.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
         
         <div className="grid grid-cols-2 gap-4">
