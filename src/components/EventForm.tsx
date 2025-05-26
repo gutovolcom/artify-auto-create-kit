@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { usePersistedState } from "@/hooks/usePersistedState";
+import { useEffect } from "react";
 
 interface Teacher {
   id: string;
@@ -33,6 +34,19 @@ interface EventFormProps {
 export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
   // Get teachers from admin panel storage
   const [adminTeachers] = usePersistedState<Teacher[]>("admin_teachers", []);
+
+  // Update teacher images when teacher selection changes
+  useEffect(() => {
+    if (eventData.professorPhotos) {
+      const selectedTeacher = adminTeachers.find(t => t.id === eventData.professorPhotos);
+      if (selectedTeacher) {
+        updateEventData({ 
+          teacherImages: [selectedTeacher.photo],
+          teacherName: selectedTeacher.name 
+        });
+      }
+    }
+  }, [eventData.professorPhotos, adminTeachers]);
 
   const platforms = [
     { id: "youtube", label: "YouTube" },
@@ -63,6 +77,16 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
         <CardTitle>Informações do Evento</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="title">Título do Evento</Label>
+          <Input
+            id="title"
+            placeholder="Insira o título do evento"
+            value={eventData.title || ""}
+            onChange={(e) => updateEventData({ title: e.target.value })}
+          />
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="classTheme">Tema da aula</Label>
           <Textarea
@@ -139,7 +163,14 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
                 {adminTeachers.map((teacher) => (
                   <SelectItem key={teacher.id} value={teacher.id}>
                     <div className="flex items-center gap-2">
-                      <img src={teacher.photo} alt={teacher.name} className="w-6 h-6 rounded-full object-cover" />
+                      <img 
+                        src={teacher.photo} 
+                        alt={teacher.name} 
+                        className="w-6 h-6 rounded-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "/placeholder.svg";
+                        }}
+                      />
                       {teacher.name}
                     </div>
                   </SelectItem>

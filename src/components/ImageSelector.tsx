@@ -110,6 +110,10 @@ export const ImageSelector = ({ selectedImageId, onSelect }: ImageSelectorProps)
                       src={image.url}
                       alt={image.name}
                       className="object-cover w-full h-full"
+                      onError={(e) => {
+                        console.error('Failed to load image:', image.url);
+                        e.currentTarget.src = "/placeholder.svg";
+                      }}
                     />
                   </div>
                   <div className="p-2 text-center text-sm font-medium">
