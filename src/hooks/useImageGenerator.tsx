@@ -1,8 +1,22 @@
+
 import { useState } from "react";
 import { EventData } from "@/pages/Index";
-import { platformConfigs } from "@/lib/platformConfigs";
 import { toast } from "sonner";
 import { renderCanvasWithTemplate } from "@/utils/canvasRenderer";
+import { usePersistedState } from "@/hooks/usePersistedState";
+
+interface Template {
+  id: string;
+  name: string;
+  formats: {
+    youtube: string;
+    feed: string;
+    stories: string;
+    bannerGCO: string;
+    ledStudio: string;
+    LP: string;
+  };
+}
 
 interface GeneratedImage {
   platform: string;
@@ -11,10 +25,21 @@ interface GeneratedImage {
   bgImageUrl?: string;
 }
 
+// Updated platform configurations
+const platformConfigs = {
+  youtube: { name: "YouTube", width: 1920, height: 1080 },
+  feed: { name: "Feed", width: 1080, height: 1080 },
+  stories: { name: "Stories", width: 1080, height: 1920 },
+  bannerGCO: { name: "Banner GCO", width: 255, height: 192 },
+  ledStudio: { name: "LED Studio", width: 1024, height: 256 },
+  LP: { name: "LP", width: 800, height: 776 },
+};
+
 export const useImageGenerator = () => {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [adminTemplates] = usePersistedState<Template[]>("admin_templates", []);
 
   const generateImages = async (eventData: EventData) => {
     if (!eventData.title || !eventData.date || !eventData.kvImageId) {
@@ -27,52 +52,65 @@ export const useImageGenerator = () => {
     setError(null);
 
     try {
-      // Get the selected template image
-      const selectedKvImage = document.querySelector(`[data-image-id="${eventData.kvImageId}"] img`) as HTMLImageElement;
-      if (!selectedKvImage) {
-        throw new Error("Template image not found");
+      console.log('Starting image generation for event:', eventData.title);
+      
+      // Get the selected template
+      const selectedTemplate = adminTemplates.find(t => t.id === eventData.kvImageId);
+      if (!selectedTemplate) {
+        throw new Error("Template not found");
       }
       
-      const bgImageUrl = selectedKvImage.src;
       const newGeneratedImages: GeneratedImage[] = [];
       
-      // Generate images for each selected platform
-      for (const platformId of eventData.platforms) {
-        const platform = platformConfigs[platformId];
-        
-        if (platform) {
-          for (const format of platform.formats) {
-            try {
-              // Use the canvas renderer to create the image with the selected template
-              const generatedImageUrl = await renderCanvasWithTemplate(
-                bgImageUrl,
-                eventData,
-                platform.dimensions.width,
-                platform.dimensions.height,
-                platformId
-              );
-              
-              newGeneratedImages.push({
-                platform: platformId,
-                format,
-                url: generatedImageUrl,
-                bgImageUrl: bgImageUrl,
-              });
-            } catch (error) {
-              console.error(`Error generating image for ${platformId} ${format}:`, error);
-              // Continue with other images even if one fails
-            }
+      // Generate images for all formats
+      const formats = Object.keys(platformConfigs) as (keyof typeof platformConfigs)[];
+      
+      for (const formatId of formats) {
+        try {
+          const platform = platformConfigs[formatId];
+          const bgImageUrl = selectedTemplate.formats[formatId];
+          
+          if (!bgImageUrl) {
+            console.warn(`No background image found for format: ${formatId}`);
+            continue;
           }
+          
+          console.log(`Generating image for ${formatId}:`, platform);
+          
+          // Use the canvas renderer to create the image with the selected template
+          const generatedImageUrl = await renderCanvasWithTemplate(
+            bgImageUrl,
+            eventData,
+            platform.width,
+            platform.height,
+            formatId
+          );
+          
+          newGeneratedImages.push({
+            platform: formatId,
+            format: platform.name,
+            url: generatedImageUrl,
+            bgImageUrl: bgImageUrl,
+          });
+        } catch (error) {
+          console.error(`Error generating image for ${formatId}:`, error);
+          // Continue with other images even if one fails
         }
       }
       
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      console.log('Generated images:', newGeneratedImages.length);
       
       setGeneratedImages(newGeneratedImages);
-      toast.success("Imagens geradas com sucesso!");
+      
+      if (newGeneratedImages.length > 0) {
+        toast.success(`${newGeneratedImages.length} imagens geradas com sucesso!`);
+      } else {
+        toast.error("Nenhuma imagem foi gerada. Verifique os templates.");
+      }
+      
       return newGeneratedImages;
     } catch (err) {
+      console.error('Image generation error:', err);
       const errorMessage = "Erro ao gerar imagens. Tente novamente.";
       setError(errorMessage);
       toast.error(errorMessage);

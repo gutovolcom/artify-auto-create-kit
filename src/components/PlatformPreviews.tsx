@@ -40,6 +40,19 @@ export const PlatformPreviews = ({
     }
   }, [eventData.kvImageId, adminTemplates]);
 
+  // Auto-generate previews when form is complete
+  useEffect(() => {
+    const isFormComplete = eventData.title && 
+                          eventData.date && 
+                          eventData.kvImageId && 
+                          eventData.classTheme;
+    
+    if (isFormComplete && !isGenerating) {
+      console.log('Auto-generating previews...');
+      onGenerate();
+    }
+  }, [eventData.title, eventData.date, eventData.kvImageId, eventData.classTheme, isGenerating, onGenerate]);
+
   // Platform-specific configurations with new formats
   const platforms = {
     youtube: {
@@ -88,20 +101,9 @@ export const PlatformPreviews = ({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-xl font-semibold">Pré-visualização das Artes</h3>
-        <Button
-          onClick={onGenerate}
-          disabled={!isFormComplete || isGenerating}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Gerando...
-            </>
-          ) : (
-            "Gerar Pré-visualizações"
-          )}
-        </Button>
+        <div className="text-sm text-gray-500">
+          {isFormComplete ? 'Previews atualizadas automaticamente' : 'Preencha os campos para gerar previews'}
+        </div>
       </div>
 
       {!isFormComplete && (
@@ -119,7 +121,7 @@ export const PlatformPreviews = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {allFormats.map((formatId) => {
           const platform = platforms[formatId as keyof typeof platforms];
-          const backgroundImage = selectedTemplate?.formats[formatId as keyof Template['formats']] || "/placeholder.svg";
+          const backgroundImage = selectedTemplate?.formats[formatId as keyof Template['formats']] || "";
           
           return (
             <Card key={formatId}>
@@ -128,9 +130,10 @@ export const PlatformPreviews = ({
               </CardHeader>
               <CardContent>
                 <div
-                  className="relative overflow-hidden rounded-md"
+                  className="relative overflow-hidden rounded-md border"
                   style={{
                     aspectRatio: platform.aspectRatio,
+                    minHeight: "120px"
                   }}
                 >
                   {!isFormComplete ? (
@@ -139,14 +142,14 @@ export const PlatformPreviews = ({
                       <div className="text-sm font-medium">
                         {platform.dimensions}
                       </div>
-                      <div className="text-xs">{platform.aspectRatio}</div>
+                      <div className="text-xs">{platform.aspectRatio.replace('/', ':')}</div>
                     </div>
                   ) : (
                     <div className="absolute inset-0 text-white">
                       <div 
                         className="relative w-full h-full flex flex-col" 
                         style={{
-                          backgroundImage: `url(${backgroundImage})`,
+                          backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                           backgroundSize: 'cover',
                           backgroundPosition: 'center'
                         }}
@@ -183,7 +186,7 @@ export const PlatformPreviews = ({
                               </div>
                               
                               {/* Teacher images positioned on the right */}
-                              {eventData.teacherImages.length > 0 && (
+                              {eventData.teacherImages && eventData.teacherImages.length > 0 && (
                                 <div className="absolute right-2 bottom-0 h-3/4 flex items-end">
                                   {eventData.teacherImages.map((image, idx) => (
                                     <div 
@@ -201,7 +204,7 @@ export const PlatformPreviews = ({
                                         alt={`Professor ${idx + 1}`}
                                         className="h-full w-full object-contain object-bottom"
                                         onError={(e) => {
-                                          e.currentTarget.src = "/placeholder.svg";
+                                          e.currentTarget.style.display = 'none';
                                         }}
                                       />
                                     </div>
@@ -236,7 +239,7 @@ export const PlatformPreviews = ({
                                 </div>
                               </div>
                               
-                              {eventData.teacherImages.length > 0 && (
+                              {eventData.teacherImages && eventData.teacherImages.length > 0 && (
                                 <div className="absolute right-2 bottom-0 h-2/3 flex items-end">
                                   <div className="relative w-full h-full">
                                     {eventData.teacherImages.slice(0, 1).map((image, idx) => (
@@ -246,7 +249,7 @@ export const PlatformPreviews = ({
                                         alt={`Professor ${idx + 1}`}
                                         className="h-full w-auto object-contain object-bottom"
                                         onError={(e) => {
-                                          e.currentTarget.src = "/placeholder.svg";
+                                          e.currentTarget.style.display = 'none';
                                         }}
                                       />
                                     ))}
@@ -259,6 +262,9 @@ export const PlatformPreviews = ({
                       </div>
                     </div>
                   )}
+                </div>
+                <div className="mt-2 text-center text-xs text-gray-500">
+                  {platform.dimensions}
                 </div>
               </CardContent>
             </Card>

@@ -185,18 +185,22 @@ export const renderCanvasWithTemplate = async (
   if (!ctx) throw new Error('Could not get canvas context');
 
   try {
+    console.log(`Rendering ${platform} format: ${width}x${height}`);
+    
     // Load and draw background image
     const backgroundImg = await loadImageFromSrc(backgroundImageSrc);
     ctx.drawImage(backgroundImg, 0, 0, width, height);
 
     // Load professor images
     const professorImages: HTMLImageElement[] = [];
-    for (const teacherImageSrc of eventData.teacherImages) {
-      try {
-        const img = await loadImageFromSrc(teacherImageSrc);
-        professorImages.push(img);
-      } catch (error) {
-        console.warn('Failed to load teacher image:', teacherImageSrc);
+    if (eventData.teacherImages && Array.isArray(eventData.teacherImages)) {
+      for (const teacherImageSrc of eventData.teacherImages) {
+        try {
+          const img = await loadImageFromSrc(teacherImageSrc);
+          professorImages.push(img);
+        } catch (error) {
+          console.warn('Failed to load teacher image:', teacherImageSrc);
+        }
       }
     }
 
@@ -205,10 +209,10 @@ export const renderCanvasWithTemplate = async (
       drawYouTubeFormat(
         ctx,
         professorImages,
-        eventData.title,
-        eventData.classTheme || eventData.subtitle || 'Tema da Aula',
-        eventData.teacherName || 'Professor Name',
-        eventData.date,
+        eventData.title || 'Título do Evento',
+        eventData.classTheme || 'Tema da Aula',
+        eventData.teacherName || 'Professor',
+        eventData.date || '',
         eventData.fontColor || '#FFFFFF',
         eventData.boxColor || '#dd303e',
         eventData.boxFontColor || '#FFFFFF',
@@ -217,34 +221,60 @@ export const renderCanvasWithTemplate = async (
         [] // additionalThemes - can be expanded later
       );
     } else {
-      // For other platforms, use simplified overlay for now
-      ctx.fillStyle = 'rgba(220, 38, 127, 0.7)';
-      ctx.fillRect(0, 0, width, height);
+      // For other platforms, use simplified overlay
+      const scaleFactor = Math.min(width / 1080, height / 1080); // Base scale on 1080px
       
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 48px Arial';
-      ctx.fillText(eventData.title, 60, 100);
+      // Title
+      const titleSize = Math.max(24, 48 * scaleFactor);
+      ctx.fillStyle = eventData.fontColor || '#FFFFFF';
+      ctx.font = `bold ${titleSize}px Arial`;
+      ctx.fillText(eventData.title || 'Título do Evento', 30 * scaleFactor, 60 * scaleFactor);
       
-      if (eventData.classTheme || eventData.subtitle) {
-        ctx.font = '32px Arial';
-        ctx.fillText(`EM FOCO: ${eventData.classTheme || eventData.subtitle}`, 60, 150);
+      // Class theme box
+      if (eventData.classTheme) {
+        const themeSize = Math.max(16, 32 * scaleFactor);
+        const padding = 10 * scaleFactor;
+        
+        ctx.font = `bold ${themeSize}px Arial`;
+        const themeText = eventData.classTheme;
+        const textWidth = ctx.measureText(themeText).width;
+        
+        // Draw rounded rectangle
+        const boxX = 30 * scaleFactor;
+        const boxY = 80 * scaleFactor;
+        const boxWidth = textWidth + (padding * 2);
+        const boxHeight = themeSize + (padding * 2);
+        
+        ctx.fillStyle = eventData.boxColor || '#dd303e';
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 5 * scaleFactor);
+        ctx.fill();
+        
+        ctx.fillStyle = eventData.boxFontColor || '#FFFFFF';
+        ctx.fillText(themeText, boxX + padding, boxY + themeSize + (padding / 2));
       }
       
-      ctx.fillText(`${eventData.date} ${eventData.time || ''}`, 60, 200);
+      // Date
+      const dateSize = Math.max(14, 24 * scaleFactor);
+      ctx.fillStyle = eventData.fontColor || '#FFFFFF';
+      ctx.font = `${dateSize}px Arial`;
+      const dateY = height - (30 * scaleFactor);
+      ctx.fillText(`${eventData.date} ${eventData.time || ''}`, 30 * scaleFactor, dateY);
       
       // Draw professor images for other platforms
       if (professorImages.length > 0) {
         const imgHeight = height * 0.6;
         const imgWidth = (professorImages[0].width / professorImages[0].height) * imgHeight;
-        const x = width - imgWidth - 20;
+        const x = width - imgWidth - (20 * scaleFactor);
         const y = height - imgHeight;
         ctx.drawImage(professorImages[0], x, y, imgWidth, imgHeight);
       }
     }
 
+    console.log(`Successfully rendered ${platform} image`);
     return canvas.toDataURL('image/png');
   } catch (error) {
-    console.error('Error rendering canvas:', error);
+    console.error(`Error rendering ${platform} canvas:`, error);
     throw error;
   }
 };

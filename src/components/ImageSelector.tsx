@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { PlusCircle, FileImage } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -44,30 +43,8 @@ export const ImageSelector = ({ selectedImageId, onSelect }: ImageSelectorProps)
     name: template.name,
   }));
 
-  const [showUploadForm, setShowUploadForm] = useState(false);
-  const [templateName, setTemplateName] = useState("");
-
-  const handleAddTemplate = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) {
-      return;
-    }
-    
-    const file = e.target.files[0];
-    
-    // Validate file (must be image)
-    if (!file.type.startsWith('image/')) {
-      toast.error("Por favor, selecione apenas arquivos de imagem");
-      return;
-    }
-    
-    if (!templateName.trim()) {
-      toast.error("Por favor, insira um nome para o template");
-      return;
-    }
-    
+  const handleAddTemplate = () => {
     toast.info("Para adicionar templates, use o painel administrativo");
-    setTemplateName("");
-    setShowUploadForm(false);
   };
 
   return (
@@ -77,7 +54,7 @@ export const ImageSelector = ({ selectedImageId, onSelect }: ImageSelectorProps)
         <Button 
           variant="outline" 
           size="sm" 
-          onClick={() => toast.info("Para adicionar templates, use o painel administrativo")}
+          onClick={handleAddTemplate}
         >
           <PlusCircle className="h-4 w-4 mr-2" />
           Adicionar Template
@@ -105,16 +82,41 @@ export const ImageSelector = ({ selectedImageId, onSelect }: ImageSelectorProps)
                   onClick={() => onSelect(image.id)}
                   data-image-id={image.id}
                 >
-                  <div className="aspect-video relative">
-                    <img
-                      src={image.url}
-                      alt={image.name}
-                      className="object-cover w-full h-full"
-                      onError={(e) => {
-                        console.error('Failed to load image:', image.url);
-                        e.currentTarget.src = "/placeholder.svg";
-                      }}
-                    />
+                  <div className="aspect-video relative bg-gray-100">
+                    {image.url ? (
+                      <img
+                        src={image.url}
+                        alt={image.name}
+                        className="object-cover w-full h-full"
+                        onError={(e) => {
+                          console.error('Failed to load template image:', image.url);
+                          // Hide the broken image and show a placeholder
+                          e.currentTarget.style.display = 'none';
+                          const parent = e.currentTarget.parentElement;
+                          if (parent && !parent.querySelector('.placeholder-content')) {
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'placeholder-content absolute inset-0 flex items-center justify-center text-gray-400';
+                            placeholder.innerHTML = '<div class="text-center"><div class="text-2xl mb-2">🖼️</div><div class="text-sm">Template</div></div>';
+                            parent.appendChild(placeholder);
+                          }
+                        }}
+                        onLoad={(e) => {
+                          // Ensure any placeholder is removed when image loads successfully
+                          const parent = e.currentTarget.parentElement;
+                          const placeholder = parent?.querySelector('.placeholder-content');
+                          if (placeholder) {
+                            placeholder.remove();
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                        <div className="text-center">
+                          <div className="text-2xl mb-2">🖼️</div>
+                          <div className="text-sm">Template</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="p-2 text-center text-sm font-medium">
                     {image.name}
