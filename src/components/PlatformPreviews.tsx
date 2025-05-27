@@ -2,21 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EventData } from "@/pages/Index";
 import { Loader2, Image } from "lucide-react";
-import { useEffect, useState } from "react";
-import { usePersistedState } from "@/hooks/usePersistedState";
-
-interface Template {
-  id: string;
-  name: string;
-  formats: {
-    youtube: string;
-    feed: string;
-    stories: string;
-    bannerGCO: string;
-    ledStudio: string;
-    LP: string;
-  };
-}
+import { useEffect, useState, useCallback } from "react";
+import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
 
 interface PlatformPreviewsProps {
   eventData: EventData;
@@ -29,16 +16,21 @@ export const PlatformPreviews = ({
   onGenerate,
   isGenerating,
 }: PlatformPreviewsProps) => {
-  const [adminTemplates] = usePersistedState<Template[]>("admin_templates", []);
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const { templates } = useSupabaseTemplates();
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
 
   // Get the selected template
   useEffect(() => {
     if (eventData.kvImageId) {
-      const template = adminTemplates.find(t => t.id === eventData.kvImageId);
+      const template = templates.find(t => t.id === eventData.kvImageId);
       setSelectedTemplate(template || null);
     }
-  }, [eventData.kvImageId, adminTemplates]);
+  }, [eventData.kvImageId, templates]);
+
+  // Memoize the generate function to prevent infinite re-renders
+  const handleGenerate = useCallback(() => {
+    onGenerate();
+  }, [onGenerate]);
 
   // Auto-generate previews when form is complete
   useEffect(() => {
@@ -47,11 +39,14 @@ export const PlatformPreviews = ({
                           eventData.kvImageId && 
                           eventData.classTheme;
     
-    if (isFormComplete && !isGenerating) {
+    if (isFormComplete && !isGenerating && selectedTemplate) {
       console.log('Auto-generating previews...');
-      onGenerate();
+      // Use setTimeout to prevent blocking the UI and avoid tab navigation issues
+      setTimeout(() => {
+        handleGenerate();
+      }, 100);
     }
-  }, [eventData.title, eventData.date, eventData.kvImageId, eventData.classTheme, isGenerating, onGenerate]);
+  }, [eventData.title, eventData.date, eventData.kvImageId, eventData.classTheme, isGenerating, selectedTemplate, handleGenerate]);
 
   // Platform-specific configurations with new formats
   const platforms = {
@@ -121,7 +116,8 @@ export const PlatformPreviews = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {allFormats.map((formatId) => {
           const platform = platforms[formatId as keyof typeof platforms];
-          const backgroundImage = selectedTemplate?.formats[formatId as keyof Template['formats']] || "";
+          const formatData = selectedTemplate?.formats?.find((f: any) => f.format_name === formatId);
+          const backgroundImage = formatData?.image_url || "";
           
           return (
             <Card key={formatId}>
@@ -151,7 +147,8 @@ export const PlatformPreviews = ({
                         style={{
                           backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                           backgroundSize: 'cover',
-                          backgroundPosition: 'center'
+                          backgroundPosition: 'center',
+                          fontFamily: 'Margem, system-ui, -apple-system, sans-serif'
                         }}
                       >
                         <div className="relative z-10 w-full h-full flex flex-col">

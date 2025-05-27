@@ -3,20 +3,8 @@ import { useState } from "react";
 import { EventData } from "@/pages/Index";
 import { toast } from "sonner";
 import { renderCanvasWithTemplate } from "@/utils/canvasRenderer";
-import { usePersistedState } from "@/hooks/usePersistedState";
-
-interface Template {
-  id: string;
-  name: string;
-  formats: {
-    youtube: string;
-    feed: string;
-    stories: string;
-    bannerGCO: string;
-    ledStudio: string;
-    LP: string;
-  };
-}
+import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
+import { useActivityLog } from "@/hooks/useActivityLog";
 
 interface GeneratedImage {
   platform: string;
@@ -25,7 +13,6 @@ interface GeneratedImage {
   bgImageUrl?: string;
 }
 
-// Updated platform configurations
 const platformConfigs = {
   youtube: { name: "YouTube", width: 1920, height: 1080 },
   feed: { name: "Feed", width: 1080, height: 1080 },
@@ -39,7 +26,8 @@ export const useImageGenerator = () => {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [adminTemplates] = usePersistedState<Template[]>("admin_templates", []);
+  const { templates } = useSupabaseTemplates();
+  const { logActivity } = useActivityLog();
 
   const generateImages = async (eventData: EventData) => {
     if (!eventData.title || !eventData.date || !eventData.kvImageId) {
@@ -54,8 +42,8 @@ export const useImageGenerator = () => {
     try {
       console.log('Starting image generation for event:', eventData.title);
       
-      // Get the selected template
-      const selectedTemplate = adminTemplates.find(t => t.id === eventData.kvImageId);
+      // Get the selected template from Supabase
+      const selectedTemplate = templates.find(t => t.id === eventData.kvImageId);
       if (!selectedTemplate) {
         throw new Error("Template not found");
       }
@@ -68,9 +56,9 @@ export const useImageGenerator = () => {
       for (const formatId of formats) {
         try {
           const platform = platformConfigs[formatId];
-          const bgImageUrl = selectedTemplate.formats[formatId];
+          const formatData = selectedTemplate.formats?.find(f => f.format_name === formatId);
           
-          if (!bgImageUrl) {
+          if (!formatData?.image_url) {
             console.warn(`No background image found for format: ${formatId}`);
             continue;
           }
@@ -79,7 +67,7 @@ export const useImageGenerator = () => {
           
           // Use the canvas renderer to create the image with the selected template
           const generatedImageUrl = await renderCanvasWithTemplate(
-            bgImageUrl,
+            formatData.image_url,
             eventData,
             platform.width,
             platform.height,
@@ -90,7 +78,7 @@ export const useImageGenerator = () => {
             platform: formatId,
             format: platform.name,
             url: generatedImageUrl,
-            bgImageUrl: bgImageUrl,
+            bgImageUrl: formatData.image_url,
           });
         } catch (error) {
           console.error(`Error generating image for ${formatId}:`, error);
@@ -103,6 +91,8 @@ export const useImageGenerator = () => {
       setGeneratedImages(newGeneratedImages);
       
       if (newGeneratedImages.length > 0) {
+        // Log the activity
+        await logActivity(eventData, newGeneratedImages.map(img => img.platform));
         toast.success(`${newGeneratedImages.length} imagens geradas com sucesso!`);
       } else {
         toast.error("Nenhuma imagem foi gerada. Verifique os templates.");

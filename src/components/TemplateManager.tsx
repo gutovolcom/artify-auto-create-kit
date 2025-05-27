@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -5,20 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { usePersistedState } from "@/hooks/usePersistedState";
-
-interface Template {
-  id: string;
-  name: string;
-  formats: {
-    youtube: string;
-    feed: string;
-    stories: string;
-    bannerGCO: string;
-    ledStudio: string;
-    LP: string;
-  };
-}
+import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
+import { Loader2 } from "lucide-react";
 
 const formatSpecs = {
   youtube: { width: 1920, height: 1080, label: "YouTube" },
@@ -30,34 +19,20 @@ const formatSpecs = {
 };
 
 export const TemplateManager = () => {
-  const [templates, setTemplates] = usePersistedState<Template[]>("admin_templates", [
-    {
-      id: "1",
-      name: "Template Padrão",
-      formats: {
-        youtube: "/api/placeholder/1920/1080",
-        feed: "/api/placeholder/1080/1080",
-        stories: "/api/placeholder/1080/1920",
-        bannerGCO: "/api/placeholder/255/192",
-        ledStudio: "/api/placeholder/1024/256",
-        LP: "/api/placeholder/800/776",
-      }
-    }
-  ]);
-  
+  const { templates, loading, createTemplate, deleteTemplate } = useSupabaseTemplates();
   const [isCreating, setIsCreating] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [newTemplateName, setNewTemplateName] = useState("");
-  const [newTemplateFormats, setNewTemplateFormats] = useState<Partial<Template['formats']>>({});
+  const [newTemplateFiles, setNewTemplateFiles] = useState<Record<string, File>>({});
+  const [creating, setCreatingState] = useState(false);
 
-  const handleCreateTemplate = () => {
+  const handleCreateTemplate = async () => {
     if (!newTemplateName.trim()) {
       toast.error("Nome do template é obrigatório!");
       return;
     }
 
     const missingFormats = Object.keys(formatSpecs).filter(
-      format => !newTemplateFormats[format as keyof Template['formats']]
+      format => !newTemplateFiles[format]
     );
 
     if (missingFormats.length > 0) {
@@ -65,54 +40,38 @@ export const TemplateManager = () => {
       return;
     }
 
-    const newTemplate: Template = {
-      id: Date.now().toString(),
-      name: newTemplateName,
-      formats: newTemplateFormats as Template['formats']
-    };
-
-    setTemplates([...templates, newTemplate]);
-    setIsCreating(false);
-    setNewTemplateName("");
-    setNewTemplateFormats({});
-    toast.success("Template criado com sucesso!");
+    setCreatingState(true);
+    try {
+      await createTemplate(newTemplateName.trim(), newTemplateFiles);
+      setIsCreating(false);
+      setNewTemplateName("");
+      setNewTemplateFiles({});
+    } catch (error) {
+      // Error handling is done in the hook
+    } finally {
+      setCreatingState(false);
+    }
   };
 
-  const handleEditTemplate = (template: Template) => {
-    setEditingTemplate(template);
-    setNewTemplateName(template.name);
-    setNewTemplateFormats(template.formats);
-  };
-
-  const handleUpdateTemplate = () => {
-    if (!editingTemplate) return;
-
-    const updatedTemplates = templates.map(t => 
-      t.id === editingTemplate.id 
-        ? { ...t, name: newTemplateName, formats: newTemplateFormats as Template['formats'] }
-        : t
-    );
-
-    setTemplates(updatedTemplates);
-    setEditingTemplate(null);
-    setNewTemplateName("");
-    setNewTemplateFormats({});
-    toast.success("Template atualizado com sucesso!");
-  };
-
-  const handleDeleteTemplate = (id: string) => {
-    setTemplates(templates.filter(t => t.id !== id));
-    toast.success("Template excluído com sucesso!");
-  };
-
-  const handleFileUpload = (format: keyof Template['formats'], file: File) => {
-    // In a real app, this would upload to a server
-    const url = URL.createObjectURL(file);
-    setNewTemplateFormats(prev => ({
+  const handleFileUpload = (format: string, file: File) => {
+    setNewTemplateFiles(prev => ({
       ...prev,
-      [format]: url
+      [format]: file
     }));
   };
+
+  const resetForm = () => {
+    setNewTemplateName("");
+    setNewTemplateFiles({});
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -152,16 +111,14 @@ export const TemplateManager = () => {
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            handleFileUpload(formatKey as keyof Template['formats'], file);
+                            handleFileUpload(formatKey, file);
                           }
                         }}
                       />
-                      {newTemplateFormats[formatKey as keyof Template['formats']] && (
-                        <img
-                          src={newTemplateFormats[formatKey as keyof Template['formats']]}
-                          alt={`Preview ${spec.label}`}
-                          className="mt-2 max-w-full h-20 object-cover rounded"
-                        />
+                      {newTemplateFiles[formatKey] && (
+                        <div className="mt-2 text-sm text-green-600">
+                          ✓ {newTemplateFiles[formatKey].name}
+                        </div>
                       )}
                     </CardContent>
                   </Card>
@@ -169,8 +126,17 @@ export const TemplateManager = () => {
               </div>
               
               <div className="flex gap-2">
-                <Button onClick={handleCreateTemplate}>Criar Template</Button>
-                <Button variant="outline" onClick={() => setIsCreating(false)}>
+                <Button 
+                  onClick={handleCreateTemplate}
+                  disabled={creating}
+                >
+                  {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Criar Template
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  setIsCreating(false);
+                  resetForm();
+                }}>
                   Cancelar
                 </Button>
               </div>
@@ -187,88 +153,25 @@ export const TemplateManager = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-2">
-                {Object.entries(template.formats).map(([format, url]) => (
-                  <div key={format} className="text-center">
+                {template.formats?.map((format) => (
+                  <div key={format.id} className="text-center">
                     <img
-                      src={url}
-                      alt={`${format} format`}
+                      src={format.image_url}
+                      alt={`${format.format_name} format`}
                       className="w-full h-16 object-cover rounded mb-1"
                     />
                     <span className="text-xs text-gray-600">
-                      {formatSpecs[format as keyof typeof formatSpecs].label}
+                      {formatSpecs[format.format_name as keyof typeof formatSpecs]?.label || format.format_name}
                     </span>
                   </div>
                 ))}
               </div>
               
               <div className="flex gap-2">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditTemplate(template)}
-                    >
-                      Editar
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Editar Template</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="editTemplateName">Nome do Template</Label>
-                        <Input
-                          id="editTemplateName"
-                          value={newTemplateName}
-                          onChange={(e) => setNewTemplateName(e.target.value)}
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {Object.entries(formatSpecs).map(([formatKey, spec]) => (
-                          <Card key={formatKey}>
-                            <CardHeader>
-                              <CardTitle className="text-sm">
-                                {spec.label} ({spec.width}x{spec.height})
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                              <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    handleFileUpload(formatKey as keyof Template['formats'], file);
-                                  }
-                                }}
-                              />
-                              <img
-                                src={newTemplateFormats[formatKey as keyof Template['formats']] || template.formats[formatKey as keyof Template['formats']]}
-                                alt={`Preview ${spec.label}`}
-                                className="mt-2 max-w-full h-20 object-cover rounded"
-                              />
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button onClick={handleUpdateTemplate}>Salvar Alterações</Button>
-                        <Button variant="outline" onClick={() => setEditingTemplate(null)}>
-                          Cancelar
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => handleDeleteTemplate(template.id)}
+                  onClick={() => deleteTemplate(template.id)}
                 >
                   Excluir
                 </Button>

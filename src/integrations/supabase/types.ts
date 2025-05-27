@@ -9,6 +9,47 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          created_at: string
+          event_date: string | null
+          event_title: string
+          generated_formats: string[] | null
+          id: string
+          teacher_ids: string[] | null
+          template_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_date?: string | null
+          event_title: string
+          generated_formats?: string[] | null
+          id?: string
+          teacher_ids?: string[] | null
+          template_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_date?: string | null
+          event_title?: string
+          generated_formats?: string[] | null
+          id?: string
+          teacher_ids?: string[] | null
+          template_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -29,6 +70,89 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      teachers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          image_url: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          image_url?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      template_formats: {
+        Row: {
+          created_at: string
+          format_name: string
+          id: string
+          image_url: string
+          template_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          format_name: string
+          id?: string
+          image_url: string
+          template_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          format_name?: string
+          id?: string
+          image_url?: string
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_formats_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
           updated_at?: string
         }
         Relationships: []
