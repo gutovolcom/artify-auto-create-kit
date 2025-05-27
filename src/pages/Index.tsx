@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { LoginForm } from "@/components/LoginForm";
 import { AdminPanel } from "@/components/AdminPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Navbar } from "@/components/Navbar";
@@ -10,7 +9,9 @@ import { PlatformPreviews } from "@/components/PlatformPreviews";
 import { GeneratedGallery } from "@/components/GeneratedGallery";
 import { ExportButton } from "@/components/ExportButton";
 import { useImageGenerator } from "@/hooks/useImageGenerator";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { Navigate } from "react-router-dom";
 
 export interface EventData {
   title: string;
@@ -31,7 +32,8 @@ export interface EventData {
 }
 
 const Index = () => {
-  const [userType, setUserType] = useState<'user' | 'admin' | null>(null);
+  const { user, loading, signOut } = useAuth();
+  const [userType, setUserType] = useState<'user' | 'admin'>('user');
   const [eventData, setEventData] = useState<EventData>({
     title: "",
     subtitle: "",
@@ -72,21 +74,30 @@ const Index = () => {
     }
   };
 
-  const handleLogin = (type: 'user' | 'admin') => {
-    setUserType(type);
+  const handleLogout = async () => {
+    await signOut();
+    toast.success("Logout realizado com sucesso!");
   };
 
-  const handleLogout = () => {
-    setUserType(null);
-  };
-
-  // Show login form if not authenticated
-  if (!userType) {
-    return <LoginForm onLogin={handleLogin} />;
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Carregando...</div>
+      </div>
+    );
   }
 
+  // Redirect to auth if not authenticated
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Check if user is admin (you can implement admin role logic here)
+  const isAdmin = user.email === "admin@lovable.com"; // Simple admin check for now
+
   // Show admin panel for admin users
-  if (userType === 'admin') {
+  if (isAdmin && userType === 'admin') {
     return <AdminPanel onLogout={handleLogout} />;
   }
 
@@ -96,13 +107,26 @@ const Index = () => {
       <Navbar />
       
       <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-2 flex justify-end">
-          <button
-            onClick={handleLogout}
-            className="text-sm text-gray-600 hover:text-gray-800"
-          >
-            Sair
-          </button>
+        <div className="container mx-auto px-4 py-2 flex justify-between items-center">
+          <div className="text-sm text-gray-600">
+            Bem-vindo, {user.email}
+          </div>
+          <div className="flex gap-4">
+            {isAdmin && (
+              <button
+                onClick={() => setUserType(userType === 'admin' ? 'user' : 'admin')}
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
+                {userType === 'admin' ? 'Modo Usuário' : 'Painel Admin'}
+              </button>
+            )}
+            <button
+              onClick={handleLogout}
+              className="text-sm text-gray-600 hover:text-gray-800"
+            >
+              Sair
+            </button>
+          </div>
         </div>
       </div>
       
