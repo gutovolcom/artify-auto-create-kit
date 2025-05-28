@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -165,7 +164,7 @@ const Index = () => {
           </TabsContent>
           
           <TabsContent value="export">
-            <GeneratedGallery images={generatedImages.map(img => img.url)} eventData={eventData} />
+            <GeneratedGallery images={generatedImages} eventData={eventData} />
             <div className="mt-8 flex justify-center">
               <ExportButton onClick={handleExport} disabled={generatedImages.length === 0} />
             </div>

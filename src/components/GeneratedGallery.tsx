@@ -2,11 +2,17 @@
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Download, Image } from "lucide-react";
-import { EventData } from "@/pages/Index";
+
+interface GeneratedImage {
+  platform: string;
+  format: string;
+  url: string;
+  bgImageUrl?: string;
+}
 
 interface GeneratedGalleryProps {
-  images: string[];
-  eventData: EventData;
+  images: GeneratedImage[];
+  eventData: any;
 }
 
 export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) => {
@@ -28,15 +34,18 @@ export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) =
 
   const platforms = {
     youtube: "YouTube",
-    instagram: "Instagram",
-    linkedin: "LinkedIn",
+    feed: "Feed",
+    stories: "Stories", 
+    bannerGCO: "Banner GCO",
+    ledStudio: "LED Studio",
+    LP: "LP",
   };
 
-  const handleDownload = (imageUrl: string, platformName: string, index: number) => {
+  const handleDownload = (imageUrl: string, platformName: string, platformId: string) => {
     // Create download link
     const link = document.createElement('a');
     link.href = imageUrl;
-    link.download = `${eventData.title}_${platformName}_${index + 1}.png`;
+    link.download = `${eventData.title}_${platformId}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -48,9 +57,15 @@ export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) =
         <h3 className="text-xl font-semibold">Artes Geradas</h3>
         <ScrollArea className="w-full whitespace-nowrap rounded-md border">
           <div className="flex w-max space-x-6 p-4">
-            {images.map((imageUrl, index) => {
-              const platformId = eventData.platforms[index % eventData.platforms.length];
-              const platformName = platforms[platformId as keyof typeof platforms];
+            {images.map((generatedImage, index) => {
+              const platformName = platforms[generatedImage.platform as keyof typeof platforms] || generatedImage.format;
+              
+              // Define aspect ratio based on platform
+              let aspectRatio = "1";
+              if (generatedImage.platform === "youtube") aspectRatio = "16/9";
+              else if (generatedImage.platform === "stories") aspectRatio = "9/16";
+              else if (generatedImage.platform === "bannerGCO") aspectRatio = "4/3";
+              else if (generatedImage.platform === "ledStudio") aspectRatio = "4/1";
               
               return (
                 <div key={index} className="w-[300px] shrink-0 space-y-3">
@@ -58,12 +73,11 @@ export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) =
                     <div className="relative">
                       {/* Display the generated image directly */}
                       <img 
-                        src={imageUrl}
+                        src={generatedImage.url}
                         alt={`${platformName} - ${eventData.title}`}
                         className="w-full h-auto object-cover"
                         style={{
-                          aspectRatio: platformId === "instagram" ? "1" : 
-                                      platformId === "youtube" ? "16/9" : "1.91/1"
+                          aspectRatio: aspectRatio
                         }}
                       />
                     </div>
@@ -77,7 +91,7 @@ export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) =
                       variant="outline" 
                       size="icon" 
                       className="h-8 w-8"
-                      onClick={() => handleDownload(imageUrl, platformName, index)}
+                      onClick={() => handleDownload(generatedImage.url, platformName, generatedImage.platform)}
                     >
                       <Download className="h-4 w-4" />
                       <span className="sr-only">Download</span>

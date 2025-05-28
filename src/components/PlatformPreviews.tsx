@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EventData } from "@/pages/Index";
@@ -27,7 +28,7 @@ export const PlatformPreviews = ({
     }
   }, [eventData.kvImageId, templates]);
 
-  // Platform-specific configurations with new formats
+  // Platform-specific configurations with correct formats
   const platforms = {
     youtube: {
       name: "YouTube",
