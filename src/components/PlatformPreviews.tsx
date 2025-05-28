@@ -45,20 +45,20 @@ export const PlatformPreviews = ({
       dimensions: "1080 x 1920",
       aspectRatio: "9:16",
     },
-    bannerGCO: {
-      name: "Banner GCO",
+    highlight: {
+      name: "Highlight",
       dimensions: "255 x 192",
       aspectRatio: "4:3",
+    },
+    bannerGCO: {
+      name: "Banner GCO",
+      dimensions: "1920 x 500",
+      aspectRatio: "96:25",
     },
     ledStudio: {
       name: "LED Studio",
       dimensions: "1024 x 256",
       aspectRatio: "4:1",
-    },
-    LP: {
-      name: "LP",
-      dimensions: "800 x 776",
-      aspectRatio: "1:1",
     },
   };
 
