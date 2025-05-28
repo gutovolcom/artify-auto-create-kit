@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EventData } from "@/pages/Index";
 import { Loader2, Image } from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
 
 interface PlatformPreviewsProps {
@@ -26,27 +26,6 @@ export const PlatformPreviews = ({
       setSelectedTemplate(template || null);
     }
   }, [eventData.kvImageId, templates]);
-
-  // Memoize the generate function to prevent infinite re-renders
-  const handleGenerate = useCallback(() => {
-    onGenerate();
-  }, [onGenerate]);
-
-  // Auto-generate previews when form is complete
-  useEffect(() => {
-    const isFormComplete = eventData.title && 
-                          eventData.date && 
-                          eventData.kvImageId && 
-                          eventData.classTheme;
-    
-    if (isFormComplete && !isGenerating && selectedTemplate) {
-      console.log('Auto-generating previews...');
-      // Use setTimeout to prevent blocking the UI and avoid tab navigation issues
-      setTimeout(() => {
-        handleGenerate();
-      }, 100);
-    }
-  }, [eventData.title, eventData.date, eventData.kvImageId, eventData.classTheme, isGenerating, selectedTemplate, handleGenerate]);
 
   // Platform-specific configurations with new formats
   const platforms = {
@@ -96,9 +75,20 @@ export const PlatformPreviews = ({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h3 className="text-xl font-semibold">Pré-visualização das Artes</h3>
-        <div className="text-sm text-gray-500">
-          {isFormComplete ? 'Previews atualizadas automaticamente' : 'Preencha os campos para gerar previews'}
-        </div>
+        <Button 
+          onClick={onGenerate} 
+          disabled={!isFormComplete || isGenerating}
+          className="flex items-center gap-2"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Gerando...
+            </>
+          ) : (
+            "Gerar Pré-visualizações"
+          )}
+        </Button>
       </div>
 
       {!isFormComplete && (

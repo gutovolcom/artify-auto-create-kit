@@ -17,14 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { usePersistedState } from "@/hooks/usePersistedState";
+import { useSupabaseTeachers } from "@/hooks/useSupabaseTeachers";
 import { useEffect } from "react";
-
-interface Teacher {
-  id: string;
-  name: string;
-  photo: string;
-}
 
 interface EventFormProps {
   eventData: EventData;
@@ -32,21 +26,21 @@ interface EventFormProps {
 }
 
 export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
-  // Get teachers from admin panel storage
-  const [adminTeachers] = usePersistedState<Teacher[]>("admin_teachers", []);
+  // Get teachers from Supabase instead of localStorage
+  const { teachers, loading } = useSupabaseTeachers();
 
   // Update teacher images when teacher selection changes
   useEffect(() => {
     if (eventData.professorPhotos) {
-      const selectedTeacher = adminTeachers.find(t => t.id === eventData.professorPhotos);
+      const selectedTeacher = teachers.find(t => t.id === eventData.professorPhotos);
       if (selectedTeacher) {
         updateEventData({ 
-          teacherImages: [selectedTeacher.photo],
+          teacherImages: [selectedTeacher.image_url],
           teacherName: selectedTeacher.name 
         });
       }
     }
-  }, [eventData.professorPhotos, adminTeachers]);
+  }, [eventData.professorPhotos, teachers, updateEventData]);
 
   const platforms = [
     { id: "youtube", label: "YouTube" },
@@ -150,7 +144,11 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
 
         <div className="space-y-2">
           <Label>Foto do professor</Label>
-          {adminTeachers.length === 0 ? (
+          {loading ? (
+            <div className="text-sm text-gray-500 p-3 bg-gray-50 rounded-md">
+              Carregando professores...
+            </div>
+          ) : teachers.length === 0 ? (
             <div className="text-sm text-gray-500 p-3 bg-gray-50 rounded-md">
               Nenhum professor cadastrado. Cadastre professores no painel administrativo.
             </div>
@@ -160,11 +158,11 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
                 <SelectValue placeholder="Selecione o professor" />
               </SelectTrigger>
               <SelectContent>
-                {adminTeachers.map((teacher) => (
+                {teachers.map((teacher) => (
                   <SelectItem key={teacher.id} value={teacher.id}>
                     <div className="flex items-center gap-2">
                       <img 
-                        src={teacher.photo} 
+                        src={teacher.image_url} 
                         alt={teacher.name} 
                         className="w-6 h-6 rounded-full object-cover"
                         onError={(e) => {
