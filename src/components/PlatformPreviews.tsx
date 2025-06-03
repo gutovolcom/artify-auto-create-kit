@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EventData } from "@/pages/Index";
@@ -138,10 +139,10 @@ export const PlatformPreviews = ({
                 <CardTitle className="text-lg">{platform.name}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-hidden rounded-md border">
+                <div className="bg-gray-100 border rounded-lg overflow-hidden">
                   {!isFormComplete ? (
                     <div 
-                      className="flex items-center justify-center text-gray-400 flex-col bg-gray-100"
+                      className="flex items-center justify-center text-gray-400 flex-col"
                       style={{
                         aspectRatio: platform.aspectRatio,
                         minHeight: "120px"
