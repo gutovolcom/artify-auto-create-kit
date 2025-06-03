@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EventData } from "@/pages/Index";
@@ -22,8 +21,9 @@ export const PlatformPreviews = ({
 
   // Get the selected template
   useEffect(() => {
-    if (eventData.kvImageId) {
+    if (eventData.kvImageId && templates.length > 0) {
       const template = templates.find(t => t.id === eventData.kvImageId);
+      console.log('Selected template:', template);
       setSelectedTemplate(template || null);
     }
   }, [eventData.kvImageId, templates]);
@@ -94,6 +94,10 @@ export const PlatformPreviews = ({
   // Show all formats for preview
   const allFormats = Object.keys(platforms);
 
+  console.log('Form complete:', isFormComplete);
+  console.log('Selected template:', selectedTemplate);
+  console.log('Event data:', eventData);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -130,263 +134,304 @@ export const PlatformPreviews = ({
         {allFormats.map((formatId) => {
           const platform = platforms[formatId as keyof typeof platforms];
           const formatData = selectedTemplate?.formats?.find((f: any) => f.format_name === formatId);
-          const backgroundImage = formatData?.image_url || "";
+          const backgroundImage = formatData?.image_url;
           const formattedDateTime = formatDateTime(eventData.date, eventData.time);
           
+          console.log(`Format ${formatId}:`, {
+            formatData,
+            backgroundImage,
+            hasSelectedTemplate: !!selectedTemplate,
+            hasFormats: !!selectedTemplate?.formats
+          });
+          
           return (
-            <Card key={formatId}>
+            <Card key={formatId} className="overflow-hidden">
               <CardHeader>
                 <CardTitle className="text-lg">{platform.name}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="w-full">
-                  {!isFormComplete ? (
-                    <div 
-                      className="flex items-center justify-center text-gray-400 flex-col bg-gray-100 border rounded-lg"
-                      style={{
-                        aspectRatio: platform.aspectRatio,
-                        minHeight: "120px"
-                      }}
-                    >
-                      <Image className="h-12 w-12 opacity-50 mb-2" />
-                      <div className="text-sm font-medium">
-                        {platform.dimensions}
-                      </div>
-                      <div className="text-xs">{platform.aspectRatio.replace('/', ':')}</div>
+              <CardContent className="p-0">
+                {!isFormComplete ? (
+                  <div 
+                    className="flex items-center justify-center text-gray-400 flex-col bg-gray-100 border-t"
+                    style={{
+                      aspectRatio: platform.aspectRatio,
+                      minHeight: "120px"
+                    }}
+                  >
+                    <Image className="h-12 w-12 opacity-50 mb-2" />
+                    <div className="text-sm font-medium">
+                      {platform.dimensions}
                     </div>
-                  ) : (
-                    <div 
-                      className="relative text-white overflow-hidden w-full"
-                      style={{
-                        aspectRatio: platform.aspectRatio,
-                        backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        fontFamily: 'Margem, system-ui, -apple-system, sans-serif'
-                      }}
-                    >
-                      {formatId === 'youtube' ? (
-                        // YouTube-specific layout following the drawYouTubeFormat style
-                        <>
-                          {/* Event title */}
-                          <div className="absolute left-2 top-2">
-                            <div className="text-lg font-black text-white tracking-wide">
-                              {eventData.title.toUpperCase()}
-                            </div>
+                    <div className="text-xs">{platform.aspectRatio.replace('/', ':')}</div>
+                  </div>
+                ) : (
+                  <div 
+                    className="relative text-white overflow-hidden w-full"
+                    style={{
+                      aspectRatio: platform.aspectRatio,
+                      backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      fontFamily: 'Margem, system-ui, -apple-system, sans-serif',
+                      minHeight: "120px"
+                    }}
+                  >
+                    {formatId === 'youtube' ? (
+                      // YouTube-specific layout following the drawYouTubeFormat style
+                      <>
+                        {/* Event title */}
+                        <div className="absolute left-3 top-3">
+                          <div 
+                            className="text-sm font-black text-white tracking-wide leading-tight"
+                            style={{ fontSize: 'clamp(10px, 2.5vw, 14px)' }}
+                          >
+                            {eventData.title.toUpperCase()}
                           </div>
-                          
-                          {/* Class theme box */}
-                          <div className="absolute left-2 top-8">
-                            <div 
-                              className="px-2 py-1 rounded text-xs font-bold"
-                              style={{
-                                backgroundColor: eventData.boxColor || '#dd303e',
-                                color: eventData.boxFontColor || '#FFFFFF'
-                              }}
-                            >
-                              {eventData.classTheme || "Tema da Aula"}
-                            </div>
+                        </div>
+                        
+                        {/* Class theme box */}
+                        <div className="absolute left-3 top-8">
+                          <div 
+                            className="px-2 py-1 rounded text-xs font-bold"
+                            style={{
+                              backgroundColor: eventData.boxColor || '#dd303e',
+                              color: eventData.boxFontColor || '#FFFFFF',
+                              fontSize: 'clamp(8px, 1.5vw, 10px)'
+                            }}
+                          >
+                            {eventData.classTheme || "Tema da Aula"}
                           </div>
-                          
-                          {/* Date and time */}
-                          <div className="absolute left-2 bottom-8">
-                            <div className="text-sm text-white">
-                              {formattedDateTime}
-                            </div>
+                        </div>
+                        
+                        {/* Date and time */}
+                        <div className="absolute left-3 bottom-3">
+                          <div 
+                            className="text-white"
+                            style={{ fontSize: 'clamp(8px, 1.5vw, 10px)' }}
+                          >
+                            {formattedDateTime}
                           </div>
-                          
-                          {/* Teacher images positioned on the right */}
-                          {eventData.teacherImages && eventData.teacherImages.length > 0 && (
-                            <div className="absolute right-2 bottom-0 h-3/4 flex items-end">
-                              {eventData.teacherImages.map((image, idx) => (
-                                <div 
-                                  key={idx}
-                                  className="h-full"
-                                  style={{
-                                    marginRight: idx > 0 ? '-5px' : '0',
-                                    zIndex: eventData.teacherImages.length - idx,
-                                    width: eventData.teacherImages.length === 1 ? '60px' : 
-                                           eventData.teacherImages.length === 2 ? '45px' : '35px'
+                        </div>
+                        
+                        {/* Teacher images positioned on the right */}
+                        {eventData.teacherImages && eventData.teacherImages.length > 0 && (
+                          <div className="absolute right-2 bottom-0 h-3/4 flex items-end">
+                            {eventData.teacherImages.map((image, idx) => (
+                              <div 
+                                key={idx}
+                                className="h-full"
+                                style={{
+                                  marginRight: idx > 0 ? '-5px' : '0',
+                                  zIndex: eventData.teacherImages.length - idx,
+                                  width: eventData.teacherImages.length === 1 ? '30px' : 
+                                         eventData.teacherImages.length === 2 ? '25px' : '20px'
+                                }}
+                              >
+                                <img 
+                                  src={image} 
+                                  alt={`Professor ${idx + 1}`}
+                                  className="h-full w-full object-contain object-bottom"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
                                   }}
-                                >
-                                  <img 
-                                    src={image} 
-                                    alt={`Professor ${idx + 1}`}
-                                    className="h-full w-full object-contain object-bottom"
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = 'none';
-                                    }}
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </>
-                      ) : formatId === 'stories' ? (
-                        // Stories format - vertical layout
-                        <>
-                          <div className="absolute top-4 left-4 right-4">
-                            <div className="text-base font-bold tracking-wide text-center">
-                              {eventData.title.toUpperCase()}
-                            </div>
+                                />
+                              </div>
+                            ))}
                           </div>
-                          
-                          <div className="absolute top-12 left-4">
-                            <div 
-                              className="px-2 py-1 rounded text-sm font-bold"
-                              style={{
-                                backgroundColor: eventData.boxColor || '#dd303e',
-                                color: eventData.boxFontColor || '#FFFFFF'
+                        )}
+                      </>
+                    ) : formatId === 'stories' ? (
+                      // Stories format - vertical layout
+                      <>
+                        <div className="absolute top-4 left-3 right-3">
+                          <div 
+                            className="font-bold tracking-wide text-center"
+                            style={{ fontSize: 'clamp(10px, 2vw, 12px)' }}
+                          >
+                            {eventData.title.toUpperCase()}
+                          </div>
+                        </div>
+                        
+                        <div className="absolute top-10 left-3">
+                          <div 
+                            className="px-2 py-1 rounded font-bold"
+                            style={{
+                              backgroundColor: eventData.boxColor || '#dd303e',
+                              color: eventData.boxFontColor || '#FFFFFF',
+                              fontSize: 'clamp(8px, 1.5vw, 10px)'
+                            }}
+                          >
+                            {eventData.classTheme || "Tema da Aula"}
+                          </div>
+                        </div>
+                        
+                        <div className="absolute bottom-4 left-3">
+                          <div 
+                            className="text-white"
+                            style={{ fontSize: 'clamp(8px, 1.5vw, 10px)' }}
+                          >
+                            {formattedDateTime}
+                          </div>
+                        </div>
+                        
+                        {eventData.teacherImages && eventData.teacherImages.length > 0 && (
+                          <div className="absolute right-3 bottom-0 h-1/3 flex items-end">
+                            <img 
+                              src={eventData.teacherImages[0]} 
+                              alt="Professor"
+                              className="h-full w-auto object-contain object-bottom"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
                               }}
-                            >
-                              {eventData.classTheme || "Tema da Aula"}
-                            </div>
+                            />
                           </div>
-                          
-                          <div className="absolute bottom-4 left-4">
-                            <div className="text-sm text-white">
-                              {formattedDateTime}
-                            </div>
+                        )}
+                      </>
+                    ) : formatId === 'bannerGCO' ? (
+                      // Banner GCO format - wide horizontal layout
+                      <>
+                        <div className="absolute left-3 top-1">
+                          <div 
+                            className="font-bold tracking-wide"
+                            style={{ fontSize: 'clamp(8px, 2vw, 11px)' }}
+                          >
+                            {eventData.title.toUpperCase()}
                           </div>
-                          
-                          {eventData.teacherImages && eventData.teacherImages.length > 0 && (
-                            <div className="absolute right-4 bottom-0 h-1/2 flex items-end">
-                              <img 
-                                src={eventData.teacherImages[0]} 
-                                alt="Professor"
-                                className="h-full w-auto object-contain object-bottom"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            </div>
-                          )}
-                        </>
-                      ) : formatId === 'bannerGCO' ? (
-                        // Banner GCO format - wide horizontal layout
-                        <>
-                          <div className="absolute left-4 top-2">
-                            <div className="text-lg font-bold tracking-wide">
-                              {eventData.title.toUpperCase()}
-                            </div>
+                        </div>
+                        
+                        <div className="absolute left-3 top-5">
+                          <div 
+                            className="px-1 py-0.5 rounded font-bold"
+                            style={{
+                              backgroundColor: eventData.boxColor || '#dd303e',
+                              color: eventData.boxFontColor || '#FFFFFF',
+                              fontSize: 'clamp(6px, 1.2vw, 8px)'
+                            }}
+                          >
+                            {eventData.classTheme || "Tema da Aula"}
                           </div>
-                          
-                          <div className="absolute left-4 top-8">
-                            <div 
-                              className="px-2 py-1 rounded text-xs font-bold"
-                              style={{
-                                backgroundColor: eventData.boxColor || '#dd303e',
-                                color: eventData.boxFontColor || '#FFFFFF'
+                        </div>
+                        
+                        <div className="absolute left-3 bottom-1">
+                          <div 
+                            className="text-white"
+                            style={{ fontSize: 'clamp(6px, 1.2vw, 8px)' }}
+                          >
+                            {formattedDateTime}
+                          </div>
+                        </div>
+                        
+                        {eventData.teacherImages && eventData.teacherImages.length > 0 && (
+                          <div className="absolute right-2 bottom-0 h-4/5 flex items-end">
+                            <img 
+                              src={eventData.teacherImages[0]} 
+                              alt="Professor"
+                              className="h-full w-auto object-contain object-bottom"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
                               }}
-                            >
-                              {eventData.classTheme || "Tema da Aula"}
-                            </div>
+                            />
                           </div>
-                          
-                          <div className="absolute left-4 bottom-2">
-                            <div className="text-xs text-white">
-                              {formattedDateTime}
-                            </div>
+                        )}
+                      </>
+                    ) : formatId === 'ledStudio' ? (
+                      // LED Studio format - very wide horizontal layout
+                      <>
+                        <div className="absolute left-2 top-1">
+                          <div 
+                            className="font-bold tracking-wide"
+                            style={{ fontSize: 'clamp(6px, 1.5vw, 9px)' }}
+                          >
+                            {eventData.title.toUpperCase()}
                           </div>
-                          
-                          {eventData.teacherImages && eventData.teacherImages.length > 0 && (
-                            <div className="absolute right-4 bottom-0 h-4/5 flex items-end">
-                              <img 
-                                src={eventData.teacherImages[0]} 
-                                alt="Professor"
-                                className="h-full w-auto object-contain object-bottom"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            </div>
-                          )}
-                        </>
-                      ) : formatId === 'ledStudio' ? (
-                        // LED Studio format - very wide horizontal layout
-                        <>
-                          <div className="absolute left-2 top-1">
-                            <div className="text-sm font-bold tracking-wide">
-                              {eventData.title.toUpperCase()}
-                            </div>
+                        </div>
+                        
+                        <div className="absolute left-2 top-4">
+                          <div 
+                            className="px-1 py-0.5 rounded font-bold"
+                            style={{
+                              backgroundColor: eventData.boxColor || '#dd303e',
+                              color: eventData.boxFontColor || '#FFFFFF',
+                              fontSize: 'clamp(5px, 1vw, 7px)'
+                            }}
+                          >
+                            {eventData.classTheme || "Tema da Aula"}
                           </div>
-                          
-                          <div className="absolute left-2 top-6">
-                            <div 
-                              className="px-1 py-0.5 rounded text-xs font-bold"
-                              style={{
-                                backgroundColor: eventData.boxColor || '#dd303e',
-                                color: eventData.boxFontColor || '#FFFFFF'
+                        </div>
+                        
+                        <div className="absolute right-2 bottom-1">
+                          <div 
+                            className="text-white"
+                            style={{ fontSize: 'clamp(5px, 1vw, 7px)' }}
+                          >
+                            {formattedDateTime}
+                          </div>
+                        </div>
+                        
+                        {eventData.teacherImages && eventData.teacherImages.length > 0 && (
+                          <div className="absolute right-8 bottom-0 h-3/4 flex items-end">
+                            <img 
+                              src={eventData.teacherImages[0]} 
+                              alt="Professor"
+                              className="h-full w-auto object-contain object-bottom"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
                               }}
-                            >
-                              {eventData.classTheme || "Tema da Aula"}
-                            </div>
+                            />
                           </div>
-                          
-                          <div className="absolute right-2 bottom-1">
-                            <div className="text-xs text-white">
-                              {formattedDateTime}
-                            </div>
+                        )}
+                      </>
+                    ) : (
+                      // Other formats - simplified layout (Feed, Highlight)
+                      <>
+                        <div className="absolute top-2 left-2">
+                          <div 
+                            className="font-bold tracking-wide"
+                            style={{ fontSize: 'clamp(8px, 2vw, 10px)' }}
+                          >
+                            {eventData.title.toUpperCase()}
                           </div>
-                          
-                          {eventData.teacherImages && eventData.teacherImages.length > 0 && (
-                            <div className="absolute right-12 bottom-0 h-3/4 flex items-end">
-                              <img 
-                                src={eventData.teacherImages[0]} 
-                                alt="Professor"
-                                className="h-full w-auto object-contain object-bottom"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        // Other formats - simplified layout (Feed, Highlight)
-                        <>
-                          <div className="absolute top-2 left-2">
-                            <div className="text-sm font-bold tracking-wide">
-                              {eventData.title.toUpperCase()}
-                            </div>
+                        </div>
+                        
+                        <div className="absolute top-6 left-2">
+                          <div 
+                            className="px-1 py-0.5 rounded font-bold"
+                            style={{
+                              backgroundColor: eventData.boxColor || '#dd303e',
+                              color: eventData.boxFontColor || '#FFFFFF',
+                              fontSize: 'clamp(6px, 1.5vw, 8px)'
+                            }}
+                          >
+                            {eventData.classTheme || "Tema da Aula"}
                           </div>
-                          
-                          <div className="absolute top-6 left-2">
-                            <div 
-                              className="px-1 py-0.5 rounded text-xs font-bold"
-                              style={{
-                                backgroundColor: eventData.boxColor || '#dd303e',
-                                color: eventData.boxFontColor || '#FFFFFF'
+                        </div>
+                        
+                        <div className="absolute bottom-2 left-2">
+                          <div 
+                            className="text-white"
+                            style={{ fontSize: 'clamp(6px, 1.5vw, 8px)' }}
+                          >
+                            {formattedDateTime}
+                          </div>
+                        </div>
+                        
+                        {eventData.teacherImages && eventData.teacherImages.length > 0 && (
+                          <div className="absolute right-2 bottom-0 h-2/3 flex items-end">
+                            <img 
+                              src={eventData.teacherImages[0]} 
+                              alt="Professor"
+                              className="h-full w-auto object-contain object-bottom"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
                               }}
-                            >
-                              {eventData.classTheme || "Tema da Aula"}
-                            </div>
+                            />
                           </div>
-                          
-                          <div className="absolute bottom-2 left-2">
-                            <div className="text-xs text-white">
-                              {formattedDateTime}
-                            </div>
-                          </div>
-                          
-                          {eventData.teacherImages && eventData.teacherImages.length > 0 && (
-                            <div className="absolute right-2 bottom-0 h-2/3 flex items-end">
-                              <img 
-                                src={eventData.teacherImages[0]} 
-                                alt="Professor"
-                                className="h-full w-auto object-contain object-bottom"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div className="mt-2 text-center text-xs text-gray-500">
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+                <div className="p-2 text-center text-xs text-gray-500 bg-gray-50">
                   {platform.dimensions}
                 </div>
               </CardContent>
