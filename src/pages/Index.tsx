@@ -1,12 +1,13 @@
+
 import { useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Navbar } from "@/components/Navbar";
 import { EventForm } from "@/components/EventForm";
 import { ImageSelector } from "@/components/ImageSelector";
-import { PlatformPreviews } from "@/components/PlatformPreviews";
 import { GeneratedGallery } from "@/components/GeneratedGallery";
 import { ExportButton } from "@/components/ExportButton";
+import { GenerateButton } from "@/components/GenerateButton";
 import { useImageGenerator } from "@/hooks/useImageGenerator";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -78,6 +79,9 @@ const Index = () => {
     toast.success("Logout realizado com sucesso!");
   };
 
+  // Check if form is ready for generation
+  const isFormReady = eventData.title && eventData.date && eventData.kvImageId && eventData.professorPhotos;
+
   // Show loading while checking auth
   if (loading) {
     return (
@@ -135,10 +139,9 @@ const Index = () => {
         </h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger value="input">1. Dados do Evento</TabsTrigger>
-            <TabsTrigger value="preview">2. Pré-visualização</TabsTrigger>
-            <TabsTrigger value="export">3. Exportação</TabsTrigger>
+            <TabsTrigger value="export">2. Exportação</TabsTrigger>
           </TabsList>
           
           <TabsContent value="input" className="space-y-8">
@@ -153,14 +156,20 @@ const Index = () => {
                 />
               </div>
             </div>
-          </TabsContent>
-          
-          <TabsContent value="preview">
-            <PlatformPreviews
-              eventData={eventData}
-              onGenerate={handleGenerate}
-              isGenerating={isGenerating}
-            />
+            
+            <div className="flex justify-center pt-8">
+              <GenerateButton
+                onGenerate={handleGenerate}
+                isGenerating={isGenerating}
+                disabled={!isFormReady}
+                missingFields={[
+                  !eventData.title && "Título do evento",
+                  !eventData.date && "Data",
+                  !eventData.kvImageId && "Template de imagem",
+                  !eventData.professorPhotos && "Foto do professor"
+                ].filter(Boolean) as string[]}
+              />
+            </div>
           </TabsContent>
           
           <TabsContent value="export">
