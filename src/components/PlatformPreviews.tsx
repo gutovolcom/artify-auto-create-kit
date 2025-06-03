@@ -139,10 +139,10 @@ export const PlatformPreviews = ({
                 <CardTitle className="text-lg">{platform.name}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="bg-gray-100 border rounded-lg overflow-hidden">
+                <div className="w-full">
                   {!isFormComplete ? (
                     <div 
-                      className="flex items-center justify-center text-gray-400 flex-col"
+                      className="flex items-center justify-center text-gray-400 flex-col bg-gray-100 border rounded-lg"
                       style={{
                         aspectRatio: platform.aspectRatio,
                         minHeight: "120px"
@@ -156,7 +156,7 @@ export const PlatformPreviews = ({
                     </div>
                   ) : (
                     <div 
-                      className="relative text-white overflow-hidden"
+                      className="relative text-white overflow-hidden w-full"
                       style={{
                         aspectRatio: platform.aspectRatio,
                         backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
