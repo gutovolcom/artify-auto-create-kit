@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -62,10 +63,19 @@ const Index = () => {
   };
   
   const handleGenerate = async () => {
-    const images = await generateImages(eventData);
-    if (images.length > 0) {
-      toast.success("Imagens geradas com sucesso!");
-      setActiveTab("export");
+    console.log('Starting generation with event data:', eventData);
+    
+    try {
+      const images = await generateImages(eventData);
+      if (images.length > 0) {
+        toast.success("Imagens geradas com sucesso!");
+        setActiveTab("export");
+      } else {
+        toast.error("Nenhuma imagem foi gerada. Verifique os dados e tente novamente.");
+      }
+    } catch (error) {
+      console.error('Generation error:', error);
+      toast.error("Erro durante a geração das imagens. Tente novamente.");
     }
   };
 
@@ -102,7 +112,7 @@ const Index = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Check if user is admin - using your real email now
+  // Check if user is admin
   const isAdmin = user.email === "henriquetocheto@gmail.com";
 
   // Show admin panel for admin users
@@ -178,9 +188,9 @@ const Index = () => {
             </div>
           </TabsContent>
           
-          <TabsContent value="export">
+          <TabsContent value="export" className="space-y-8">
             <GeneratedGallery images={generatedImages} eventData={eventData} />
-            <div className="mt-8 flex justify-center">
+            <div className="flex justify-center">
               <ExportButton onClick={handleExport} disabled={generatedImages.length === 0} />
             </div>
           </TabsContent>

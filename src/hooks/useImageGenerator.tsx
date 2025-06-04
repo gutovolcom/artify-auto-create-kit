@@ -40,82 +40,119 @@ export const useImageGenerator = () => {
 
     setIsGenerating(true);
     setError(null);
+    setGeneratedImages([]); // Clear previous images immediately
 
     try {
-      console.log('Starting image generation for event:', eventData.title);
+      console.log('Starting image generation for event:', eventData);
       
       // Refresh templates to get the latest data
       await refetchTemplates();
       
-      // Get the selected template from Supabase
+      // Get the selected template from the refreshed data
       const selectedTemplate = templates.find(t => t.id === eventData.kvImageId);
       if (!selectedTemplate) {
-        throw new Error("Template not found");
+        // Try to fetch templates again if not found
+        await refetchTemplates();
+        const updatedTemplate = templates.find(t => t.id === eventData.kvImageId);
+        if (!updatedTemplate) {
+          throw new Error("Template não encontrado. Tente atualizar a página.");
+        }
       }
       
-      console.log('Selected template:', selectedTemplate);
+      const templateToUse = selectedTemplate || templates.find(t => t.id === eventData.kvImageId);
+      console.log('Using template for generation:', templateToUse);
       
       const newGeneratedImages: GeneratedImage[] = [];
       
-      // Generate images for all formats
+      // Generate images for all formats sequentially to avoid race conditions
       const formats = Object.keys(platformConfigs) as (keyof typeof platformConfigs)[];
       
       for (const formatId of formats) {
         try {
           const platform = platformConfigs[formatId];
-          const formatData = selectedTemplate.formats?.find(f => f.format_name === formatId);
+          const formatData = templateToUse?.formats?.find(f => f.format_name === formatId);
           
           if (!formatData?.image_url) {
-            console.warn(`No background image found for format: ${formatId}`);
+            console.warn(`No background image found for format: ${formatId}, skipping...`);
             continue;
           }
           
-          console.log(`Generating image for ${formatId}:`, platform);
+          console.log(`Generating image for ${formatId}:`, {
+            platform,
+            backgroundUrl: formatData.image_url,
+            eventData
+          });
           
           // Get layout configuration for this format
-          const layoutConfig = await getLayout(selectedTemplate.id, formatId);
+          const layoutConfig = await getLayout(templateToUse.id, formatId);
           console.log(`Layout config for ${formatId}:`, layoutConfig);
           
-          // Use the canvas renderer to create the image with the selected template and layout
+          // Prepare the complete event data for rendering
+          const completeEventData = {
+            ...eventData,
+            // Ensure professor photo is available
+            professorPhotos: eventData.professorPhotos || eventData.teacherImages?.[0] || "",
+            // Ensure all required fields are present
+            classTheme: eventData.classTheme || "",
+            teacherName: eventData.teacherName || "",
+            boxColor: eventData.boxColor || "#dd303e",
+            boxFontColor: eventData.boxFontColor || "#FFFFFF",
+            textColor: eventData.textColor || "#FFFFFF"
+          };
+          
+          console.log(`Complete event data for ${formatId}:`, completeEventData);
+          
+          // Use the canvas renderer to create the image
           const generatedImageUrl = await renderCanvasWithTemplate(
             formatData.image_url,
-            eventData,
+            completeEventData,
             platform.width,
             platform.height,
             formatId,
             layoutConfig?.layout_config || null
           );
           
-          newGeneratedImages.push({
+          const newImage = {
             platform: formatId,
             format: platform.name,
             url: generatedImageUrl,
             bgImageUrl: formatData.image_url,
-          });
+          };
+          
+          newGeneratedImages.push(newImage);
+          console.log(`Successfully generated image for ${formatId}`);
+          
+          // Update state with each generated image for progressive display
+          setGeneratedImages(prev => [...prev, newImage]);
+          
         } catch (error) {
           console.error(`Error generating image for ${formatId}:`, error);
           // Continue with other images even if one fails
         }
       }
       
-      console.log('Generated images:', newGeneratedImages.length);
-      
-      setGeneratedImages(newGeneratedImages);
+      console.log('All images generated:', newGeneratedImages.length);
       
       if (newGeneratedImages.length > 0) {
         // Log the activity
-        await logActivity(eventData, newGeneratedImages.map(img => img.platform));
+        try {
+          await logActivity(eventData, newGeneratedImages.map(img => img.platform));
+        } catch (logError) {
+          console.warn('Failed to log activity:', logError);
+        }
+        
         toast.success(`${newGeneratedImages.length} imagens geradas com sucesso!`);
       } else {
-        toast.error("Nenhuma imagem foi gerada. Verifique os templates.");
+        toast.error("Nenhuma imagem foi gerada. Verifique os templates e tente novamente.");
       }
       
       return newGeneratedImages;
     } catch (err) {
       console.error('Image generation error:', err);
-      const errorMessage = "Erro ao gerar imagens. Tente novamente.";
+      const errorMessage = err instanceof Error ? err.message : "Erro ao gerar imagens. Tente novamente.";
       setError(errorMessage);
       toast.error(errorMessage);
+      setGeneratedImages([]); // Clear any partial results
       return [];
     } finally {
       setIsGenerating(false);

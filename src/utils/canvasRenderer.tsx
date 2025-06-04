@@ -17,7 +17,12 @@ export const renderCanvasWithTemplate = async (
         format,
         width,
         height,
-        layoutConfig
+        layoutConfig,
+        eventData: {
+          ...eventData,
+          professorPhotos: eventData.professorPhotos,
+          teacherImages: eventData.teacherImages
+        }
       });
 
       // Create a temporary canvas element
@@ -54,42 +59,39 @@ export const renderCanvasWithTemplate = async (
         // Add text elements based on layout configuration or default positions
         if (layoutConfig?.elements) {
           console.log('Using custom layout configuration');
+          const promises: Promise<void>[] = [];
+          
           layoutConfig.elements.forEach((element: any) => {
-            addElementToCanvas(fabricCanvas, element, eventData, width, height);
+            if (element.type === 'image' && element.field === 'professorPhotos') {
+              // Handle professor photo separately as it's async
+              const photoUrl = eventData.professorPhotos || eventData.teacherImages?.[0];
+              if (photoUrl) {
+                const promise = addProfessorPhotoToCanvas(fabricCanvas, photoUrl, element, width, height);
+                promises.push(promise);
+              }
+            } else {
+              addElementToCanvas(fabricCanvas, element, eventData, width, height);
+            }
+          });
+
+          // Wait for all professor photos to load, then render
+          Promise.all(promises).then(() => {
+            fabricCanvas.renderAll();
+            exportCanvas(fabricCanvas, tempCanvas, resolve, reject);
+          }).catch((error) => {
+            console.error('Error loading professor photos:', error);
+            fabricCanvas.renderAll();
+            exportCanvas(fabricCanvas, tempCanvas, resolve, reject);
           });
         } else {
           console.log('Using default layout for format:', format);
-          addDefaultElements(fabricCanvas, eventData, format, width, height);
+          addDefaultElements(fabricCanvas, eventData, format, width, height).then(() => {
+            exportCanvas(fabricCanvas, tempCanvas, resolve, reject);
+          }).catch((error) => {
+            console.error('Error in default layout:', error);
+            exportCanvas(fabricCanvas, tempCanvas, resolve, reject);
+          });
         }
-
-        // Add professor photo if available
-        if (eventData.professorPhotos) {
-          addProfessorPhoto(fabricCanvas, eventData.professorPhotos, layoutConfig, width, height);
-        }
-
-        // Render and export
-        fabricCanvas.renderAll();
-        
-        setTimeout(() => {
-          try {
-            const dataURL = fabricCanvas.toDataURL({
-              format: 'png',
-              quality: 1.0,
-              multiplier: 1
-            });
-            
-            // Clean up
-            fabricCanvas.dispose();
-            document.body.removeChild(tempCanvas);
-            
-            resolve(dataURL);
-          } catch (exportError) {
-            console.error('Error exporting canvas:', exportError);
-            fabricCanvas.dispose();
-            document.body.removeChild(tempCanvas);
-            reject(exportError);
-          }
-        }, 500);
       }).catch((error) => {
         console.error('Error loading background image:', error);
         fabricCanvas.dispose();
@@ -101,6 +103,29 @@ export const renderCanvasWithTemplate = async (
       reject(error);
     }
   });
+};
+
+const exportCanvas = (fabricCanvas: FabricCanvas, tempCanvas: HTMLCanvasElement, resolve: (value: string) => void, reject: (reason?: any) => void) => {
+  setTimeout(() => {
+    try {
+      const dataURL = fabricCanvas.toDataURL({
+        format: 'png',
+        quality: 1.0,
+        multiplier: 1
+      });
+      
+      // Clean up
+      fabricCanvas.dispose();
+      document.body.removeChild(tempCanvas);
+      
+      resolve(dataURL);
+    } catch (exportError) {
+      console.error('Error exporting canvas:', exportError);
+      fabricCanvas.dispose();
+      document.body.removeChild(tempCanvas);
+      reject(exportError);
+    }
+  }, 500);
 };
 
 const addElementToCanvas = (
@@ -120,11 +145,11 @@ const addElementToCanvas = (
   const textContent = getTextContent(field, eventData);
   if (!textContent) return;
 
-  const fontSize = style.fontSize || 24;
-  const fontFamily = style.fontFamily || 'Margem-Regular';
+  const fontSize = style?.fontSize || 24;
+  const fontFamily = style?.fontFamily || 'Arial';
   
   // Use textColor from eventData for most fields, except classTheme
-  let textColor = style.color || style.textColor || eventData.textColor || '#000000';
+  let textColor = style?.color || style?.textColor || eventData.textColor || '#000000';
   
   if (field === 'classTheme') {
     // For class theme, use the specific box colors from eventData
@@ -140,9 +165,9 @@ const addElementToCanvas = (
       textAlign: 'center'
     });
 
-    const padding = style.padding || 20;
-    const backgroundColor = eventData.boxColor || style.backgroundColor || '#dd303e';
-    const borderRadius = style.borderRadius || 10;
+    const padding = style?.padding || 20;
+    const backgroundColor = eventData.boxColor || style?.backgroundColor || '#dd303e';
+    const borderRadius = style?.borderRadius || 10;
 
     const background = new Rect({
       width: text.width! + (padding * 2),
@@ -153,8 +178,8 @@ const addElementToCanvas = (
     });
 
     const group = new Group([background, text], {
-      left: position.x,
-      top: position.y,
+      left: position?.x || 0,
+      top: position?.y || 0,
       selectable: false,
       evented: false
     });
@@ -163,8 +188,8 @@ const addElementToCanvas = (
   } else {
     // Create regular text
     const text = new FabricText(textContent, {
-      left: position.x,
-      top: position.y,
+      left: position?.x || 0,
+      top: position?.y || 0,
       fontSize: fontSize,
       fontFamily: fontFamily,
       fill: textColor,
@@ -176,13 +201,13 @@ const addElementToCanvas = (
   }
 };
 
-const addDefaultElements = (
+const addDefaultElements = async (
   canvas: FabricCanvas,
   eventData: EventData,
   format: string,
   width: number,
   height: number
-) => {
+): Promise<void> => {
   // Default positions based on format
   const defaultPositions = getDefaultPositions(format, width, height);
   
@@ -192,7 +217,7 @@ const addDefaultElements = (
       left: defaultPositions.title.x,
       top: defaultPositions.title.y,
       fontSize: defaultPositions.title.fontSize,
-      fontFamily: 'Margem-Bold',
+      fontFamily: 'Arial',
       fill: eventData.textColor || '#000000',
       selectable: false,
       evented: false
@@ -200,49 +225,121 @@ const addDefaultElements = (
     canvas.add(title);
   }
 
-  // Add other elements with default positioning...
-  // This would include date, time, teacher name, etc.
+  // Add date
+  if (eventData.date) {
+    const date = new FabricText(formatDate(eventData.date, eventData.time), {
+      left: defaultPositions.date.x,
+      top: defaultPositions.date.y,
+      fontSize: defaultPositions.date.fontSize,
+      fontFamily: 'Arial',
+      fill: eventData.textColor || '#000000',
+      selectable: false,
+      evented: false
+    });
+    canvas.add(date);
+  }
+
+  // Add teacher name
+  if (eventData.teacherName) {
+    const teacherName = new FabricText(eventData.teacherName, {
+      left: defaultPositions.teacherName.x,
+      top: defaultPositions.teacherName.y,
+      fontSize: defaultPositions.teacherName.fontSize,
+      fontFamily: 'Arial',
+      fill: eventData.textColor || '#000000',
+      selectable: false,
+      evented: false
+    });
+    canvas.add(teacherName);
+  }
+
+  // Add class theme
+  if (eventData.classTheme) {
+    const text = new FabricText(eventData.classTheme, {
+      fontSize: defaultPositions.classTheme.fontSize,
+      fontFamily: 'Arial',
+      fill: eventData.boxFontColor || '#FFFFFF',
+      textAlign: 'center'
+    });
+
+    const padding = 20;
+    const background = new Rect({
+      width: text.width! + (padding * 2),
+      height: text.height! + (padding * 2),
+      fill: eventData.boxColor || '#dd303e',
+      rx: 10,
+      ry: 10
+    });
+
+    const group = new Group([background, text], {
+      left: defaultPositions.classTheme.x,
+      top: defaultPositions.classTheme.y,
+      selectable: false,
+      evented: false
+    });
+
+    canvas.add(group);
+  }
+
+  // Add professor photo with default positioning
+  const photoUrl = eventData.professorPhotos || eventData.teacherImages?.[0];
+  if (photoUrl) {
+    try {
+      await addProfessorPhotoToCanvas(canvas, photoUrl, null, width, height);
+    } catch (error) {
+      console.error('Error adding professor photo with default positioning:', error);
+    }
+  }
+
+  canvas.renderAll();
 };
 
-const addProfessorPhoto = (
+const addProfessorPhotoToCanvas = async (
   canvas: FabricCanvas,
   photoUrl: string,
-  layoutConfig: any,
+  photoElement: any | null,
   canvasWidth: number,
   canvasHeight: number
-) => {
-  const photoElement = layoutConfig?.elements?.find((el: any) => el.field === 'professorPhotos');
-  
-  FabricImage.fromURL(photoUrl, {
-    crossOrigin: 'anonymous'
-  }).then((img) => {
-    if (photoElement) {
-      // Use layout configuration
-      img.set({
-        left: photoElement.position.x,
-        top: photoElement.position.y,
-        scaleX: (photoElement.style.width || 200) / img.width!,
-        scaleY: (photoElement.style.height || 200) / img.height!,
-        selectable: false,
-        evented: false
-      });
-    } else {
-      // Use default positioning
-      const defaultSize = Math.min(canvasWidth, canvasHeight) * 0.2;
-      img.set({
-        left: canvasWidth - defaultSize - 20,
-        top: canvasHeight - defaultSize - 20,
-        scaleX: defaultSize / img.width!,
-        scaleY: defaultSize / img.height!,
-        selectable: false,
-        evented: false
-      });
-    }
+): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    console.log('Adding professor photo:', photoUrl);
     
-    canvas.add(img);
-    canvas.renderAll();
-  }).catch((error) => {
-    console.error('Error loading professor photo:', error);
+    FabricImage.fromURL(photoUrl, {
+      crossOrigin: 'anonymous'
+    }).then((img) => {
+      if (photoElement) {
+        // Use layout configuration
+        const targetWidth = photoElement.style?.width || 200;
+        const targetHeight = photoElement.style?.height || 200;
+        
+        img.set({
+          left: photoElement.position?.x || 0,
+          top: photoElement.position?.y || 0,
+          scaleX: targetWidth / img.width!,
+          scaleY: targetHeight / img.height!,
+          selectable: false,
+          evented: false
+        });
+      } else {
+        // Use default positioning
+        const defaultSize = Math.min(canvasWidth, canvasHeight) * 0.2;
+        img.set({
+          left: canvasWidth - defaultSize - 20,
+          top: canvasHeight - defaultSize - 20,
+          scaleX: defaultSize / img.width!,
+          scaleY: defaultSize / img.height!,
+          selectable: false,
+          evented: false
+        });
+      }
+      
+      canvas.add(img);
+      canvas.renderAll();
+      resolve();
+    }).catch((error) => {
+      console.error('Error loading professor photo:', error);
+      reject(error);
+    });
   });
 };
 
@@ -255,12 +352,33 @@ const getTextContent = (field: string, eventData: EventData): string => {
     case 'teacherName':
       return eventData.teacherName || '';
     case 'date':
-      return eventData.date;
+      return formatDate(eventData.date, eventData.time);
     case 'time':
-      return eventData.time;
+      return eventData.time || '';
     default:
       return '';
   }
+};
+
+const formatDate = (dateString: string, timeString?: string): string => {
+  if (!dateString) return "";
+  
+  const date = new Date(dateString);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  
+  let formattedDateTime = `${day}/${month}`;
+  
+  if (timeString) {
+    const [hours, minutes] = timeString.split(':');
+    if (minutes === '00') {
+      formattedDateTime += `, às ${hours}h`;
+    } else {
+      formattedDateTime += `, às ${hours}h${minutes}`;
+    }
+  }
+  
+  return formattedDateTime;
 };
 
 const getDefaultPositions = (format: string, width: number, height: number) => {

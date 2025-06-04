@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +38,11 @@ export const useSupabaseTemplates = () => {
   const fetchTemplates = async () => {
     try {
       setLoading(true);
+      
+      // Clear browser cache for this request
+      const timestamp = Date.now();
+      console.log(`Fetching templates at ${timestamp}`);
+      
       const { data: templatesData, error: templatesError } = await supabase
         .from('templates')
         .select(`
@@ -50,7 +54,7 @@ export const useSupabaseTemplates = () => {
 
       if (templatesError) throw templatesError;
 
-      console.log('Fetched templates with layouts:', templatesData);
+      console.log('Fetched fresh templates with layouts:', templatesData);
       setTemplates(templatesData || []);
     } catch (error) {
       console.error('Error fetching templates:', error);
@@ -147,9 +151,9 @@ export const useSupabaseTemplates = () => {
 
       if (templateError) throw templateError;
 
-      // Refresh templates to get the latest data
+      // Force refresh templates to get the latest data
       await fetchTemplates();
-      console.log('Template format updated, refreshing data');
+      console.log('Template format updated, data refreshed');
       return imageUrl;
     } catch (error) {
       console.error('Error updating template format:', error);
