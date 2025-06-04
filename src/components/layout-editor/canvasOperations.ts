@@ -36,9 +36,12 @@ export const loadBackgroundImage = async (
         });
       }
       
-      canvas.backgroundImage = img;
-      canvas.renderAll();
-      resolve();
+      // Use the correct Fabric.js v6 method to set background image
+      canvas.setBackgroundImage(img, () => {
+        console.log('Background image set successfully');
+        canvas.renderAll();
+        resolve();
+      });
     }).catch((error) => {
       console.error('Error loading background image:', error);
       reject(error);
