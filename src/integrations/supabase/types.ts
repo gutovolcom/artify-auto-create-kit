@@ -50,6 +50,33 @@ export type Database = {
           },
         ]
       }
+      layout_elements: {
+        Row: {
+          created_at: string
+          default_style: Json | null
+          element_type: string
+          field_mapping: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          default_style?: Json | null
+          element_type?: string
+          field_mapping: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          default_style?: Json | null
+          element_type?: string
+          field_mapping?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -126,6 +153,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "template_formats_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      template_layouts: {
+        Row: {
+          created_at: string
+          format_name: string
+          id: string
+          layout_config: Json
+          template_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          format_name: string
+          id?: string
+          layout_config: Json
+          template_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          format_name?: string
+          id?: string
+          layout_config?: Json
+          template_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "template_layouts_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "templates"

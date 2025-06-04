@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
-import { Loader2 } from "lucide-react";
+import { LayoutEditor } from "@/components/LayoutEditor";
+import { Loader2, Edit, Palette } from "lucide-react";
 
 const formatSpecs = {
   youtube: { width: 1920, height: 1080, label: "YouTube" },
@@ -21,6 +21,11 @@ const formatSpecs = {
 export const TemplateManager = () => {
   const { templates, loading, createTemplate, deleteTemplate } = useSupabaseTemplates();
   const [isCreating, setIsCreating] = useState(false);
+  const [editingLayout, setEditingLayout] = useState<{
+    templateId: string;
+    formatName: string;
+    imageUrl: string;
+  } | null>(null);
   const [newTemplateName, setNewTemplateName] = useState("");
   const [newTemplateFiles, setNewTemplateFiles] = useState<Record<string, File>>({});
   const [creating, setCreatingState] = useState(false);
@@ -63,6 +68,10 @@ export const TemplateManager = () => {
   const resetForm = () => {
     setNewTemplateName("");
     setNewTemplateFiles({});
+  };
+
+  const openLayoutEditor = (templateId: string, formatName: string, imageUrl: string) => {
+    setEditingLayout({ templateId, formatName, imageUrl });
   };
 
   if (loading) {
@@ -155,11 +164,27 @@ export const TemplateManager = () => {
               <div className="grid grid-cols-2 gap-2">
                 {template.formats?.map((format) => (
                   <div key={format.id} className="text-center">
-                    <img
-                      src={format.image_url}
-                      alt={`${format.format_name} format`}
-                      className="w-full h-16 object-cover rounded mb-1"
-                    />
+                    <div className="relative group">
+                      <img
+                        src={format.image_url}
+                        alt={`${format.format_name} format`}
+                        className="w-full h-16 object-cover rounded mb-1"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => openLayoutEditor(
+                            template.id,
+                            format.format_name,
+                            format.image_url
+                          )}
+                        >
+                          <Palette className="h-3 w-3 mr-1" />
+                          Layout
+                        </Button>
+                      </div>
+                    </div>
                     <span className="text-xs text-gray-600">
                       {formatSpecs[format.format_name as keyof typeof formatSpecs]?.label || format.format_name}
                     </span>
@@ -180,6 +205,27 @@ export const TemplateManager = () => {
           </Card>
         ))}
       </div>
+
+      {/* Layout Editor Dialog */}
+      <Dialog open={!!editingLayout} onOpenChange={() => setEditingLayout(null)}>
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editor de Layout</DialogTitle>
+          </DialogHeader>
+          {editingLayout && (
+            <LayoutEditor
+              templateId={editingLayout.templateId}
+              formatName={editingLayout.formatName}
+              backgroundImageUrl={editingLayout.imageUrl}
+              formatDimensions={formatSpecs[editingLayout.formatName as keyof typeof formatSpecs]}
+              onSave={() => {
+                setEditingLayout(null);
+                toast.success('Layout salvo com sucesso!');
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

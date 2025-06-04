@@ -11,6 +11,7 @@ interface Template {
   created_at: string;
   updated_at: string;
   formats: TemplateFormat[];
+  layouts?: TemplateLayout[];
 }
 
 interface TemplateFormat {
@@ -19,6 +20,15 @@ interface TemplateFormat {
   format_name: string;
   image_url: string;
   created_at: string;
+}
+
+interface TemplateLayout {
+  id: string;
+  template_id: string;
+  format_name: string;
+  layout_config: any;
+  created_at: string;
+  updated_at: string;
 }
 
 export const useSupabaseTemplates = () => {
@@ -32,7 +42,8 @@ export const useSupabaseTemplates = () => {
         .from('templates')
         .select(`
           *,
-          formats:template_formats(*)
+          formats:template_formats(*),
+          layouts:template_layouts(*)
         `);
 
       if (templatesError) throw templatesError;
@@ -126,6 +137,10 @@ export const useSupabaseTemplates = () => {
       toast.error('Erro ao excluir template');
     }
   };
+
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
 
   return {
     templates,
