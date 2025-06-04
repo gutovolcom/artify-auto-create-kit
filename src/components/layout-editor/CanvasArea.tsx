@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -122,10 +123,6 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
                 Remover Elemento
               </Button>
             )}
-            
-            <div className="ml-auto text-sm text-gray-500">
-              Escala: {Math.round(scale * 100)}%
-            </div>
           </div>
           
           <div className="mt-2 text-xs text-gray-600">

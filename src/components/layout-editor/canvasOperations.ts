@@ -1,3 +1,4 @@
+
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getPreviewText, getMargemFontForField, getDefaultFontSizeForField } from './utils';
 import { CanvasElementConfig } from './types';
@@ -23,11 +24,22 @@ export const loadBackgroundImage = async (
       console.log('Image dimensions:', img.width, 'x', img.height);
       console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
       
-      // Simply set the image as background without any scaling
-      img.set({
-        selectable: false,
-        evented: false
-      });
+      // Scale the background image to fit the canvas exactly
+      if (canvas.width && canvas.height) {
+        const scaleX = canvas.width / img.width!;
+        const scaleY = canvas.height / img.height!;
+        
+        img.set({
+          scaleX: scaleX,
+          scaleY: scaleY,
+          left: 0,
+          top: 0,
+          selectable: false,
+          evented: false
+        });
+        
+        console.log('Image scaled to fit canvas. ScaleX:', scaleX, 'ScaleY:', scaleY);
+      }
       
       // Set background image directly
       canvas.backgroundImage = img;
