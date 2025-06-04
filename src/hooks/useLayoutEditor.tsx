@@ -101,7 +101,8 @@ export const useLayoutEditor = () => {
 
       if (error) {
         console.error('Error fetching layout:', error);
-        throw error;
+        // Don't throw error for missing layout, just return null
+        return null;
       }
       
       if (data) {
@@ -118,7 +119,7 @@ export const useLayoutEditor = () => {
       return null;
     } catch (error) {
       console.error('Error fetching layout:', error);
-      toast.error('Erro ao carregar layout existente');
+      // Return null instead of showing error to prevent infinite loops
       return null;
     }
   };

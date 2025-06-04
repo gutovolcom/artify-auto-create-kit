@@ -38,7 +38,7 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
 }) => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   const [selectedObject, setSelectedObject] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const { layoutElements, saveLayout, getLayout, loading: elementsLoading, error } = useLayoutEditor();
   
   const maxCanvasWidth = 800;
@@ -68,7 +68,6 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
     
     console.log('Adding default layout elements');
     
-    // Default elements with position only (styling will come from form)
     const defaultElements = [
       {
         id: 'title',
@@ -113,9 +112,11 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
   };
 
   const handleCanvasReady = async (fabricCanvas: FabricCanvas) => {
+    if (isInitialized) return; // Prevent multiple initializations
+    
     console.log('Canvas ready, initializing...');
     setCanvas(fabricCanvas);
-    setIsLoading(true);
+    setIsInitialized(true);
     
     try {
       await loadBackgroundImage(fabricCanvas, backgroundImageUrl, scale);
@@ -131,11 +132,9 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
         addDefaultLayoutElements(fabricCanvas);
       }
     } catch (error) {
-      console.error('Error loading layout:', error);
-      toast.error('Erro ao carregar layout');
+      console.error('Error during canvas initialization:', error);
+      // Even if layout loading fails, add default elements so the editor is usable
       addDefaultLayoutElements(fabricCanvas);
-    } finally {
-      setIsLoading(false);
     }
   };
 
