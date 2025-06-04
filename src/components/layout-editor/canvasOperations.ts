@@ -9,9 +9,12 @@ export const loadBackgroundImage = async (
   scale: number
 ): Promise<void> => {
   return new Promise((resolve, reject) => {
+    console.log('Loading background image:', backgroundImageUrl);
+    
     FabricImage.fromURL(backgroundImageUrl, {
       crossOrigin: 'anonymous'
     }).then((img) => {
+      console.log('Background image loaded successfully');
       img.set({
         scaleX: scale,
         scaleY: scale,
@@ -21,7 +24,10 @@ export const loadBackgroundImage = async (
       canvas.backgroundImage = img;
       canvas.renderAll();
       resolve();
-    }).catch(reject);
+    }).catch((error) => {
+      console.error('Error loading background image:', error);
+      reject(error);
+    });
   });
 };
 
@@ -31,6 +37,11 @@ export const addElementToCanvas = (
   scale: number,
   eventData?: any
 ): void => {
+  if (!canvas) {
+    console.error('Canvas is not available');
+    return;
+  }
+
   const config: CanvasElementConfig = {
     id: elementConfig?.id || `element_${Date.now()}`,
     type: elementConfig?.type || 'text',
@@ -40,96 +51,106 @@ export const addElementToCanvas = (
     constraints: elementConfig?.constraints
   };
 
-  if (config.type === 'image') {
-    const rect = new Rect({
-      left: config.position.x * scale,
-      top: config.position.y * scale,
-      width: (config.style.width || 200) * scale,
-      height: (config.style.height || 200) * scale,
-      fill: 'rgba(0,0,0,0.1)',
-      stroke: '#666',
-      strokeWidth: 2,
-      strokeDashArray: [5, 5]
-    });
-    
-    // Add proportional resizing constraints
-    rect.set({
-      elementId: config.id,
-      elementType: 'image',
-      fieldMapping: config.field,
-      lockUniScaling: true, // Maintain aspect ratio
-      centeredScaling: false
-    });
-    
-    canvas.add(rect);
-  } else {
-    // Use real data and correct fonts for preview
-    const textContent = getPreviewText(config.field, eventData);
-    const fontFamily = getMargemFontForField(config.field);
-    const fontSize = getDefaultFontSizeForField(config.field) * scale;
-    
-    // Use real colors from eventData if available
-    let textColor = '#000000';
-    if (eventData) {
-      textColor = eventData.textColor || '#000000';
-    }
+  console.log('Adding element to canvas:', config);
 
-    const text = new FabricText(textContent, {
-      left: config.position.x * scale,
-      top: config.position.y * scale,
-      fontSize: fontSize,
-      fill: textColor,
-      fontFamily: fontFamily,
-      fontWeight: 'normal'
-    });
-
-    text.set({
-      elementId: config.id,
-      elementType: config.type,
-      fieldMapping: config.field,
-      lockUniScaling: true // Prevent text distortion
-    });
-
-    if (config.type === 'text_box') {
-      const padding = 20 * scale;
-      const bbox = text.getBoundingRect();
-      
-      // Use real box color from eventData if available
-      let boxColor = '#dd303e';
-      let boxTextColor = '#FFFFFF';
-      if (eventData) {
-        boxColor = eventData.boxColor || '#dd303e';
-        boxTextColor = eventData.boxFontColor || '#FFFFFF';
-      }
-      
-      text.set({ fill: boxTextColor });
-      
-      const background = new Rect({
-        left: bbox.left - padding,
-        top: bbox.top - padding,
-        width: bbox.width + (padding * 2),
-        height: bbox.height + (padding * 2),
-        fill: boxColor,
-        rx: 10 * scale,
-        ry: 10 * scale
-      });
-
-      const group = new Group([background, text], {
+  try {
+    if (config.type === 'image') {
+      const rect = new Rect({
         left: config.position.x * scale,
-        top: config.position.y * scale
+        top: config.position.y * scale,
+        width: (config.style.width || 200) * scale,
+        height: (config.style.height || 200) * scale,
+        fill: 'rgba(0,0,0,0.1)',
+        stroke: '#666',
+        strokeWidth: 2,
+        strokeDashArray: [5, 5]
       });
-
-      group.set({
+      
+      rect.set({
         elementId: config.id,
-        elementType: 'text_box',
+        elementType: 'image',
         fieldMapping: config.field,
-        lockUniScaling: true // Maintain proportions
+        lockUniScaling: true,
+        centeredScaling: false
+      });
+      
+      canvas.add(rect);
+      console.log('Image placeholder added successfully');
+    } else {
+      // Use real data and correct fonts for preview
+      const textContent = getPreviewText(config.field, eventData);
+      const fontFamily = getMargemFontForField(config.field);
+      const fontSize = getDefaultFontSizeForField(config.field) * scale;
+      
+      // Use real colors from eventData if available
+      let textColor = '#000000';
+      if (eventData) {
+        textColor = eventData.textColor || '#000000';
+      }
+
+      const text = new FabricText(textContent, {
+        left: config.position.x * scale,
+        top: config.position.y * scale,
+        fontSize: fontSize,
+        fill: textColor,
+        fontFamily: fontFamily,
+        fontWeight: 'normal'
       });
 
-      canvas.add(group);
-    } else {
-      canvas.add(text);
+      text.set({
+        elementId: config.id,
+        elementType: config.type,
+        fieldMapping: config.field,
+        lockUniScaling: true
+      });
+
+      if (config.type === 'text_box') {
+        const padding = 20 * scale;
+        const bbox = text.getBoundingRect();
+        
+        // Use real box color from eventData if available
+        let boxColor = '#dd303e';
+        let boxTextColor = '#FFFFFF';
+        if (eventData) {
+          boxColor = eventData.boxColor || '#dd303e';
+          boxTextColor = eventData.boxFontColor || '#FFFFFF';
+        }
+        
+        text.set({ fill: boxTextColor });
+        
+        const background = new Rect({
+          left: bbox.left - padding,
+          top: bbox.top - padding,
+          width: bbox.width + (padding * 2),
+          height: bbox.height + (padding * 2),
+          fill: boxColor,
+          rx: 10 * scale,
+          ry: 10 * scale
+        });
+
+        const group = new Group([background, text], {
+          left: config.position.x * scale,
+          top: config.position.y * scale
+        });
+
+        group.set({
+          elementId: config.id,
+          elementType: 'text_box',
+          fieldMapping: config.field,
+          lockUniScaling: true
+        });
+
+        canvas.add(group);
+        console.log('Text box added successfully');
+      } else {
+        canvas.add(text);
+        console.log('Text element added successfully');
+      }
     }
+    
+    canvas.renderAll();
+  } catch (error) {
+    console.error('Error adding element to canvas:', error);
   }
 };
 
@@ -140,59 +161,81 @@ export const updateSelectedObjectProperty = (
   value: any,
   scale: number
 ): void => {
-  // Only allow position and size updates, no styling
-  if (!selectedObject || !canvas) return;
+  if (!selectedObject || !canvas) {
+    console.warn('Cannot update property: missing selected object or canvas');
+    return;
+  }
 
   console.log('Updating object property:', property, 'to value:', value);
 
-  // Only handle position and size changes, ignore font/color changes
-  if (property === 'left' || property === 'top' || property === 'scaleX' || property === 'scaleY') {
-    selectedObject.set({ [property]: value });
-    canvas.renderAll();
+  try {
+    // Only handle position and size changes, ignore font/color changes
+    if (property === 'left' || property === 'top' || property === 'scaleX' || property === 'scaleY') {
+      selectedObject.set({ [property]: value });
+      canvas.renderAll();
+      console.log('Property updated successfully');
+    } else {
+      console.log('Property update ignored (styling not allowed):', property);
+    }
+  } catch (error) {
+    console.error('Error updating object property:', error);
   }
 };
 
 export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any => {
-  return canvas.getObjects().map((obj: any) => {
-    const position = {
-      x: Math.round(obj.left / scale),
-      y: Math.round(obj.top / scale)
-    };
+  if (!canvas) {
+    console.warn('Cannot serialize layout: canvas is not available');
+    return [];
+  }
 
-    // Only save position and size data, NO styling data
-    if (obj.elementType === 'image') {
-      return {
-        id: obj.elementId,
-        type: 'image',
-        field: obj.fieldMapping,
-        position,
-        size: {
-          width: Math.round((obj.width * obj.scaleX) / scale),
-          height: Math.round((obj.height * obj.scaleY) / scale)
-        }
+  try {
+    const elements = canvas.getObjects().map((obj: any) => {
+      const position = {
+        x: Math.round((obj.left || 0) / scale),
+        y: Math.round((obj.top || 0) / scale)
       };
-    } else if (obj.elementType === 'text_box') {
-      return {
-        id: obj.elementId,
-        type: 'text_box',
-        field: obj.fieldMapping,
-        position,
-        size: {
-          width: Math.round((obj.width * obj.scaleX) / scale),
-          height: Math.round((obj.height * obj.scaleY) / scale)
-        }
+
+      const baseElement = {
+        id: obj.elementId || `element_${Date.now()}`,
+        field: obj.fieldMapping || 'unknown',
+        position
       };
-    } else {
-      return {
-        id: obj.elementId,
-        type: 'text',
-        field: obj.fieldMapping,
-        position,
-        size: {
-          width: Math.round((obj.width * obj.scaleX) / scale),
-          height: Math.round((obj.height * obj.scaleY) / scale)
-        }
-      };
-    }
-  });
+
+      // Only save position and size data, NO styling data
+      if (obj.elementType === 'image') {
+        return {
+          ...baseElement,
+          type: 'image',
+          size: {
+            width: Math.round(((obj.width || 200) * (obj.scaleX || 1)) / scale),
+            height: Math.round(((obj.height || 200) * (obj.scaleY || 1)) / scale)
+          }
+        };
+      } else if (obj.elementType === 'text_box') {
+        return {
+          ...baseElement,
+          type: 'text_box',
+          size: {
+            width: Math.round(((obj.width || 100) * (obj.scaleX || 1)) / scale),
+            height: Math.round(((obj.height || 50) * (obj.scaleY || 1)) / scale)
+          }
+        };
+      } else {
+        return {
+          ...baseElement,
+          type: 'text',
+          size: {
+            width: Math.round(((obj.width || 100) * (obj.scaleX || 1)) / scale),
+            height: Math.round(((obj.height || 50) * (obj.scaleY || 1)) / scale)
+          }
+        };
+      }
+    });
+
+    console.log('Layout serialized successfully:', elements);
+    return elements;
+  } catch (error) {
+    console.error('Error serializing canvas layout:', error);
+    return [];
+  }
 };

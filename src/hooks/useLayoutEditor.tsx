@@ -21,7 +21,8 @@ interface LayoutConfig {
       type: string;
       field: string;
       position: { x: number; y: number };
-      style: any;
+      style?: any;
+      size?: { width: number; height: number };
       constraints?: any;
     }>;
   };
@@ -30,18 +31,28 @@ interface LayoutConfig {
 export const useLayoutEditor = () => {
   const [layoutElements, setLayoutElements] = useState<LayoutElement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchLayoutElements = async () => {
     try {
+      setError(null);
+      console.log('Fetching layout elements...');
+      
       const { data, error } = await supabase
         .from('layout_elements')
         .select('*')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching layout elements:', error);
+        throw error;
+      }
+      
+      console.log('Layout elements fetched successfully:', data);
       setLayoutElements(data || []);
     } catch (error) {
       console.error('Error fetching layout elements:', error);
+      setError('Erro ao carregar elementos de layout');
       toast.error('Erro ao carregar elementos de layout');
     } finally {
       setLoading(false);
@@ -50,6 +61,8 @@ export const useLayoutEditor = () => {
 
   const saveLayout = async (layoutConfig: LayoutConfig) => {
     try {
+      console.log('Saving layout configuration:', layoutConfig);
+      
       const { error } = await supabase
         .from('template_layouts')
         .upsert({
@@ -61,7 +74,12 @@ export const useLayoutEditor = () => {
           onConflict: 'template_id,format_name'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error saving layout:', error);
+        throw error;
+      }
+      
+      console.log('Layout saved successfully');
       toast.success('Layout salvo com sucesso!');
     } catch (error) {
       console.error('Error saving layout:', error);
@@ -72,6 +90,8 @@ export const useLayoutEditor = () => {
 
   const getLayout = async (templateId: string, formatName: string): Promise<LayoutConfig | null> => {
     try {
+      console.log('Fetching layout for template:', templateId, 'format:', formatName);
+      
       const { data, error } = await supabase
         .from('template_layouts')
         .select('*')
@@ -79,10 +99,13 @@ export const useLayoutEditor = () => {
         .eq('format_name', formatName)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching layout:', error);
+        throw error;
+      }
       
-      // Properly cast the Json type to our LayoutConfig interface
       if (data) {
+        console.log('Layout found:', data);
         return {
           id: data.id,
           template_id: data.template_id,
@@ -91,9 +114,11 @@ export const useLayoutEditor = () => {
         };
       }
       
+      console.log('No existing layout found');
       return null;
     } catch (error) {
       console.error('Error fetching layout:', error);
+      toast.error('Erro ao carregar layout existente');
       return null;
     }
   };
@@ -105,6 +130,7 @@ export const useLayoutEditor = () => {
   return {
     layoutElements,
     loading,
+    error,
     saveLayout,
     getLayout,
     refetch: fetchLayoutElements

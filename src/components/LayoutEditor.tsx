@@ -38,7 +38,8 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
 }) => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   const [selectedObject, setSelectedObject] = useState<any>(null);
-  const { layoutElements, saveLayout, getLayout } = useLayoutEditor();
+  const [isLoading, setIsLoading] = useState(true);
+  const { layoutElements, saveLayout, getLayout, loading: elementsLoading, error } = useLayoutEditor();
   
   const maxCanvasWidth = 800;
   const maxCanvasHeight = 600;
@@ -65,6 +66,8 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
   const addDefaultLayoutElements = (fabricCanvas: FabricCanvas) => {
     const sampleData = createSampleEventData();
     
+    console.log('Adding default layout elements');
+    
     // Default elements with position only (styling will come from form)
     const defaultElements = [
       {
@@ -72,28 +75,28 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
         type: 'text',
         field: 'title',
         position: { x: 50, y: 50 },
-        style: {} // Empty - will be populated from form data
+        style: {}
       },
       {
         id: 'classTheme',
         type: 'text_box',
         field: 'classTheme',
         position: { x: 50, y: 150 },
-        style: {} // Empty - will be populated from form data
+        style: {}
       },
       {
         id: 'teacherName',
         type: 'text',
         field: 'teacherName',
         position: { x: 50, y: 250 },
-        style: {} // Empty - will be populated from form data
+        style: {}
       },
       {
         id: 'date',
         type: 'text',
         field: 'date',
         position: { x: 50, y: 320 },
-        style: {} // Empty - will be populated from form data
+        style: {}
       },
       {
         id: 'professorPhoto',
@@ -110,31 +113,43 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
   };
 
   const handleCanvasReady = async (fabricCanvas: FabricCanvas) => {
+    console.log('Canvas ready, initializing...');
     setCanvas(fabricCanvas);
-    
-    await loadBackgroundImage(fabricCanvas, backgroundImageUrl, scale);
+    setIsLoading(true);
     
     try {
+      await loadBackgroundImage(fabricCanvas, backgroundImageUrl, scale);
+      
       const existingLayout = await getLayout(templateId, formatName);
       if (existingLayout?.layout_config?.elements && existingLayout.layout_config.elements.length > 0) {
-        // Load existing layout with real event data for styling
+        console.log('Loading existing layout with', existingLayout.layout_config.elements.length, 'elements');
         existingLayout.layout_config.elements.forEach((element: any) => {
           addElementToCanvas(fabricCanvas, element, scale, createSampleEventData());
         });
       } else {
+        console.log('No existing layout found, adding default elements');
         addDefaultLayoutElements(fabricCanvas);
       }
     } catch (error) {
-      console.error('Error loading existing layout:', error);
+      console.error('Error loading layout:', error);
+      toast.error('Erro ao carregar layout');
       addDefaultLayoutElements(fabricCanvas);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleAddElement = (elementType: string) => {
-    if (!canvas) return;
+    if (!canvas) {
+      toast.error('Canvas não está disponível');
+      return;
+    }
     
     const element = layoutElements.find(el => el.field_mapping === elementType);
-    if (!element) return;
+    if (!element) {
+      toast.error('Elemento não encontrado');
+      return;
+    }
 
     const sampleData = createSampleEventData();
     
@@ -142,19 +157,28 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
       type: element.element_type,
       field: element.field_mapping,
       position: { x: 50, y: 50 },
-      style: {} // Only position, no styling
+      style: {}
     };
 
     addElementToCanvas(canvas, elementConfig, scale, sampleData);
+    toast.success('Elemento adicionado!');
   };
 
   const handleDeleteSelected = () => {
-    if (!selectedObject || !canvas) return;
+    if (!selectedObject || !canvas) {
+      toast.error('Nenhum elemento selecionado');
+      return;
+    }
     
-    canvas.remove(selectedObject);
-    setSelectedObject(null);
-    canvas.renderAll();
-    toast.success('Elemento removido!');
+    try {
+      canvas.remove(selectedObject);
+      setSelectedObject(null);
+      canvas.renderAll();
+      toast.success('Elemento removido!');
+    } catch (error) {
+      console.error('Error deleting element:', error);
+      toast.error('Erro ao remover elemento');
+    }
   };
 
   const handleUpdateObject = (property: string, value: any) => {
@@ -163,7 +187,10 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
   };
 
   const handleSaveLayout = async () => {
-    if (!canvas) return;
+    if (!canvas) {
+      toast.error('Canvas não está disponível');
+      return;
+    }
 
     try {
       const elements = serializeCanvasLayout(canvas, scale);
@@ -176,9 +203,31 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
 
       onSave?.();
     } catch (error) {
-      // Error handled in hook
+      console.error('Error saving layout:', error);
     }
   };
+
+  if (elementsLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p>Carregando elementos de layout...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center text-red-600">
+          <p>Erro ao carregar editor de layout</p>
+          <p className="text-sm mt-2">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex gap-6">
