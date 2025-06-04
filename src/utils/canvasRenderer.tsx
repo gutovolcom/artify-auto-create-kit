@@ -49,11 +49,11 @@ export const renderCanvasWithTemplate = async (
         fabricCanvas.backgroundImage = bgImg;
 
         if (layoutConfig?.elements) {
-          console.log('Using layout configuration for positioning');
+          console.log('Using layout configuration for positioning and styling');
           const promises: Promise<void>[] = [];
           
           layoutConfig.elements.forEach((element: any) => {
-            if (element.type === 'image' && element.field === 'professorPhotos') {
+            if (element.type === 'image' && element.field === 'teacherImages') {
               const teacherImageUrl = eventData.teacherImages?.[0] || "";
               if (teacherImageUrl) {
                 const promise = addProfessorPhotoToCanvas(fabricCanvas, teacherImageUrl, element, width, height);
@@ -123,25 +123,19 @@ const addElementToCanvas = (
   canvasWidth: number,
   canvasHeight: number
 ) => {
-  const { type, field, position, size } = element;
+  const { type, field, position, style, size } = element;
   
-  if (type === 'image' && field === 'professorPhotos') {
+  if (type === 'image' && field === 'teacherImages') {
     return; // Handled separately
   }
 
   const textContent = getTextContent(field, eventData);
   if (!textContent) return;
 
-  // ALWAYS use form data for styling, NEVER layout config
-  const fontFamily = getMargemFont(field);
-  const fontSize = getDefaultFontSize(field);
-  
-  // ALWAYS use eventData colors
-  let textColor = eventData.textColor || '#000000';
-  
-  if (field === 'classTheme') {
-    textColor = eventData.boxFontColor || '#FFFFFF';
-  }
+  // Use layout configuration styling when available, otherwise fall back to defaults
+  const fontSize = style?.fontSize || getDefaultFontSize(field);
+  const fontFamily = style?.fontFamily || getMargemFont(field);
+  const textColor = style?.color || getTextColor(field, eventData);
 
   if (type === 'text_box' && field === 'classTheme') {
     const text = new FabricText(textContent, {
@@ -342,6 +336,13 @@ const getTextContent = (field: string, eventData: EventData): string => {
     default:
       return '';
   }
+};
+
+const getTextColor = (field: string, eventData: EventData): string => {
+  if (field === 'classTheme') {
+    return eventData.boxFontColor || '#FFFFFF';
+  }
+  return eventData.textColor || '#000000';
 };
 
 const formatDate = (dateString: string, timeString?: string): string => {

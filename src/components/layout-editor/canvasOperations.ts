@@ -1,4 +1,3 @@
-
 import * as fabric from 'fabric';
 import { CanvasElementConfig } from './types';
 
@@ -65,13 +64,13 @@ export const addElementToCanvas = (
     return;
   }
 
-  // Check if element with this ID already exists to prevent duplicates
+  // Check if element with this field already exists to prevent duplicates
   const existingObjects = canvas.getObjects();
-  const existingElement = existingObjects.find((obj: any) => obj.elementId === elementConfig.id);
+  const existingElement = existingObjects.find((obj: any) => obj.fieldMapping === elementConfig.field);
   
   if (existingElement) {
-    console.log('Element with ID already exists, skipping:', elementConfig.id);
-    return;
+    console.log('Element with field already exists, removing old one:', elementConfig.field);
+    canvas.remove(existingElement);
   }
 
   const config: CanvasElementConfig = {
@@ -182,7 +181,7 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
         y: Math.round(obj.top || 0)
       };
 
-      // Serialize visual style properties only
+      // Serialize visual style properties only - avoid circular references
       const style = {
         fontSize: obj.originalFontSize || obj.fontSize || 24,
         fontFamily: obj.originalFontFamily || obj.fontFamily || 'Arial',
@@ -209,11 +208,16 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
         type: obj.elementType
       });
 
+      // Create a clean serializable object without fabric.js circular references
       const baseElement = {
         id: obj.elementId || `element_${Date.now()}`,
         field: obj.fieldMapping || 'unknown',
         position,
-        style
+        style: {
+          fontSize: style.fontSize,
+          fontFamily: style.fontFamily,
+          color: style.color
+        }
       };
 
       if (obj.elementType === 'image') {

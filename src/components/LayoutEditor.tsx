@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import * as fabric from 'fabric';
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
@@ -88,9 +87,9 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
         style: { fontSize: 16, fontFamily: 'Arial', color: '#333333' }
       },
       {
-        id: 'professorPhoto',
+        id: 'teacherImages',
         type: 'image',
-        field: 'professorPhotos',
+        field: 'teacherImages',
         position: { x: displayWidth - 250, y: displayHeight - 250 },
         style: { width: 200, height: 200 }
       }
@@ -112,6 +111,20 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     fabricCanvas.renderAll();
   };
 
+  const removeDuplicateElements = (fabricCanvas: FabricCanvas, fieldToAdd: string) => {
+    console.log('Checking for duplicate elements with field:', fieldToAdd);
+    const objects = fabricCanvas.getObjects();
+    const duplicates = objects.filter((obj: any) => obj.fieldMapping === fieldToAdd);
+    
+    if (duplicates.length > 0) {
+      console.log('Removing', duplicates.length, 'duplicate elements for field:', fieldToAdd);
+      duplicates.forEach(duplicate => {
+        fabricCanvas.remove(duplicate);
+      });
+      fabricCanvas.renderAll();
+    }
+  };
+
   const loadElementsToCanvas = async (fabricCanvas: FabricCanvas) => {
     if (elementsLoaded) {
       console.log('Elements already loaded, skipping');
@@ -127,8 +140,17 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
       const existingLayout = await getLayout(templateId, formatName);
       if (existingLayout?.layout_config?.elements && existingLayout.layout_config.elements.length > 0) {
         console.log('Loading existing layout elements:', existingLayout.layout_config.elements);
+        
+        // Deduplicate elements by field before adding to canvas
+        const uniqueElements = new Map();
         existingLayout.layout_config.elements.forEach((element: any) => {
-          // Convert saved layout to expected format with all properties
+          // Keep the last occurrence of each field (most recent)
+          uniqueElements.set(element.field, element);
+        });
+        
+        console.log('After deduplication:', Array.from(uniqueElements.values()));
+        
+        Array.from(uniqueElements.values()).forEach((element: any) => {
           const elementConfig = {
             id: element.id,
             type: element.type,
@@ -189,12 +211,15 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
       return;
     }
 
+    // Remove any existing elements with the same field to prevent duplicates
+    removeDuplicateElements(canvas, element.field_mapping);
+
     // Position new elements in visible area with some randomness
     const randomX = 50 + Math.random() * (displayWidth - 300);
     const randomY = 50 + Math.random() * (displayHeight - 200);
 
     const elementConfig = {
-      id: `${elementType}_${Date.now()}`,
+      id: `${elementType}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: element.element_type,
       field: element.field_mapping,
       position: { x: randomX, y: randomY },

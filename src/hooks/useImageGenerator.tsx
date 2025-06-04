@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { EventData } from "@/pages/Index";
 import { toast } from "sonner";
@@ -96,11 +95,11 @@ export const useImageGenerator = () => {
           const layoutConfig = await getLayout(templateToUse.id, formatId);
           console.log(`Layout config for ${formatId}:`, layoutConfig);
           
-          // Prepare the complete event data for rendering
+          // Prepare the complete event data for rendering with standardized field names
           const completeEventData = {
             ...eventData,
-            // Ensure professor photo is available
-            professorPhotos: eventData.professorPhotos || eventData.teacherImages?.[0] || "",
+            // Standardize teacher photo field name to match layout editor
+            teacherImages: eventData.teacherImages || eventData.professorPhotos || [],
             // Ensure all required fields are present
             classTheme: eventData.classTheme || "",
             teacherName: eventData.teacherName || "",
@@ -111,9 +110,9 @@ export const useImageGenerator = () => {
           
           console.log(`Complete event data for ${formatId}:`, completeEventData);
           
-          // Use the canvas renderer to create the image
+          // Use the canvas renderer to create the image with the correct background
           const generatedImageUrl = await renderCanvasWithTemplate(
-            formatData.image_url,
+            formatData.image_url, // Use the template's background image
             completeEventData,
             platform.width,
             platform.height,
