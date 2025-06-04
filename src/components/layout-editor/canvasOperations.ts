@@ -1,4 +1,3 @@
-
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage } from 'fabric';
 import { CanvasElementConfig } from './types';
 
@@ -37,11 +36,10 @@ export const loadBackgroundImage = async (
       }
       
       // Use the correct Fabric.js v6 method to set background image
-      canvas.setBackgroundImage(img, () => {
-        console.log('Background image set successfully');
-        canvas.renderAll();
-        resolve();
-      });
+      canvas.backgroundImage = img;
+      canvas.renderAll();
+      console.log('Background image set successfully');
+      resolve();
     }).catch((error) => {
       console.error('Error loading background image:', error);
       reject(error);
