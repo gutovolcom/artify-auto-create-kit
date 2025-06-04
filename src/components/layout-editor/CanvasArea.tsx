@@ -119,8 +119,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
         fabricCanvasRef.current.dispose();
         fabricCanvasRef.current = null;
       }
-    }, []);
-    
+    };
   }, [displayWidth, displayHeight, backgroundImageUrl, scale, onCanvasReady, onSelectionChange, onDeleteSelected, onBackgroundLoaded]);
 
   return (
