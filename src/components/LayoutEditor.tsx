@@ -8,7 +8,6 @@ import { CanvasArea } from './layout-editor/CanvasArea';
 import { ElementToolbar } from './layout-editor/ElementToolbar';
 import { PropertiesPanel } from './layout-editor/PropertiesPanel';
 import { 
-  loadBackgroundImage, 
   addElementToCanvas, 
   serializeCanvasLayout
 } from './layout-editor/canvasOperations';
@@ -91,18 +90,11 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
   const handleCanvasReady = async (fabricCanvas: FabricCanvas) => {
     if (isInitialized) return;
     
-    console.log('Canvas ready, initializing...');
+    console.log('Canvas ready, loading existing layout or default elements...');
     setCanvas(fabricCanvas);
     setIsInitialized(true);
     
     try {
-      if (backgroundImageUrl) {
-        await loadBackgroundImage(fabricCanvas, backgroundImageUrl, scale);
-      } else {
-        fabricCanvas.backgroundColor = '#f5f5f5';
-        fabricCanvas.renderAll();
-      }
-      
       const existingLayout = await getLayout(templateId, formatName);
       if (existingLayout?.layout_config?.elements && existingLayout.layout_config.elements.length > 0) {
         console.log('Loading existing layout');
@@ -113,11 +105,8 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
         addDefaultLayoutElements(fabricCanvas);
       }
     } catch (error) {
-      console.error('Error during canvas initialization:', error);
-      fabricCanvas.backgroundColor = '#f5f5f5';
-      fabricCanvas.renderAll();
+      console.error('Error loading layout:', error);
       addDefaultLayoutElements(fabricCanvas);
-      toast.error('Erro ao carregar imagem de fundo');
     }
   };
 
@@ -230,7 +219,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
         <PropertiesPanel
           selectedObject={selectedObject}
           scale={scale}
-          onUpdateObject={() => {}} // Removed real-time updates
+          onUpdateObject={() => {}}
           onDeleteSelected={handleDeleteSelected}
         />
       </div>

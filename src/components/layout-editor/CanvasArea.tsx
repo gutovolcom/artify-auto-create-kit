@@ -4,6 +4,7 @@ import { Canvas as FabricCanvas } from 'fabric';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Trash, Save } from 'lucide-react';
+import { loadBackgroundImage } from './canvasOperations';
 
 interface CanvasAreaProps {
   formatName: string;
@@ -25,6 +26,8 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
   formatDimensions,
   displayWidth,
   displayHeight,
+  backgroundImageUrl,
+  scale,
   canvas,
   selectedObject,
   onCanvasReady,
@@ -45,6 +48,20 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
       height: displayHeight,
       backgroundColor: '#f5f5f5'
     });
+
+    // Load background image if provided
+    if (backgroundImageUrl) {
+      console.log('Loading background image during canvas initialization:', backgroundImageUrl);
+      loadBackgroundImage(fabricCanvas, backgroundImageUrl, scale)
+        .then(() => {
+          console.log('Background image loaded successfully');
+        })
+        .catch((error) => {
+          console.error('Error loading background image:', error);
+          fabricCanvas.backgroundColor = '#f5f5f5';
+          fabricCanvas.renderAll();
+        });
+    }
 
     fabricCanvas.on('selection:created', (e) => {
       onSelectionChange(e.selected?.[0]);
@@ -76,7 +93,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
         fabricCanvasRef.current = null;
       }
     };
-  }, [displayWidth, displayHeight, onCanvasReady, onSelectionChange, onDeleteSelected]);
+  }, [displayWidth, displayHeight, backgroundImageUrl, scale, onCanvasReady, onSelectionChange, onDeleteSelected]);
 
   return (
     <div className="flex-1">
