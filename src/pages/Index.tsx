@@ -25,6 +25,7 @@ export interface EventData {
   boxColor?: string;
   boxFontColor?: string;
   fontColor?: string;
+  textColor?: string;
   backgroundColorType?: string;
   selectedTeacherId?: string;
   teacherName?: string;
@@ -41,11 +42,12 @@ const Index = () => {
     time: "",
     kvImageId: null,
     teacherImages: [],
-    platforms: ["youtube", "instagram", "linkedin"],
+    platforms: [],
     classTheme: "",
     boxColor: "#dd303e",
     boxFontColor: "#FFFFFF",
     fontColor: "#000000",
+    textColor: "#FFFFFF",
     backgroundColorType: "red",
     selectedTeacherId: "",
     teacherName: "",

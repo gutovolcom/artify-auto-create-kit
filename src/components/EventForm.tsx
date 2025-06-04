@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSupabaseTeachers } from "@/hooks/useSupabaseTeachers";
+import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
 import { useEffect } from "react";
 
 interface EventFormProps {
@@ -28,6 +29,7 @@ interface EventFormProps {
 export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
   // Get teachers from Supabase instead of localStorage
   const { teachers, loading } = useSupabaseTeachers();
+  const { templates } = useSupabaseTemplates();
 
   // Update teacher images when teacher selection changes
   useEffect(() => {
@@ -42,15 +44,27 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
     }
   }, [eventData.professorPhotos, teachers, updateEventData]);
 
-  const platforms = [
-    { id: "youtube", label: "YouTube" },
-    { id: "instagram", label: "Instagram" },
-    { id: "linkedin", label: "LinkedIn" },
-  ];
+  // Get available formats from selected template
+  const availableFormats = eventData.kvImageId 
+    ? templates.find(t => t.id === eventData.kvImageId)?.formats?.map(f => ({
+        id: f.format_name,
+        label: formatDisplayNames[f.format_name as keyof typeof formatDisplayNames] || f.format_name
+      })) || []
+    : [];
+
+  const formatDisplayNames = {
+    youtube: "YouTube",
+    feed: "Feed",
+    stories: "Stories", 
+    bannerGCO: "Banner GCO",
+    ledStudio: "LED Studio",
+    LP: "LP"
+  };
 
   const backgroundColorOptions = [
     { id: "red", label: "Vermelho", color: "#dd303e", textColor: "#FFFFFF" },
     { id: "white", label: "Branco", color: "#FFFFFF", textColor: "#dd303e" },
+    { id: "green", label: "Verde Gran", color: "#CAFF39", textColor: "#dd303e" },
     { id: "transparent", label: "Sem fundo (transparente)", color: "transparent", textColor: eventData.fontColor || "#000000" },
   ];
 
@@ -119,6 +133,25 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="textColor">Cor do texto (título, professor, data/hora)</Label>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              id="textColor"
+              value={eventData.textColor || "#FFFFFF"}
+              onChange={(e) => updateEventData({ textColor: e.target.value })}
+              className="w-10 h-10 rounded border cursor-pointer"
+            />
+            <Input
+              value={eventData.textColor || "#FFFFFF"}
+              onChange={(e) => updateEventData({ textColor: e.target.value })}
+              placeholder="#FFFFFF"
+              className="flex-1"
+            />
+          </div>
         </div>
 
         {eventData.backgroundColorType === "transparent" && (
@@ -200,31 +233,37 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
         </div>
         
         <div className="space-y-2">
-          <Label>Plataformas</Label>
-          <div className="grid grid-cols-3 gap-2">
-            {platforms.map((platform) => (
-              <div key={platform.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`platform-${platform.id}`}
-                  checked={eventData.platforms.includes(platform.id)}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      updateEventData({
-                        platforms: [...eventData.platforms, platform.id],
-                      });
-                    } else {
-                      updateEventData({
-                        platforms: eventData.platforms.filter(
-                          (p) => p !== platform.id
-                        ),
-                      });
-                    }
-                  }}
-                />
-                <Label htmlFor={`platform-${platform.id}`}>{platform.label}</Label>
-              </div>
-            ))}
-          </div>
+          <Label>Formatos</Label>
+          {availableFormats.length === 0 ? (
+            <div className="text-sm text-gray-500 p-3 bg-gray-50 rounded-md">
+              Selecione um template para ver os formatos disponíveis
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {availableFormats.map((format) => (
+                <div key={format.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`format-${format.id}`}
+                    checked={eventData.platforms.includes(format.id)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        updateEventData({
+                          platforms: [...eventData.platforms, format.id],
+                        });
+                      } else {
+                        updateEventData({
+                          platforms: eventData.platforms.filter(
+                            (p) => p !== format.id
+                          ),
+                        });
+                      }
+                    }}
+                  />
+                  <Label htmlFor={`format-${format.id}`}>{format.label}</Label>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
