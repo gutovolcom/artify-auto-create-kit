@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +18,7 @@ interface CanvasAreaProps {
   onSelectionChange: (object: any) => void;
   onSave: () => void;
   onDeleteSelected: () => void;
+  onBackgroundLoaded?: () => void;
 }
 
 export const CanvasArea: React.FC<CanvasAreaProps> = ({
@@ -33,7 +33,8 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
   onCanvasReady,
   onSelectionChange,
   onSave,
-  onDeleteSelected
+  onDeleteSelected,
+  onBackgroundLoaded
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
@@ -55,12 +56,19 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
       loadBackgroundImage(fabricCanvas, backgroundImageUrl, scale)
         .then(() => {
           console.log('Background image loaded successfully');
+          // Call the callback to let LayoutEditor know the background is loaded
+          onBackgroundLoaded?.();
         })
         .catch((error) => {
           console.error('Error loading background image:', error);
           fabricCanvas.backgroundColor = '#f5f5f5';
           fabricCanvas.renderAll();
+          // Still call the callback even if image fails to load
+          onBackgroundLoaded?.();
         });
+    } else {
+      // If no background image, call the callback immediately
+      onBackgroundLoaded?.();
     }
 
     fabricCanvas.on('selection:created', (e) => {
@@ -93,7 +101,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
         fabricCanvasRef.current = null;
       }
     };
-  }, [displayWidth, displayHeight, backgroundImageUrl, scale, onCanvasReady, onSelectionChange, onDeleteSelected]);
+  }, [displayWidth, displayHeight, backgroundImageUrl, scale, onCanvasReady, onSelectionChange, onDeleteSelected, onBackgroundLoaded]);
 
   return (
     <div className="flex-1">

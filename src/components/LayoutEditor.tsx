@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
@@ -22,6 +21,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   const [selectedObject, setSelectedObject] = useState<any>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isBackgroundLoaded, setIsBackgroundLoaded] = useState(false);
   const { layoutElements, saveLayout, getLayout, loading: elementsLoading, error } = useLayoutEditor();
   
   const maxCanvasWidth = 800;
@@ -87,26 +87,40 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     });
   };
 
-  const handleCanvasReady = async (fabricCanvas: FabricCanvas) => {
-    if (isInitialized) return;
-    
-    console.log('Canvas ready, loading existing layout or default elements...');
-    setCanvas(fabricCanvas);
-    setIsInitialized(true);
+  const loadElementsToCanvas = async (fabricCanvas: FabricCanvas) => {
+    console.log('Loading elements to canvas after background is ready');
     
     try {
       const existingLayout = await getLayout(templateId, formatName);
       if (existingLayout?.layout_config?.elements && existingLayout.layout_config.elements.length > 0) {
-        console.log('Loading existing layout');
+        console.log('Loading existing layout elements');
         existingLayout.layout_config.elements.forEach((element: any) => {
           addElementToCanvas(fabricCanvas, element, scale);
         });
       } else {
+        console.log('No existing layout found, adding default elements');
         addDefaultLayoutElements(fabricCanvas);
       }
     } catch (error) {
       console.error('Error loading layout:', error);
       addDefaultLayoutElements(fabricCanvas);
+    }
+  };
+
+  const handleCanvasReady = (fabricCanvas: FabricCanvas) => {
+    if (isInitialized) return;
+    
+    console.log('Canvas ready, waiting for background to load...');
+    setCanvas(fabricCanvas);
+    setIsInitialized(true);
+  };
+
+  const handleBackgroundLoaded = () => {
+    console.log('Background loaded, now adding elements');
+    setIsBackgroundLoaded(true);
+    
+    if (canvas) {
+      loadElementsToCanvas(canvas);
     }
   };
 
@@ -208,6 +222,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
         onSelectionChange={setSelectedObject}
         onSave={handleSaveLayout}
         onDeleteSelected={handleDeleteSelected}
+        onBackgroundLoaded={handleBackgroundLoaded}
       />
 
       <div className="w-80">
