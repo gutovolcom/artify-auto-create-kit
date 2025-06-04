@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import * as fabric from 'fabric';
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
@@ -13,6 +14,9 @@ import {
 
 type FabricCanvas = fabric.Canvas;
 
+// Loading states for better state management
+type LoadingState = 'idle' | 'initializing' | 'loading-background' | 'loading-elements' | 'ready' | 'error';
+
 export const LayoutEditor: React.FC<LayoutEditorProps> = ({
   templateId,
   formatName,
@@ -22,9 +26,9 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
 }) => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   const [selectedObject, setSelectedObject] = useState<any>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [isBackgroundLoaded, setIsBackgroundLoaded] = useState(false);
-  const [elementsLoaded, setElementsLoaded] = useState(false);
+  const [loadingState, setLoadingState] = useState<LoadingState>('idle');
+  const [loadingError, setLoadingError] = useState<string | null>(null);
+  const [layoutLoadAttempts, setLayoutLoadAttempts] = useState(0);
   const { layoutElements, saveLayout, getLayout, loading: elementsLoading, error } = useLayoutEditor();
   
   const maxCanvasWidth = 800;
@@ -37,18 +41,20 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
   const displayWidth = formatDimensions.width * scale;
   const displayHeight = formatDimensions.height * scale;
 
+  // Refs to store latest callbacks and prevent stale closures
+  const canvasRef = useRef<FabricCanvas | null>(null);
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   console.log('LayoutEditor render:', {
-    formatDimensions,
-    scale,
-    displayWidth,
-    displayHeight,
-    maxCanvasWidth,
-    maxCanvasHeight,
-    elementsLoaded
+    templateId,
+    formatName,
+    loadingState,
+    layoutLoadAttempts,
+    canvasReady: !!canvas
   });
 
   const addDefaultLayoutElements = (fabricCanvas: FabricCanvas) => {
-    console.log('Adding default layout elements to canvas of size:', displayWidth, 'x', displayHeight);
+    console.log('Adding default layout elements to canvas');
     
     const defaultElements = [
       {
@@ -95,15 +101,13 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
       }
     ];
 
-    console.log('Default elements to add:', defaultElements);
-
     defaultElements.forEach(element => {
       addElementToCanvas(fabricCanvas, element, scale);
     });
   };
 
   const clearCanvasObjects = (fabricCanvas: FabricCanvas) => {
-    console.log('Clearing canvas objects before loading new layout');
+    console.log('Clearing canvas objects');
     const objects = fabricCanvas.getObjects();
     objects.forEach(obj => {
       fabricCanvas.remove(obj);
@@ -111,27 +115,15 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     fabricCanvas.renderAll();
   };
 
-  const removeDuplicateElements = (fabricCanvas: FabricCanvas, fieldToAdd: string) => {
-    console.log('Checking for duplicate elements with field:', fieldToAdd);
-    const objects = fabricCanvas.getObjects();
-    const duplicates = objects.filter((obj: any) => obj.fieldMapping === fieldToAdd);
-    
-    if (duplicates.length > 0) {
-      console.log('Removing', duplicates.length, 'duplicate elements for field:', fieldToAdd);
-      duplicates.forEach(duplicate => {
-        fabricCanvas.remove(duplicate);
-      });
-      fabricCanvas.renderAll();
-    }
-  };
-
-  const loadElementsToCanvas = async (fabricCanvas: FabricCanvas) => {
-    if (elementsLoaded) {
-      console.log('Elements already loaded, skipping');
-      return;
+  const loadLayoutElements = async (fabricCanvas: FabricCanvas) => {
+    if (!fabricCanvas) {
+      console.warn('Cannot load layout: canvas not available');
+      return false;
     }
 
-    console.log('Loading elements to canvas after background is ready');
+    console.log('Loading layout elements for template:', templateId, 'format:', formatName);
+    setLoadingState('loading-elements');
+    setLoadingError(null);
     
     try {
       // Clear existing objects first
@@ -139,18 +131,18 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
       
       const existingLayout = await getLayout(templateId, formatName);
       if (existingLayout?.layout_config?.elements && existingLayout.layout_config.elements.length > 0) {
-        console.log('Loading existing layout elements:', existingLayout.layout_config.elements);
+        console.log('Loading existing layout elements:', existingLayout.layout_config.elements.length, 'elements');
         
         // Deduplicate elements by field before adding to canvas
         const uniqueElements = new Map();
         existingLayout.layout_config.elements.forEach((element: any) => {
-          // Keep the last occurrence of each field (most recent)
           uniqueElements.set(element.field, element);
         });
         
-        console.log('After deduplication:', Array.from(uniqueElements.values()));
+        const elementsToLoad = Array.from(uniqueElements.values());
+        console.log('After deduplication:', elementsToLoad.length, 'unique elements');
         
-        Array.from(uniqueElements.values()).forEach((element: any) => {
+        elementsToLoad.forEach((element: any) => {
           const elementConfig = {
             id: element.id,
             type: element.type,
@@ -165,39 +157,123 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
               ...element.style
             }
           };
-          console.log('Adding element from saved layout:', elementConfig);
+          console.log('Adding element from saved layout:', elementConfig.field, 'at position:', elementConfig.position);
           addElementToCanvas(fabricCanvas, elementConfig, scale);
         });
+        
+        console.log('Successfully loaded', elementsToLoad.length, 'elements from saved layout');
+        toast.success(`Layout carregado: ${elementsToLoad.length} elementos`);
       } else {
         console.log('No existing layout found, adding default elements');
         addDefaultLayoutElements(fabricCanvas);
+        toast.info('Layout padrão aplicado');
       }
       
-      setElementsLoaded(true);
-      console.log('Elements loaded successfully, total objects on canvas:', fabricCanvas.getObjects().length);
+      setLoadingState('ready');
+      return true;
     } catch (error) {
       console.error('Error loading layout:', error);
+      setLoadingError(`Erro ao carregar layout: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      
+      // Fallback to default layout
+      console.log('Falling back to default layout');
       addDefaultLayoutElements(fabricCanvas);
-      setElementsLoaded(true);
+      setLoadingState('ready');
+      toast.error('Erro ao carregar layout salvo, usando layout padrão');
+      return false;
+    }
+  };
+
+  // Centralized function to check conditions and load elements
+  const loadLayoutIfReady = async () => {
+    const currentCanvas = canvasRef.current;
+    if (!currentCanvas || loadingState === 'loading-elements' || loadingState === 'ready') {
+      console.log('Skipping load - conditions not met:', {
+        hasCanvas: !!currentCanvas,
+        loadingState,
+        attempts: layoutLoadAttempts
+      });
+      return;
+    }
+
+    console.log('Attempting to load layout elements, attempt:', layoutLoadAttempts + 1);
+    setLayoutLoadAttempts(prev => prev + 1);
+    
+    const success = await loadLayoutElements(currentCanvas);
+    if (success) {
+      // Clear any pending timeout
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
     }
   };
 
   const handleCanvasReady = (fabricCanvas: FabricCanvas) => {
-    if (isInitialized) return;
-    
-    console.log('Canvas ready, waiting for background to load...');
+    console.log('Canvas ready callback triggered');
     setCanvas(fabricCanvas);
-    setIsInitialized(true);
+    canvasRef.current = fabricCanvas;
+    setLoadingState('initializing');
+    
+    // Try to load elements immediately when canvas is ready
+    setTimeout(() => {
+      loadLayoutIfReady();
+    }, 100);
   };
 
   const handleBackgroundLoaded = () => {
-    console.log('Background loaded, now adding elements');
-    setIsBackgroundLoaded(true);
+    console.log('Background loaded callback triggered');
+    setLoadingState('loading-background');
     
-    if (canvas && !elementsLoaded) {
-      loadElementsToCanvas(canvas);
-    }
+    // Try to load elements when background is ready
+    setTimeout(() => {
+      loadLayoutIfReady();
+    }, 100);
   };
+
+  const handleManualReload = async () => {
+    if (!canvasRef.current) {
+      toast.error('Canvas não está disponível');
+      return;
+    }
+    
+    console.log('Manual reload triggered');
+    setLayoutLoadAttempts(0);
+    setLoadingState('loading-elements');
+    await loadLayoutElements(canvasRef.current);
+  };
+
+  // Set up fallback timeout for loading elements
+  useEffect(() => {
+    if (canvas && loadingState !== 'ready' && layoutLoadAttempts < 3) {
+      // Set up a timeout to load elements even if background doesn't load
+      loadingTimeoutRef.current = setTimeout(() => {
+        console.log('Timeout triggered for loading elements');
+        loadLayoutIfReady();
+      }, 2000); // 2 second timeout
+    }
+
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+        loadingTimeoutRef.current = null;
+      }
+    };
+  }, [canvas, loadingState, layoutLoadAttempts]);
+
+  // Reset state when template or format changes
+  useEffect(() => {
+    console.log('Template or format changed, resetting state');
+    setLoadingState('idle');
+    setLayoutLoadAttempts(0);
+    setLoadingError(null);
+    canvasRef.current = null;
+    
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+      loadingTimeoutRef.current = null;
+    }
+  }, [templateId, formatName]);
 
   const handleAddElement = (elementType: string) => {
     if (!canvas) {
@@ -212,7 +288,11 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     }
 
     // Remove any existing elements with the same field to prevent duplicates
-    removeDuplicateElements(canvas, element.field_mapping);
+    const objects = canvas.getObjects();
+    const duplicates = objects.filter((obj: any) => obj.fieldMapping === elementType);
+    duplicates.forEach(duplicate => {
+      canvas.remove(duplicate);
+    });
 
     // Position new elements in visible area with some randomness
     const randomX = 50 + Math.random() * (displayWidth - 300);
@@ -261,7 +341,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
 
     try {
       const elements = serializeCanvasLayout(canvas, scale);
-      console.log('Saving layout with elements:', elements);
+      console.log('Saving layout with elements:', elements.length, 'elements');
 
       await saveLayout({
         template_id: templateId,
@@ -274,13 +354,6 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
       console.error('Error saving layout:', error);
     }
   };
-
-  // Reset elements loaded flag when template or format changes
-  useEffect(() => {
-    console.log('Template or format changed, resetting elements loaded flag');
-    setElementsLoaded(false);
-    setIsBackgroundLoaded(false);
-  }, [templateId, formatName]);
 
   if (elementsLoading) {
     return (
@@ -334,6 +407,25 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
           onUpdateObject={() => {}}
           onDeleteSelected={handleDeleteSelected}
         />
+
+        {/* Loading status and manual controls */}
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+          <div className="text-sm text-gray-600 mb-2">
+            <p><strong>Status:</strong> {loadingState}</p>
+            <p><strong>Tentativas:</strong> {layoutLoadAttempts}</p>
+            {loadingError && (
+              <p className="text-red-600 mt-2">{loadingError}</p>
+            )}
+          </div>
+          
+          <button
+            onClick={handleManualReload}
+            disabled={loadingState === 'loading-elements'}
+            className="w-full px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loadingState === 'loading-elements' ? 'Carregando...' : 'Recarregar Layout'}
+          </button>
+        </div>
       </div>
     </div>
   );

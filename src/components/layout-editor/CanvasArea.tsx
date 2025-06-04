@@ -41,6 +41,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const backgroundLoadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Use refs to store the latest callback functions
   const onSelectionChangeRef = useRef(onSelectionChange);
@@ -57,8 +58,6 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
     if (!canvasRef.current || fabricCanvasRef.current) return;
 
     console.log('Initializing Fabric.js canvas with dimensions:', displayWidth, 'x', displayHeight);
-    console.log('Format dimensions:', formatDimensions);
-    console.log('Scale factor:', scale);
 
     const fabricCanvas = new fabric.Canvas(canvasRef.current, {
       width: displayWidth,
@@ -66,36 +65,16 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
       backgroundColor: '#f5f5f5'
     });
 
-    // Load background image if provided
-    if (backgroundImageUrl) {
-      console.log('Loading background image during canvas initialization:', backgroundImageUrl);
-      loadBackgroundImage(fabricCanvas, backgroundImageUrl, scale)
-        .then(() => {
-          console.log('Background image loaded successfully');
-          onBackgroundLoadedRef.current?.();
-        })
-        .catch((error) => {
-          console.error('Error loading background image:', error);
-          fabricCanvas.backgroundColor = '#f5f5f5';
-          fabricCanvas.renderAll();
-          onBackgroundLoadedRef.current?.();
-        });
-    } else {
-      onBackgroundLoadedRef.current?.();
-    }
-
+    // Set up event listeners
     fabricCanvas.on('selection:created', (e) => {
-      console.log('Object selected:', e.selected?.[0]);
       onSelectionChangeRef.current(e.selected?.[0]);
     });
 
     fabricCanvas.on('selection:updated', (e) => {
-      console.log('Selection updated:', e.selected?.[0]);
       onSelectionChangeRef.current(e.selected?.[0]);
     });
 
     fabricCanvas.on('selection:cleared', () => {
-      console.log('Selection cleared');
       onSelectionChangeRef.current(null);
     });
 
@@ -103,9 +82,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
       console.log('Object modified:', {
         target: e.target,
         left: e.target?.left,
-        top: e.target?.top,
-        scaleX: e.target?.scaleX,
-        scaleY: e.target?.scaleY
+        top: e.target?.top
       });
     });
 
@@ -118,10 +95,25 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
 
     document.addEventListener('keydown', handleKeyDown);
     fabricCanvasRef.current = fabricCanvas;
+    
+    // Notify parent that canvas is ready
     onCanvasReady(fabricCanvas);
+
+    // Load background image immediately after canvas creation
+    if (backgroundImageUrl) {
+      loadBackgroundWithFallback(fabricCanvas, backgroundImageUrl);
+    } else {
+      // No background, trigger callback immediately
+      setTimeout(() => {
+        onBackgroundLoadedRef.current?.();
+      }, 100);
+    }
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
+      if (backgroundLoadTimeoutRef.current) {
+        clearTimeout(backgroundLoadTimeoutRef.current);
+      }
       if (fabricCanvasRef.current) {
         fabricCanvasRef.current.dispose();
         fabricCanvasRef.current = null;
@@ -129,24 +121,43 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
     };
   }, []); // Only run once
 
-  // Handle background image changes separately to avoid canvas recreation
-  useEffect(() => {
-    if (!fabricCanvasRef.current || !backgroundImageUrl) return;
+  // Function to load background with fallback mechanism
+  const loadBackgroundWithFallback = (fabricCanvas: FabricCanvas, imageUrl: string) => {
+    console.log('Loading background image with fallback:', imageUrl);
+    
+    // Set up a timeout fallback
+    backgroundLoadTimeoutRef.current = setTimeout(() => {
+      console.log('Background loading timeout reached, proceeding anyway');
+      onBackgroundLoadedRef.current?.();
+    }, 3000); // 3 second timeout
 
-    console.log('Background image URL changed, updating background:', backgroundImageUrl);
-    loadBackgroundImage(fabricCanvasRef.current, backgroundImageUrl, scale)
+    loadBackgroundImage(fabricCanvas, imageUrl, scale)
       .then(() => {
-        console.log('Background image updated successfully');
+        console.log('Background image loaded successfully');
+        if (backgroundLoadTimeoutRef.current) {
+          clearTimeout(backgroundLoadTimeoutRef.current);
+          backgroundLoadTimeoutRef.current = null;
+        }
         onBackgroundLoadedRef.current?.();
       })
       .catch((error) => {
-        console.error('Error updating background image:', error);
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.backgroundColor = '#f5f5f5';
-          fabricCanvasRef.current.renderAll();
+        console.error('Error loading background image:', error);
+        fabricCanvas.backgroundColor = '#f5f5f5';
+        fabricCanvas.renderAll();
+        if (backgroundLoadTimeoutRef.current) {
+          clearTimeout(backgroundLoadTimeoutRef.current);
+          backgroundLoadTimeoutRef.current = null;
         }
         onBackgroundLoadedRef.current?.();
       });
+  };
+
+  // Handle background image changes separately
+  useEffect(() => {
+    if (!fabricCanvasRef.current || !backgroundImageUrl) return;
+
+    console.log('Background image URL changed:', backgroundImageUrl);
+    loadBackgroundWithFallback(fabricCanvasRef.current, backgroundImageUrl);
   }, [backgroundImageUrl, scale]);
 
   return (
