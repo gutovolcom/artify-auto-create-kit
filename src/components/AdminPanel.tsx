@@ -7,17 +7,25 @@ import { TeacherManager } from "./TeacherManager";
 
 interface AdminPanelProps {
   onLogout: () => void;
+  onSwitchToUser?: () => void;
 }
 
-export const AdminPanel = ({ onLogout }: AdminPanelProps) => {
+export const AdminPanel = ({ onLogout, onSwitchToUser }: AdminPanelProps) => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-blue-800">Painel Administrativo</h1>
-          <Button onClick={onLogout} variant="outline">
-            Sair
-          </Button>
+          <div className="flex gap-2">
+            {onSwitchToUser && (
+              <Button onClick={onSwitchToUser} variant="outline">
+                Painel do Usuário
+              </Button>
+            )}
+            <Button onClick={onLogout} variant="outline">
+              Sair
+            </Button>
+          </div>
         </div>
       </div>
       

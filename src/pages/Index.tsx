@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,6 +34,7 @@ export interface EventData {
 const Index = () => {
   const { user, loading, signOut } = useAuth();
   const [userType, setUserType] = useState<'user' | 'admin'>('user');
+  
   const [eventData, setEventData] = useState<EventData>({
     title: "",
     subtitle: "",
@@ -81,6 +81,10 @@ const Index = () => {
     toast.success("Logout realizado com sucesso!");
   };
 
+  const handleSwitchToUser = () => {
+    setUserType('user');
+  };
+
   // Check if form is ready for generation
   const isFormReady = eventData.title && eventData.date && eventData.kvImageId && eventData.professorPhotos;
 
@@ -103,7 +107,7 @@ const Index = () => {
 
   // Show admin panel for admin users
   if (isAdmin && userType === 'admin') {
-    return <AdminPanel onLogout={handleLogout} />;
+    return <AdminPanel onLogout={handleLogout} onSwitchToUser={handleSwitchToUser} />;
   }
 
   // Show user interface for regular users

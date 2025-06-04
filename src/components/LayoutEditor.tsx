@@ -332,25 +332,25 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
 
   // Helper function to get current object properties for display
   const getCurrentFontSize = () => {
-    if (!selectedObject) return 24;
+    if (!selectedObject) return '';
     
     if (selectedObject.type === 'group') {
       const textObject = selectedObject.getObjects().find((obj: any) => obj.type === 'text');
-      return textObject ? Math.round(textObject.fontSize / scale) : 24;
+      return textObject ? Math.round(textObject.fontSize / scale).toString() : '';
     }
     
-    return Math.round(selectedObject.fontSize / scale) || 24;
+    return selectedObject.fontSize ? Math.round(selectedObject.fontSize / scale).toString() : '';
   };
 
   const getCurrentFontFamily = () => {
-    if (!selectedObject) return 'Margem-Regular';
+    if (!selectedObject) return '';
     
     if (selectedObject.type === 'group') {
       const textObject = selectedObject.getObjects().find((obj: any) => obj.type === 'text');
-      return textObject ? textObject.fontFamily : 'Margem-Regular';
+      return textObject ? textObject.fontFamily || '' : '';
     }
     
-    return selectedObject.fontFamily || 'Margem-Regular';
+    return selectedObject.fontFamily || '';
   };
 
   // Get the field mapping to determine what properties to show
@@ -462,6 +462,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
                           onChange={(e) => updateSelectedObject('fontSize', e.target.value)}
                           min="8"
                           max="200"
+                          placeholder="24"
                         />
                       </div>
 
@@ -472,7 +473,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
                           onValueChange={(value) => updateSelectedObject('fontFamily', value)}
                         >
                           <SelectTrigger>
-                            <SelectValue />
+                            <SelectValue placeholder="Selecionar fonte" />
                           </SelectTrigger>
                           <SelectContent>
                             {availableFonts.map((font) => (
