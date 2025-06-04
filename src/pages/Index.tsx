@@ -96,8 +96,8 @@ const Index = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Check if user is admin (you can implement admin role logic here)
-  const isAdmin = user.email === "admin@lovable.com"; // Simple admin check for now
+  // Check if user is admin - using your real email now
+  const isAdmin = user.email === "henriquetocheto@gmail.com";
 
   // Show admin panel for admin users
   if (isAdmin && userType === 'admin') {
