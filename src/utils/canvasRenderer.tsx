@@ -27,7 +27,7 @@ export const drawYouTubeFormat = (
   classTheme: string,
   professorName: string,
   eventDate: string,
-  fontColor: string,
+  textColor: string,
   boxColor: string,
   boxFontColor: string,
   width: number,
@@ -95,9 +95,9 @@ export const drawYouTubeFormat = (
     ctx.drawImage(professorImages[0], photo1X, photo1Y, professorImageWidth, professorImageHeight);
   }
 
-  // Event name with MargemBlack font
+  // Event name with MargemBlack font - use textColor
   ctx.font = '140px Arial Black'; // Fallback since custom fonts aren't loaded
-  ctx.fillStyle = fontColor;
+  ctx.fillStyle = textColor;
   ctx.fillText(eventName, leftMargin, topMargin);
 
   // Class theme with rounded box
@@ -158,14 +158,14 @@ export const drawYouTubeFormat = (
     });
   }
 
-  // Event date with TorokaWide font
+  // Event date with TorokaWide font - use textColor
   ctx.font = '66px Arial';
-  ctx.fillStyle = fontColor;
+  ctx.fillStyle = textColor;
   ctx.fillText(formatDate(eventDate), leftMargin, currentY);
 
   currentY += lineSpacing;
 
-  // Professor name with MargemMedium font
+  // Professor name with MargemMedium font - use textColor
   ctx.font = '66px Arial';
   ctx.fillText(professorName, leftMargin, currentY);
 };
@@ -213,7 +213,7 @@ export const renderCanvasWithTemplate = async (
         eventData.classTheme || 'Tema da Aula',
         eventData.teacherName || 'Professor',
         eventData.date || '',
-        eventData.fontColor || '#FFFFFF',
+        eventData.textColor || '#FFFFFF',
         eventData.boxColor || '#dd303e',
         eventData.boxFontColor || '#FFFFFF',
         width,
@@ -224,9 +224,9 @@ export const renderCanvasWithTemplate = async (
       // For other platforms, use simplified overlay
       const scaleFactor = Math.min(width / 1080, height / 1080); // Base scale on 1080px
       
-      // Title
+      // Title - use textColor
       const titleSize = Math.max(24, 48 * scaleFactor);
-      ctx.fillStyle = eventData.fontColor || '#FFFFFF';
+      ctx.fillStyle = eventData.textColor || '#FFFFFF';
       ctx.font = `bold ${titleSize}px Arial`;
       ctx.fillText(eventData.title || 'Título do Evento', 30 * scaleFactor, 60 * scaleFactor);
       
@@ -254,9 +254,9 @@ export const renderCanvasWithTemplate = async (
         ctx.fillText(themeText, boxX + padding, boxY + themeSize + (padding / 2));
       }
       
-      // Date
+      // Date - use textColor
       const dateSize = Math.max(14, 24 * scaleFactor);
-      ctx.fillStyle = eventData.fontColor || '#FFFFFF';
+      ctx.fillStyle = eventData.textColor || '#FFFFFF';
       ctx.font = `${dateSize}px Arial`;
       const dateY = height - (30 * scaleFactor);
       ctx.fillText(`${eventData.date} ${eventData.time || ''}`, 30 * scaleFactor, dateY);

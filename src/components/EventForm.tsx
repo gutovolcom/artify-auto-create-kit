@@ -66,7 +66,15 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
     { id: "red", label: "Vermelho", color: "#dd303e", textColor: "#FFFFFF" },
     { id: "white", label: "Branco", color: "#FFFFFF", textColor: "#dd303e" },
     { id: "green", label: "Verde Gran", color: "#CAFF39", textColor: "#dd303e" },
-    { id: "transparent", label: "Sem fundo (transparente)", color: "transparent", textColor: eventData.fontColor || "#000000" },
+    { id: "transparent", label: "Sem fundo (transparente)", color: "transparent", textColor: eventData.textColor || "#000000" },
+  ];
+
+  const textColorOptions = [
+    { id: "#DD303E", label: "Vermelho", color: "#DD303E" },
+    { id: "#FFFFFF", label: "Branco", color: "#FFFFFF" },
+    { id: "#0d134c", label: "Azul", color: "#0d134c" },
+    { id: "#CAFF39", label: "Verde", color: "#CAFF39" },
+    { id: "#F7C7BE", label: "Rosa Claro", color: "#F7C7BE" },
   ];
 
   const handleBackgroundColorChange = (value: string) => {
@@ -78,6 +86,10 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
         backgroundColorType: value
       });
     }
+  };
+
+  const handleTextColorChange = (value: string) => {
+    updateEventData({ textColor: value });
   };
 
   return (
@@ -111,47 +123,55 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label>Cor de fundo do texto</Label>
-          <Select value={eventData.backgroundColorType || "red"} onValueChange={handleBackgroundColorChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione a cor de fundo" />
-            </SelectTrigger>
-            <SelectContent>
-              {backgroundColorOptions.map((option) => (
-                <SelectItem key={option.id} value={option.id}>
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-4 h-4 rounded border"
-                      style={{ 
-                        backgroundColor: option.color === "transparent" ? "#f0f0f0" : option.color,
-                        border: option.color === "#FFFFFF" ? "1px solid #ccc" : "none"
-                      }}
-                    />
-                    {option.label}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Cor de fundo do texto</Label>
+            <Select value={eventData.backgroundColorType || "red"} onValueChange={handleBackgroundColorChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a cor de fundo" />
+              </SelectTrigger>
+              <SelectContent>
+                {backgroundColorOptions.map((option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-4 h-4 rounded border"
+                        style={{ 
+                          backgroundColor: option.color === "transparent" ? "#f0f0f0" : option.color,
+                          border: option.color === "#FFFFFF" ? "1px solid #ccc" : "none"
+                        }}
+                      />
+                      {option.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="textColor">Cor do texto (título, professor, data/hora)</Label>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              id="textColor"
-              value={eventData.textColor || "#FFFFFF"}
-              onChange={(e) => updateEventData({ textColor: e.target.value })}
-              className="w-10 h-10 rounded border cursor-pointer"
-            />
-            <Input
-              value={eventData.textColor || "#FFFFFF"}
-              onChange={(e) => updateEventData({ textColor: e.target.value })}
-              placeholder="#FFFFFF"
-              className="flex-1"
-            />
+          <div className="space-y-2">
+            <Label>Cor do texto</Label>
+            <Select value={eventData.textColor || "#FFFFFF"} onValueChange={handleTextColorChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a cor do texto" />
+              </SelectTrigger>
+              <SelectContent>
+                {textColorOptions.map((option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-4 h-4 rounded border"
+                        style={{ 
+                          backgroundColor: option.color,
+                          border: option.color === "#FFFFFF" ? "1px solid #ccc" : "none"
+                        }}
+                      />
+                      {option.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
