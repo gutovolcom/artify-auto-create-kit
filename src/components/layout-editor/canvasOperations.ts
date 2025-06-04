@@ -79,6 +79,7 @@ export const addElementToCanvas = (
     field: elementConfig?.field || 'title',
     position: elementConfig?.position || { x: 50, y: 50 },
     style: {
+      // Use basic preview styles for layout editor only
       fontSize: 24,
       fontFamily: 'Arial',
       color: '#333333',
@@ -86,7 +87,7 @@ export const addElementToCanvas = (
     }
   };
 
-  console.log('Adding element to canvas with config:', config);
+  console.log('Adding element to canvas with config (positioning only):', config);
   console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
   console.log('Scale factor:', scale);
   
@@ -123,10 +124,10 @@ export const addElementToCanvas = (
       canvas.add(rect);
       console.log('Image element added at:', { left: rect.left, top: rect.top, id: config.id });
     } else {
-      // Text element
-      const fontSize = config.style.fontSize || 24;
-      const fontFamily = config.style.fontFamily || 'Arial';
-      const color = config.style.color || '#333333';
+      // Text element - use preview styling for layout editor only
+      const fontSize = 24; // Fixed preview size
+      const fontFamily = 'Arial'; // Fixed preview font
+      const color = '#333333'; // Fixed preview color
       
       const text = new fabric.Text(`[${config.field.toUpperCase()}]`, {
         left: elementX,
@@ -142,13 +143,11 @@ export const addElementToCanvas = (
         elementId: config.id,
         elementType: config.type,
         fieldMapping: config.field,
-        originalFontSize: fontSize,
-        originalFontFamily: fontFamily,
-        originalColor: color
+        // Don't store original styling anymore since it should come from format rules
       });
 
       canvas.add(text);
-      console.log('Text element added at:', { left: text.left, top: text.top, id: config.id, fontSize, fontFamily, color });
+      console.log('Text element added at:', { left: text.left, top: text.top, id: config.id });
     }
     
     // Ensure element is on top and visible
@@ -171,21 +170,14 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
   }
 
   try {
-    console.log('Serializing canvas layout with scale:', scale);
+    console.log('Serializing canvas layout (positioning only)');
     console.log('Canvas objects to serialize:', canvas.getObjects().length);
     
     const elements = canvas.getObjects().map((obj: any) => {
-      // Use direct position values without scale division since we're not scaling positions
+      // Use direct position values - positioning only
       const position = {
         x: Math.round(obj.left || 0),
         y: Math.round(obj.top || 0)
-      };
-
-      // Serialize visual style properties only - avoid circular references
-      const style = {
-        fontSize: obj.originalFontSize || obj.fontSize || 24,
-        fontFamily: obj.originalFontFamily || obj.fontFamily || 'Arial',
-        color: obj.originalColor || obj.fill || '#333333'
       };
 
       // Calculate dimensions separately
@@ -199,25 +191,20 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
         height = Math.round((obj.height || 50) * (obj.scaleY || 1));
       }
 
-      console.log('Serializing object:', {
+      console.log('Serializing object (positioning only):', {
         elementId: obj.elementId,
         fieldMapping: obj.fieldMapping,
         position,
-        style,
         size: { width, height },
         type: obj.elementType
       });
 
-      // Create a clean serializable object without fabric.js circular references
+      // Create a clean serializable object with positioning only - NO STYLING
       const baseElement = {
         id: obj.elementId || `element_${Date.now()}`,
         field: obj.fieldMapping || 'unknown',
         position,
-        style: {
-          fontSize: style.fontSize,
-          fontFamily: style.fontFamily,
-          color: style.color
-        }
+        // Remove style serialization - this will come from format rules
       };
 
       if (obj.elementType === 'image') {
@@ -241,7 +228,7 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
       }
     });
 
-    console.log('Layout serialized successfully:', elements);
+    console.log('Layout serialized successfully (positioning only):', elements);
     return elements;
   } catch (error) {
     console.error('Error serializing canvas layout:', error);

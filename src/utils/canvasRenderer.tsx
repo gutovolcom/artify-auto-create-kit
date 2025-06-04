@@ -1,5 +1,7 @@
+
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
+import { getFormatSpecificStyle } from './formatStyleRules';
 
 export const renderCanvasWithTemplate = async (
   backgroundImageUrl: string,
@@ -49,7 +51,7 @@ export const renderCanvasWithTemplate = async (
         fabricCanvas.backgroundImage = bgImg;
 
         if (layoutConfig?.elements) {
-          console.log('Using layout configuration for positioning and styling');
+          console.log('Using layout configuration for positioning');
           const promises: Promise<void>[] = [];
           
           layoutConfig.elements.forEach((element: any) => {
@@ -60,7 +62,7 @@ export const renderCanvasWithTemplate = async (
                 promises.push(promise);
               }
             } else {
-              addElementToCanvas(fabricCanvas, element, eventData, width, height);
+              addElementToCanvas(fabricCanvas, element, eventData, width, height, format);
             }
           });
 
@@ -121,9 +123,10 @@ const addElementToCanvas = (
   element: any,
   eventData: EventData,
   canvasWidth: number,
-  canvasHeight: number
+  canvasHeight: number,
+  format: string
 ) => {
-  const { type, field, position, style, size } = element;
+  const { type, field, position, size } = element;
   
   if (type === 'image' && field === 'teacherImages') {
     return; // Handled separately
@@ -132,16 +135,16 @@ const addElementToCanvas = (
   const textContent = getTextContent(field, eventData);
   if (!textContent) return;
 
-  // Use layout configuration styling when available, otherwise fall back to defaults
-  const fontSize = style?.fontSize || getDefaultFontSize(field);
-  const fontFamily = style?.fontFamily || getMargemFont(field);
-  const textColor = style?.color || getTextColor(field, eventData);
+  // Use format-specific styling instead of layout config styles
+  const formatStyle = getFormatSpecificStyle(format, field, eventData);
+  
+  console.log(`Applying format-specific style for ${format}.${field}:`, formatStyle);
 
   if (type === 'text_box' && field === 'classTheme') {
     const text = new FabricText(textContent, {
-      fontSize: fontSize,
-      fontFamily: fontFamily,
-      fill: textColor,
+      fontSize: formatStyle.fontSize,
+      fontFamily: formatStyle.fontFamily,
+      fill: formatStyle.color,
       textAlign: 'center'
     });
 
@@ -169,9 +172,9 @@ const addElementToCanvas = (
     const text = new FabricText(textContent, {
       left: position?.x || 0,
       top: position?.y || 0,
-      fontSize: fontSize,
-      fontFamily: fontFamily,
-      fill: textColor,
+      fontSize: formatStyle.fontSize,
+      fontFamily: formatStyle.fontFamily,
+      fill: formatStyle.color,
       selectable: false,
       evented: false
     });
@@ -189,54 +192,58 @@ const addDefaultElements = async (
 ): Promise<void> => {
   const defaultPositions = getDefaultPositions(format, width, height);
   
-  // Add title with Margem-Black
+  // Add title with format-specific styling
   if (eventData.title) {
+    const titleStyle = getFormatSpecificStyle(format, 'title', eventData);
     const title = new FabricText(eventData.title, {
       left: defaultPositions.title.x,
       top: defaultPositions.title.y,
-      fontSize: defaultPositions.title.fontSize,
-      fontFamily: 'Margem-Black',
-      fill: eventData.textColor || '#000000',
+      fontSize: titleStyle.fontSize,
+      fontFamily: titleStyle.fontFamily,
+      fill: titleStyle.color,
       selectable: false,
       evented: false
     });
     canvas.add(title);
   }
 
-  // Add date with Margem-Regular
+  // Add date with format-specific styling
   if (eventData.date) {
+    const dateStyle = getFormatSpecificStyle(format, 'date', eventData);
     const date = new FabricText(formatDate(eventData.date, eventData.time), {
       left: defaultPositions.date.x,
       top: defaultPositions.date.y,
-      fontSize: defaultPositions.date.fontSize,
-      fontFamily: 'Margem-Regular',
-      fill: eventData.textColor || '#000000',
+      fontSize: dateStyle.fontSize,
+      fontFamily: dateStyle.fontFamily,
+      fill: dateStyle.color,
       selectable: false,
       evented: false
     });
     canvas.add(date);
   }
 
-  // Add teacher name with Margem-Regular
+  // Add teacher name with format-specific styling
   if (eventData.teacherName) {
+    const teacherStyle = getFormatSpecificStyle(format, 'teacherName', eventData);
     const teacherName = new FabricText(eventData.teacherName, {
       left: defaultPositions.teacherName.x,
       top: defaultPositions.teacherName.y,
-      fontSize: defaultPositions.teacherName.fontSize,
-      fontFamily: 'Margem-Regular',
-      fill: eventData.textColor || '#000000',
+      fontSize: teacherStyle.fontSize,
+      fontFamily: teacherStyle.fontFamily,
+      fill: teacherStyle.color,
       selectable: false,
       evented: false
     });
     canvas.add(teacherName);
   }
 
-  // Add class theme with Margem-Bold
+  // Add class theme with format-specific styling
   if (eventData.classTheme) {
+    const themeStyle = getFormatSpecificStyle(format, 'classTheme', eventData);
     const text = new FabricText(eventData.classTheme, {
-      fontSize: defaultPositions.classTheme.fontSize,
-      fontFamily: 'Margem-Bold',
-      fill: eventData.boxFontColor || '#FFFFFF',
+      fontSize: themeStyle.fontSize,
+      fontFamily: themeStyle.fontFamily,
+      fill: themeStyle.color,
       textAlign: 'center'
     });
 
