@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
@@ -115,12 +114,23 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
     if (isInitialized) return; // Prevent multiple initializations
     
     console.log('Canvas ready, initializing...');
+    console.log('Background image URL:', backgroundImageUrl);
     setCanvas(fabricCanvas);
     setIsInitialized(true);
     
     try {
-      await loadBackgroundImage(fabricCanvas, backgroundImageUrl, scale);
+      // Always try to load background image first
+      if (backgroundImageUrl) {
+        await loadBackgroundImage(fabricCanvas, backgroundImageUrl, scale);
+        console.log('Background image loaded successfully');
+      } else {
+        console.warn('No background image URL provided');
+        // Set a default background color if no image
+        fabricCanvas.backgroundColor = '#f5f5f5';
+        fabricCanvas.renderAll();
+      }
       
+      // Then load existing layout or default elements
       const existingLayout = await getLayout(templateId, formatName);
       if (existingLayout?.layout_config?.elements && existingLayout.layout_config.elements.length > 0) {
         console.log('Loading existing layout with', existingLayout.layout_config.elements.length, 'elements');
@@ -133,8 +143,12 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
       }
     } catch (error) {
       console.error('Error during canvas initialization:', error);
+      // Set background color as fallback
+      fabricCanvas.backgroundColor = '#f5f5f5';
+      fabricCanvas.renderAll();
       // Even if layout loading fails, add default elements so the editor is usable
       addDefaultLayoutElements(fabricCanvas);
+      toast.error('Erro ao carregar imagem de fundo, mas o editor está funcionando');
     }
   };
 

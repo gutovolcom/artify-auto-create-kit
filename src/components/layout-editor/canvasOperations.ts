@@ -1,3 +1,4 @@
+
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getPreviewText, getMargemFontForField, getDefaultFontSizeForField } from './utils';
 import { CanvasElementConfig } from './types';
@@ -10,10 +11,16 @@ export const loadBackgroundImage = async (
   return new Promise((resolve, reject) => {
     console.log('Loading background image:', backgroundImageUrl);
     
+    if (!backgroundImageUrl) {
+      console.error('No background image URL provided');
+      reject(new Error('No background image URL provided'));
+      return;
+    }
+    
     FabricImage.fromURL(backgroundImageUrl, {
       crossOrigin: 'anonymous'
     }).then((img) => {
-      console.log('Background image loaded successfully');
+      console.log('Background image loaded successfully:', img);
       
       // Set the image to cover the entire canvas
       img.set({
@@ -30,7 +37,7 @@ export const loadBackgroundImage = async (
       // Set as background image using the correct Fabric.js v6 API
       canvas.backgroundImage = img;
       canvas.renderAll();
-      console.log('Background image set and rendered');
+      console.log('Background image set and canvas rendered');
       resolve();
     }).catch((error) => {
       console.error('Error loading background image:', error);
