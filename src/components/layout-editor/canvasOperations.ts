@@ -75,7 +75,7 @@ export const addElementToCanvas = (
   }
 
   const config: CanvasElementConfig = {
-    id: elementConfig?.id || `element_${Date.now()}`,
+    id: elementConfig?.id || `element_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     type: elementConfig?.type || 'text',
     field: elementConfig?.field || 'title',
     position: elementConfig?.position || { x: 50, y: 50 },
@@ -182,16 +182,22 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
         y: Math.round(obj.top || 0)
       };
 
-      // Serialize all style properties
+      // Serialize visual style properties only
       const style = {
         fontSize: obj.originalFontSize || obj.fontSize || 24,
         fontFamily: obj.originalFontFamily || obj.fontFamily || 'Arial',
         color: obj.originalColor || obj.fill || '#333333'
       };
 
+      // Calculate dimensions separately
+      let width: number, height: number;
+
       if (obj.elementType === 'image') {
-        style.width = Math.round((obj.width || 200) * (obj.scaleX || 1));
-        style.height = Math.round((obj.height || 200) * (obj.scaleY || 1));
+        width = Math.round((obj.width || 200) * (obj.scaleX || 1));
+        height = Math.round((obj.height || 200) * (obj.scaleY || 1));
+      } else {
+        width = Math.round((obj.width || 100) * (obj.scaleX || 1));
+        height = Math.round((obj.height || 50) * (obj.scaleY || 1));
       }
 
       console.log('Serializing object:', {
@@ -199,6 +205,7 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
         fieldMapping: obj.fieldMapping,
         position,
         style,
+        size: { width, height },
         type: obj.elementType
       });
 
@@ -214,8 +221,8 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
           ...baseElement,
           type: 'image',
           size: {
-            width: style.width,
-            height: style.height
+            width,
+            height
           }
         };
       } else {
@@ -223,8 +230,8 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
           ...baseElement,
           type: 'text',
           size: {
-            width: Math.round((obj.width || 100) * (obj.scaleX || 1)),
-            height: Math.round((obj.height || 50) * (obj.scaleY || 1))
+            width,
+            height
           }
         };
       }
