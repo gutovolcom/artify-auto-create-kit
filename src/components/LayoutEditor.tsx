@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { Button } from '@/components/ui/button';
@@ -241,20 +242,11 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
         const textObject = selectedObject.getObjects().find((obj: any) => obj.type === 'text');
         if (textObject) {
           textObject.set({ fontSize: newFontSize });
+          // Update the group to reflect changes
+          selectedObject.addWithUpdate();
         }
       } else if (selectedObject.type === 'text') {
         selectedObject.set({ fontSize: newFontSize });
-      }
-    } else if (property === 'fill' || property === 'color') {
-      console.log('Setting color to:', value);
-      
-      if (selectedObject.type === 'group') {
-        const textObject = selectedObject.getObjects().find((obj: any) => obj.type === 'text');
-        if (textObject) {
-          textObject.set({ fill: value });
-        }
-      } else if (selectedObject.type === 'text') {
-        selectedObject.set({ fill: value });
       }
     } else if (property === 'fontFamily') {
       console.log('Setting font family to:', value);
@@ -263,6 +255,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
         const textObject = selectedObject.getObjects().find((obj: any) => obj.type === 'text');
         if (textObject) {
           textObject.set({ fontFamily: value });
+          selectedObject.addWithUpdate();
         }
       } else if (selectedObject.type === 'text') {
         selectedObject.set({ fontFamily: value });
@@ -295,15 +288,16 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
             }
           };
         } else if (obj.elementType === 'text_box') {
+          const textObject = obj.getObjects ? obj.getObjects().find((o: any) => o.type === 'text') : obj;
           return {
             id: obj.elementId,
             type: 'text_box',
             field: obj.fieldMapping,
             position,
             style: {
-              fontSize: obj.fontSize / scale,
-              fontFamily: obj.fontFamily,
-              textColor: obj.fill,
+              fontSize: textObject ? textObject.fontSize / scale : 24,
+              fontFamily: textObject ? textObject.fontFamily : 'Margem-Regular',
+              textColor: textObject ? textObject.fill : '#FFFFFF',
               backgroundColor: '#dd303e', // Default for now
               padding: 20,
               borderRadius: 10
@@ -348,17 +342,6 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     return Math.round(selectedObject.fontSize / scale) || 24;
   };
 
-  const getCurrentColor = () => {
-    if (!selectedObject) return '#000000';
-    
-    if (selectedObject.type === 'group') {
-      const textObject = selectedObject.getObjects().find((obj: any) => obj.type === 'text');
-      return textObject ? textObject.fill : '#000000';
-    }
-    
-    return selectedObject.fill || '#000000';
-  };
-
   const getCurrentFontFamily = () => {
     if (!selectedObject) return 'Margem-Regular';
     
@@ -368,6 +351,22 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     }
     
     return selectedObject.fontFamily || 'Margem-Regular';
+  };
+
+  // Get the field mapping to determine what properties to show
+  const getSelectedElementField = () => {
+    if (!selectedObject) return null;
+    return selectedObject.fieldMapping;
+  };
+
+  // Determine if the element needs font properties
+  const elementNeedsFontProperties = (field: string) => {
+    return ['title', 'teacherName', 'date', 'time', 'classTheme'].includes(field);
+  };
+
+  // Determine if the element needs only position and size
+  const elementNeedsOnlyPositionAndSize = (field: string) => {
+    return field === 'professorPhotos';
   };
 
   return (
@@ -439,44 +438,76 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label>Tamanho da Fonte</Label>
-                <Input
-                  type="number"
-                  value={getCurrentFontSize()}
-                  onChange={(e) => updateSelectedObject('fontSize', e.target.value)}
-                  min="8"
-                  max="200"
-                />
-              </div>
-              
-              <div>
-                <Label>Cor</Label>
-                <Input
-                  type="color"
-                  value={getCurrentColor()}
-                  onChange={(e) => updateSelectedObject('color', e.target.value)}
-                />
-              </div>
+              {(() => {
+                const field = getSelectedElementField();
+                
+                if (elementNeedsOnlyPositionAndSize(field)) {
+                  // For professor photos - only position (handled by dragging)
+                  return (
+                    <div className="text-sm text-gray-600">
+                      <p>Foto do Professor</p>
+                      <p>Use o mouse para posicionar a imagem no canvas.</p>
+                    </div>
+                  );
+                }
+                
+                if (elementNeedsFontProperties(field)) {
+                  return (
+                    <>
+                      <div>
+                        <Label>Tamanho da Fonte</Label>
+                        <Input
+                          type="number"
+                          value={getCurrentFontSize()}
+                          onChange={(e) => updateSelectedObject('fontSize', e.target.value)}
+                          min="8"
+                          max="200"
+                        />
+                      </div>
 
-              <div>
-                <Label>Fonte</Label>
-                <Select
-                  value={getCurrentFontFamily()}
-                  onValueChange={(value) => updateSelectedObject('fontFamily', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableFonts.map((font) => (
-                      <SelectItem key={font} value={font}>
-                        {font}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                      <div>
+                        <Label>Fonte</Label>
+                        <Select
+                          value={getCurrentFontFamily()}
+                          onValueChange={(value) => updateSelectedObject('fontFamily', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableFonts.map((font) => (
+                              <SelectItem key={font} value={font}>
+                                {font}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {field === 'classTheme' && (
+                        <div className="text-sm text-gray-600 p-2 bg-blue-50 rounded">
+                          <p><strong>Tema da Aula:</strong></p>
+                          <p>A cor do texto e do fundo são configuradas no painel do usuário.</p>
+                        </div>
+                      )}
+
+                      {['title', 'teacherName', 'date', 'time'].includes(field) && (
+                        <div className="text-sm text-gray-600 p-2 bg-blue-50 rounded">
+                          <p><strong>Cor do Texto:</strong></p>
+                          <p>Configure a cor no painel do usuário no campo "Cor do texto".</p>
+                        </div>
+                      )}
+                    </>
+                  );
+                }
+                
+                return (
+                  <div className="text-sm text-gray-600">
+                    <p>Elemento selecionado: {field}</p>
+                    <p>Use o mouse para posicionar no canvas.</p>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         )}
