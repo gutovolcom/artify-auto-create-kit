@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { Button } from '@/components/ui/button';
@@ -46,9 +45,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
   const availableFonts = [
     'Margem-Regular',
     'Margem-Bold', 
-    'Margem-Black',
-    'Arial', // Keep some system fonts as fallback
-    'Arial Black'
+    'Margem-Black'
   ];
 
   useEffect(() => {
@@ -231,16 +228,49 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
   const updateSelectedObject = (property: string, value: any) => {
     if (!selectedObject || !canvas) return;
 
+    console.log('Updating object property:', property, 'to value:', value);
+    console.log('Selected object:', selectedObject);
+
     if (property === 'fontSize') {
-      const newFontSize = value * scale;
-      selectedObject.set({ fontSize: newFontSize });
+      const newFontSize = parseInt(value) * scale;
+      console.log('Setting font size to:', newFontSize);
+      
+      // Handle both regular text objects and text objects within groups
+      if (selectedObject.type === 'group') {
+        // For text_box elements (groups), update the text object inside
+        const textObject = selectedObject.getObjects().find((obj: any) => obj.type === 'text');
+        if (textObject) {
+          textObject.set({ fontSize: newFontSize });
+        }
+      } else if (selectedObject.type === 'text') {
+        selectedObject.set({ fontSize: newFontSize });
+      }
     } else if (property === 'fill' || property === 'color') {
-      selectedObject.set({ fill: value });
+      console.log('Setting color to:', value);
+      
+      if (selectedObject.type === 'group') {
+        const textObject = selectedObject.getObjects().find((obj: any) => obj.type === 'text');
+        if (textObject) {
+          textObject.set({ fill: value });
+        }
+      } else if (selectedObject.type === 'text') {
+        selectedObject.set({ fill: value });
+      }
     } else if (property === 'fontFamily') {
-      selectedObject.set({ fontFamily: value });
+      console.log('Setting font family to:', value);
+      
+      if (selectedObject.type === 'group') {
+        const textObject = selectedObject.getObjects().find((obj: any) => obj.type === 'text');
+        if (textObject) {
+          textObject.set({ fontFamily: value });
+        }
+      } else if (selectedObject.type === 'text') {
+        selectedObject.set({ fontFamily: value });
+      }
     }
 
     canvas.renderAll();
+    console.log('Canvas rendered after update');
   };
 
   const saveCurrentLayout = async () => {
@@ -304,6 +334,40 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     } catch (error) {
       // Error handled in hook
     }
+  };
+
+  // Helper function to get current object properties for display
+  const getCurrentFontSize = () => {
+    if (!selectedObject) return 24;
+    
+    if (selectedObject.type === 'group') {
+      const textObject = selectedObject.getObjects().find((obj: any) => obj.type === 'text');
+      return textObject ? Math.round(textObject.fontSize / scale) : 24;
+    }
+    
+    return Math.round(selectedObject.fontSize / scale) || 24;
+  };
+
+  const getCurrentColor = () => {
+    if (!selectedObject) return '#000000';
+    
+    if (selectedObject.type === 'group') {
+      const textObject = selectedObject.getObjects().find((obj: any) => obj.type === 'text');
+      return textObject ? textObject.fill : '#000000';
+    }
+    
+    return selectedObject.fill || '#000000';
+  };
+
+  const getCurrentFontFamily = () => {
+    if (!selectedObject) return 'Margem-Regular';
+    
+    if (selectedObject.type === 'group') {
+      const textObject = selectedObject.getObjects().find((obj: any) => obj.type === 'text');
+      return textObject ? textObject.fontFamily : 'Margem-Regular';
+    }
+    
+    return selectedObject.fontFamily || 'Margem-Regular';
   };
 
   return (
@@ -379,8 +443,8 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
                 <Label>Tamanho da Fonte</Label>
                 <Input
                   type="number"
-                  value={Math.round((selectedObject as any).fontSize / scale) || 24}
-                  onChange={(e) => updateSelectedObject('fontSize', parseInt(e.target.value))}
+                  value={getCurrentFontSize()}
+                  onChange={(e) => updateSelectedObject('fontSize', e.target.value)}
                   min="8"
                   max="200"
                 />
@@ -390,15 +454,15 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
                 <Label>Cor</Label>
                 <Input
                   type="color"
-                  value={(selectedObject as any).fill || '#000000'}
-                  onChange={(e) => updateSelectedObject('fill', e.target.value)}
+                  value={getCurrentColor()}
+                  onChange={(e) => updateSelectedObject('color', e.target.value)}
                 />
               </div>
 
               <div>
                 <Label>Fonte</Label>
                 <Select
-                  value={(selectedObject as any).fontFamily || 'Margem-Regular'}
+                  value={getCurrentFontFamily()}
                   onValueChange={(value) => updateSelectedObject('fontFamily', value)}
                 >
                   <SelectTrigger>
