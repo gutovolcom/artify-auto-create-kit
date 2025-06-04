@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { EventData } from "@/pages/Index";
 import { toast } from "sonner";
@@ -22,6 +23,24 @@ const platformConfigs = {
   LP: { name: "LP", width: 800, height: 776 },
 };
 
+// Helper function to normalize teacher photos to always be an array
+const normalizeTeacherPhotos = (eventData: EventData): string[] => {
+  // Handle both teacherImages (array) and professorPhotos (string) fields
+  if (eventData.teacherImages && Array.isArray(eventData.teacherImages)) {
+    return eventData.teacherImages;
+  }
+  
+  if (eventData.teacherImages && typeof eventData.teacherImages === 'string') {
+    return [eventData.teacherImages];
+  }
+  
+  if (eventData.professorPhotos && typeof eventData.professorPhotos === 'string') {
+    return [eventData.professorPhotos];
+  }
+  
+  return [];
+};
+
 export const useImageGenerator = () => {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -36,6 +55,14 @@ export const useImageGenerator = () => {
     if (!eventData.title || !eventData.date || !eventData.kvImageId) {
       setError("Informações incompletas. Preencha todos os campos obrigatórios.");
       toast.error("Preencha todos os campos obrigatórios");
+      return [];
+    }
+
+    // Check if we have teacher photos in either field
+    const teacherPhotos = normalizeTeacherPhotos(eventData);
+    if (teacherPhotos.length === 0) {
+      setError("Foto do professor é obrigatória.");
+      toast.error("Adicione a foto do professor");
       return [];
     }
 
@@ -95,11 +122,11 @@ export const useImageGenerator = () => {
           const layoutConfig = await getLayout(templateToUse.id, formatId);
           console.log(`Layout config for ${formatId}:`, layoutConfig);
           
-          // Prepare the complete event data for rendering with standardized field names
-          const completeEventData = {
+          // Prepare the complete event data for rendering with normalized teacher photos
+          const completeEventData: EventData = {
             ...eventData,
-            // Standardize teacher photo field name to match layout editor
-            teacherImages: eventData.teacherImages || eventData.professorPhotos || [],
+            // Ensure teacherImages is always an array
+            teacherImages: teacherPhotos,
             // Ensure all required fields are present
             classTheme: eventData.classTheme || "",
             teacherName: eventData.teacherName || "",
