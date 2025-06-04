@@ -78,16 +78,16 @@ export const addElementToCanvas = (
     type: elementConfig?.type || 'text',
     field: elementConfig?.field || 'title',
     position: elementConfig?.position || { x: 50, y: 50 },
+    // ✅ CRITICAL: Use only basic preview styles for layout editor - NO ACTUAL STYLING
     style: {
-      // Use basic preview styles for layout editor only
-      fontSize: 24,
-      fontFamily: 'Arial',
-      color: '#333333',
+      fontSize: 24,        // Fixed preview size
+      fontFamily: 'Arial', // Fixed preview font  
+      color: '#333333',    // Fixed preview color
       ...elementConfig?.style
     }
   };
 
-  console.log('Adding element to canvas with config (positioning only):', config);
+  console.log('🎨 Adding element to canvas with PREVIEW STYLING ONLY (real styles come from format rules):', config);
   console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
   console.log('Scale factor:', scale);
   
@@ -124,7 +124,7 @@ export const addElementToCanvas = (
       canvas.add(rect);
       console.log('Image element added at:', { left: rect.left, top: rect.top, id: config.id });
     } else {
-      // Text element - use preview styling for layout editor only
+      // Text element - use ONLY preview styling for layout editor
       const fontSize = 24; // Fixed preview size
       const fontFamily = 'Arial'; // Fixed preview font
       const color = '#333333'; // Fixed preview color
@@ -142,8 +142,9 @@ export const addElementToCanvas = (
       text.set({
         elementId: config.id,
         elementType: config.type,
-        fieldMapping: config.field,
-        // Don't store original styling anymore since it should come from format rules
+        fieldMapping: config.field
+        // ✅ CRITICAL: DO NOT store any styling properties here
+        // Real styles will come from format-specific rules during generation
       });
 
       canvas.add(text);
@@ -170,7 +171,7 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
   }
 
   try {
-    console.log('Serializing canvas layout (positioning only)');
+    console.log('🚫 Serializing canvas layout - POSITION AND SIZE ONLY (no styles)');
     console.log('Canvas objects to serialize:', canvas.getObjects().length);
     
     const elements = canvas.getObjects().map((obj: any) => {
@@ -191,7 +192,7 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
         height = Math.round((obj.height || 50) * (obj.scaleY || 1));
       }
 
-      console.log('Serializing object (positioning only):', {
+      console.log(`🎯 Serializing ${obj.fieldMapping} - POSITION ONLY:`, {
         elementId: obj.elementId,
         fieldMapping: obj.fieldMapping,
         position,
@@ -199,12 +200,13 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
         type: obj.elementType
       });
 
-      // Create a clean serializable object with positioning only - NO STYLING
+      // ✅ CRITICAL: Create clean serializable object with POSITION ONLY - NO STYLING
       const baseElement = {
         id: obj.elementId || `element_${Date.now()}`,
         field: obj.fieldMapping || 'unknown',
-        position,
-        // Remove style serialization - this will come from format rules
+        position
+        // ✅ IMPORTANT: NO fontSize, fontFamily, color properties saved!
+        // These will come from format-specific rules during generation
       };
 
       if (obj.elementType === 'image') {
@@ -228,7 +230,7 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
       }
     });
 
-    console.log('Layout serialized successfully (positioning only):', elements);
+    console.log('✅ Layout serialized successfully - POSITIONING ONLY (styles will come from format rules):', elements);
     return elements;
   } catch (error) {
     console.error('Error serializing canvas layout:', error);

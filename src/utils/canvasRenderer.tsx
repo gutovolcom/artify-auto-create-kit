@@ -1,7 +1,6 @@
-
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
-import { getFormatSpecificStyle } from './formatStyleRules';
+import { getStyleForField, getUserColors } from './formatStyleRules';
 
 export const renderCanvasWithTemplate = async (
   backgroundImageUrl: string,
@@ -51,7 +50,7 @@ export const renderCanvasWithTemplate = async (
         fabricCanvas.backgroundImage = bgImg;
 
         if (layoutConfig?.elements) {
-          console.log('Using layout configuration for positioning');
+          console.log('Using layout configuration for positioning ONLY (ignoring any saved styles)');
           const promises: Promise<void>[] = [];
           
           layoutConfig.elements.forEach((element: any) => {
@@ -135,10 +134,15 @@ const addElementToCanvas = (
   const textContent = getTextContent(field, eventData);
   if (!textContent) return;
 
-  // Use format-specific styling instead of layout config styles
-  const formatStyle = getFormatSpecificStyle(format, field, eventData);
+  // ✅ CRITICAL: Completely ignore any styles from layout editor
+  // Only use position and size from layout configuration
+  console.log(`🚫 Ignoring layout editor styles for ${field} - using format-specific styles only`);
   
-  console.log(`Applying format-specific style for ${format}.${field}:`, formatStyle);
+  // ✅ Get format-specific styling using the new function
+  const userColors = getUserColors(eventData);
+  const formatStyle = getStyleForField(format, field, userColors);
+  
+  console.log(`✅ Applied format-specific style for ${format}.${field}:`, formatStyle);
 
   if (type === 'text_box' && field === 'classTheme') {
     const text = new FabricText(textContent, {
@@ -191,10 +195,11 @@ const addDefaultElements = async (
   height: number
 ): Promise<void> => {
   const defaultPositions = getDefaultPositions(format, width, height);
+  const userColors = getUserColors(eventData);
   
   // Add title with format-specific styling
   if (eventData.title) {
-    const titleStyle = getFormatSpecificStyle(format, 'title', eventData);
+    const titleStyle = getStyleForField(format, 'title', userColors);
     const title = new FabricText(eventData.title, {
       left: defaultPositions.title.x,
       top: defaultPositions.title.y,
@@ -209,7 +214,7 @@ const addDefaultElements = async (
 
   // Add date with format-specific styling
   if (eventData.date) {
-    const dateStyle = getFormatSpecificStyle(format, 'date', eventData);
+    const dateStyle = getStyleForField(format, 'date', userColors);
     const date = new FabricText(formatDate(eventData.date, eventData.time), {
       left: defaultPositions.date.x,
       top: defaultPositions.date.y,
@@ -224,7 +229,7 @@ const addDefaultElements = async (
 
   // Add teacher name with format-specific styling
   if (eventData.teacherName) {
-    const teacherStyle = getFormatSpecificStyle(format, 'teacherName', eventData);
+    const teacherStyle = getStyleForField(format, 'teacherName', userColors);
     const teacherName = new FabricText(eventData.teacherName, {
       left: defaultPositions.teacherName.x,
       top: defaultPositions.teacherName.y,
@@ -239,7 +244,7 @@ const addDefaultElements = async (
 
   // Add class theme with format-specific styling
   if (eventData.classTheme) {
-    const themeStyle = getFormatSpecificStyle(format, 'classTheme', eventData);
+    const themeStyle = getStyleForField(format, 'classTheme', userColors);
     const text = new FabricText(eventData.classTheme, {
       fontSize: themeStyle.fontSize,
       fontFamily: themeStyle.fontFamily,
@@ -345,13 +350,6 @@ const getTextContent = (field: string, eventData: EventData): string => {
   }
 };
 
-const getTextColor = (field: string, eventData: EventData): string => {
-  if (field === 'classTheme') {
-    return eventData.boxFontColor || '#FFFFFF';
-  }
-  return eventData.textColor || '#000000';
-};
-
 const formatDate = (dateString: string, timeString?: string): string => {
   if (!dateString) return "";
   
@@ -399,37 +397,5 @@ const getDefaultPositions = (format: string, width: number, height: number) => {
         teacherName: { x: 50, y: 160, fontSize: 20 },
         classTheme: { x: 50, y: 200, fontSize: 18 }
       };
-  }
-};
-
-const getMargemFont = (field: string): string => {
-  switch (field) {
-    case 'title':
-      return 'Margem-Black';
-    case 'classTheme':
-      return 'Margem-Bold';
-    case 'teacherName':
-      return 'Margem-Regular';
-    case 'date':
-    case 'time':
-      return 'Margem-Regular';
-    default:
-      return 'Margem-Regular';
-  }
-};
-
-const getDefaultFontSize = (field: string): number => {
-  switch (field) {
-    case 'title':
-      return 48;
-    case 'classTheme':
-      return 28;
-    case 'teacherName':
-      return 32;
-    case 'date':
-    case 'time':
-      return 24;
-    default:
-      return 24;
   }
 };
