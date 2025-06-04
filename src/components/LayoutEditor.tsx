@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import * as fabric from 'fabric';
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
 import { toast } from 'sonner';
@@ -24,6 +25,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
   const [selectedObject, setSelectedObject] = useState<any>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [isBackgroundLoaded, setIsBackgroundLoaded] = useState(false);
+  const [elementsLoaded, setElementsLoaded] = useState(false);
   const { layoutElements, saveLayout, getLayout, loading: elementsLoading, error } = useLayoutEditor();
   
   const maxCanvasWidth = 800;
@@ -42,7 +44,8 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     displayWidth,
     displayHeight,
     maxCanvasWidth,
-    maxCanvasHeight
+    maxCanvasHeight,
+    elementsLoaded
   });
 
   const addDefaultLayoutElements = (fabricCanvas: FabricCanvas) => {
@@ -54,35 +57,35 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
         type: 'text',
         field: 'title',
         position: { x: 50, y: 50 },
-        style: { fontSize: 24 }
+        style: { fontSize: 24, fontFamily: 'Arial', color: '#333333' }
       },
       {
         id: 'classTheme',
         type: 'text',
         field: 'classTheme',
         position: { x: 50, y: 150 },
-        style: { fontSize: 20 }
+        style: { fontSize: 20, fontFamily: 'Arial', color: '#333333' }
       },
       {
         id: 'teacherName',
         type: 'text',
         field: 'teacherName',
         position: { x: 50, y: 250 },
-        style: { fontSize: 18 }
+        style: { fontSize: 18, fontFamily: 'Arial', color: '#333333' }
       },
       {
         id: 'date',
         type: 'text',
         field: 'date',
         position: { x: 50, y: 320 },
-        style: { fontSize: 16 }
+        style: { fontSize: 16, fontFamily: 'Arial', color: '#333333' }
       },
       {
         id: 'time',
         type: 'text',
         field: 'time',
         position: { x: 200, y: 320 },
-        style: { fontSize: 16 }
+        style: { fontSize: 16, fontFamily: 'Arial', color: '#333333' }
       },
       {
         id: 'professorPhoto',
@@ -100,31 +103,60 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     });
   };
 
+  const clearCanvasObjects = (fabricCanvas: FabricCanvas) => {
+    console.log('Clearing canvas objects before loading new layout');
+    const objects = fabricCanvas.getObjects();
+    objects.forEach(obj => {
+      fabricCanvas.remove(obj);
+    });
+    fabricCanvas.renderAll();
+  };
+
   const loadElementsToCanvas = async (fabricCanvas: FabricCanvas) => {
+    if (elementsLoaded) {
+      console.log('Elements already loaded, skipping');
+      return;
+    }
+
     console.log('Loading elements to canvas after background is ready');
     
     try {
+      // Clear existing objects first
+      clearCanvasObjects(fabricCanvas);
+      
       const existingLayout = await getLayout(templateId, formatName);
       if (existingLayout?.layout_config?.elements && existingLayout.layout_config.elements.length > 0) {
         console.log('Loading existing layout elements:', existingLayout.layout_config.elements);
         existingLayout.layout_config.elements.forEach((element: any) => {
-          // Convert saved layout to expected format
+          // Convert saved layout to expected format with all properties
           const elementConfig = {
             id: element.id,
             type: element.type,
             field: element.field,
             position: element.position,
-            style: element.style || {}
+            style: {
+              fontSize: element.style?.fontSize || 24,
+              fontFamily: element.style?.fontFamily || 'Arial',
+              color: element.style?.color || '#333333',
+              width: element.size?.width || element.style?.width,
+              height: element.size?.height || element.style?.height,
+              ...element.style
+            }
           };
+          console.log('Adding element from saved layout:', elementConfig);
           addElementToCanvas(fabricCanvas, elementConfig, scale);
         });
       } else {
         console.log('No existing layout found, adding default elements');
         addDefaultLayoutElements(fabricCanvas);
       }
+      
+      setElementsLoaded(true);
+      console.log('Elements loaded successfully, total objects on canvas:', fabricCanvas.getObjects().length);
     } catch (error) {
       console.error('Error loading layout:', error);
       addDefaultLayoutElements(fabricCanvas);
+      setElementsLoaded(true);
     }
   };
 
@@ -140,7 +172,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     console.log('Background loaded, now adding elements');
     setIsBackgroundLoaded(true);
     
-    if (canvas) {
+    if (canvas && !elementsLoaded) {
       loadElementsToCanvas(canvas);
     }
   };
@@ -162,10 +194,15 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     const randomY = 50 + Math.random() * (displayHeight - 200);
 
     const elementConfig = {
+      id: `${elementType}_${Date.now()}`,
       type: element.element_type,
       field: element.field_mapping,
       position: { x: randomX, y: randomY },
-      style: { fontSize: 20 }
+      style: { 
+        fontSize: 20,
+        fontFamily: 'Arial',
+        color: '#333333'
+      }
     };
 
     console.log('Adding new element:', elementConfig);
@@ -180,6 +217,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     }
     
     try {
+      console.log('Deleting selected object:', selectedObject.elementId);
       canvas.remove(selectedObject);
       setSelectedObject(null);
       canvas.renderAll();
@@ -211,6 +249,13 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
       console.error('Error saving layout:', error);
     }
   };
+
+  // Reset elements loaded flag when template or format changes
+  useEffect(() => {
+    console.log('Template or format changed, resetting elements loaded flag');
+    setElementsLoaded(false);
+    setIsBackgroundLoaded(false);
+  }, [templateId, formatName]);
 
   if (elementsLoading) {
     return (

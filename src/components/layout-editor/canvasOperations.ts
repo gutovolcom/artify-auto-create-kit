@@ -65,12 +65,26 @@ export const addElementToCanvas = (
     return;
   }
 
+  // Check if element with this ID already exists to prevent duplicates
+  const existingObjects = canvas.getObjects();
+  const existingElement = existingObjects.find((obj: any) => obj.elementId === elementConfig.id);
+  
+  if (existingElement) {
+    console.log('Element with ID already exists, skipping:', elementConfig.id);
+    return;
+  }
+
   const config: CanvasElementConfig = {
     id: elementConfig?.id || `element_${Date.now()}`,
     type: elementConfig?.type || 'text',
     field: elementConfig?.field || 'title',
     position: elementConfig?.position || { x: 50, y: 50 },
-    style: elementConfig?.style || {}
+    style: {
+      fontSize: 24,
+      fontFamily: 'Arial',
+      color: '#333333',
+      ...elementConfig?.style
+    }
   };
 
   console.log('Adding element to canvas with config:', config);
@@ -108,16 +122,19 @@ export const addElementToCanvas = (
       });
       
       canvas.add(rect);
-      console.log('Image element added at:', { left: rect.left, top: rect.top });
+      console.log('Image element added at:', { left: rect.left, top: rect.top, id: config.id });
     } else {
       // Text element
       const fontSize = config.style.fontSize || 24;
+      const fontFamily = config.style.fontFamily || 'Arial';
+      const color = config.style.color || '#333333';
+      
       const text = new fabric.Text(`[${config.field.toUpperCase()}]`, {
         left: elementX,
         top: elementY,
         fontSize: fontSize,
-        fill: config.style.color || '#333333',
-        fontFamily: config.style.fontFamily || 'Arial',
+        fill: color,
+        fontFamily: fontFamily,
         selectable: true,
         evented: true
       });
@@ -125,21 +142,23 @@ export const addElementToCanvas = (
       text.set({
         elementId: config.id,
         elementType: config.type,
-        fieldMapping: config.field
+        fieldMapping: config.field,
+        originalFontSize: fontSize,
+        originalFontFamily: fontFamily,
+        originalColor: color
       });
 
       canvas.add(text);
-      console.log('Text element added at:', { left: text.left, top: text.top });
+      console.log('Text element added at:', { left: text.left, top: text.top, id: config.id, fontSize, fontFamily, color });
     }
     
     // Ensure element is on top and visible
     const objects = canvas.getObjects();
     const addedElement = objects[objects.length - 1];
     canvas.moveObjectTo(addedElement, objects.length - 1);
-    canvas.setActiveObject(addedElement);
     canvas.renderAll();
     
-    console.log('Element added successfully and moved to front');
+    console.log('Element added successfully:', config.id);
     console.log('Total canvas objects:', canvas.getObjects().length);
   } catch (error) {
     console.error('Error adding element to canvas:', error);
@@ -163,17 +182,31 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
         y: Math.round(obj.top || 0)
       };
 
+      // Serialize all style properties
+      const style = {
+        fontSize: obj.originalFontSize || obj.fontSize || 24,
+        fontFamily: obj.originalFontFamily || obj.fontFamily || 'Arial',
+        color: obj.originalColor || obj.fill || '#333333'
+      };
+
+      if (obj.elementType === 'image') {
+        style.width = Math.round((obj.width || 200) * (obj.scaleX || 1));
+        style.height = Math.round((obj.height || 200) * (obj.scaleY || 1));
+      }
+
       console.log('Serializing object:', {
         elementId: obj.elementId,
         fieldMapping: obj.fieldMapping,
         position,
+        style,
         type: obj.elementType
       });
 
       const baseElement = {
         id: obj.elementId || `element_${Date.now()}`,
         field: obj.fieldMapping || 'unknown',
-        position
+        position,
+        style
       };
 
       if (obj.elementType === 'image') {
@@ -181,8 +214,8 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
           ...baseElement,
           type: 'image',
           size: {
-            width: Math.round((obj.width || 200) * (obj.scaleX || 1)),
-            height: Math.round((obj.height || 200) * (obj.scaleY || 1))
+            width: style.width,
+            height: style.height
           }
         };
       } else {
