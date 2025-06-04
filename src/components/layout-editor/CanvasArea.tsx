@@ -25,7 +25,6 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
   formatDimensions,
   displayWidth,
   displayHeight,
-  scale,
   canvas,
   selectedObject,
   onCanvasReady,
@@ -48,26 +47,15 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
     });
 
     fabricCanvas.on('selection:created', (e) => {
-      console.log('Selection created:', e.selected?.[0]);
       onSelectionChange(e.selected?.[0]);
     });
 
     fabricCanvas.on('selection:updated', (e) => {
-      console.log('Selection updated:', e.selected?.[0]);
       onSelectionChange(e.selected?.[0]);
     });
 
     fabricCanvas.on('selection:cleared', () => {
-      console.log('Selection cleared');
       onSelectionChange(null);
-    });
-
-    fabricCanvas.on('object:moving', (e) => {
-      console.log('Object moving:', e.target);
-    });
-
-    fabricCanvas.on('object:scaling', (e) => {
-      console.log('Object scaling:', e.target);
     });
 
     const handleKeyDown = (e: KeyboardEvent) => {

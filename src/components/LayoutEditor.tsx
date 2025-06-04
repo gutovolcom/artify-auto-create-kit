@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
@@ -9,30 +10,14 @@ import { PropertiesPanel } from './layout-editor/PropertiesPanel';
 import { 
   loadBackgroundImage, 
   addElementToCanvas, 
-  updateSelectedObjectProperty,
   serializeCanvasLayout
 } from './layout-editor/canvasOperations';
 
-interface ExtendedLayoutEditorProps extends LayoutEditorProps {
-  eventData?: {
-    title: string;
-    classTheme: string;
-    teacherName: string;
-    date: string;
-    time: string;
-    textColor: string;
-    boxColor: string;
-    boxFontColor: string;
-    teacherImages?: string[];
-  };
-}
-
-export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
+export const LayoutEditor: React.FC<LayoutEditorProps> = ({
   templateId,
   formatName,
   backgroundImageUrl,
   formatDimensions,
-  eventData,
   onSave
 }) => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
@@ -50,21 +35,7 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
   const displayWidth = formatDimensions.width * scale;
   const displayHeight = formatDimensions.height * scale;
 
-  const createSampleEventData = () => ({
-    title: eventData?.title || 'Título do Evento',
-    classTheme: eventData?.classTheme || 'Tema da Aula',
-    teacherName: eventData?.teacherName || 'Nome do Professor',
-    date: eventData?.date || '2024-01-25',
-    time: eventData?.time || '19:00',
-    textColor: eventData?.textColor || '#FFFFFF',
-    boxColor: eventData?.boxColor || '#dd303e',
-    boxFontColor: eventData?.boxFontColor || '#FFFFFF',
-    teacherImages: eventData?.teacherImages || []
-  });
-
   const addDefaultLayoutElements = (fabricCanvas: FabricCanvas) => {
-    const sampleData = createSampleEventData();
-    
     console.log('Adding default layout elements');
     
     const defaultElements = [
@@ -77,7 +48,7 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
       },
       {
         id: 'classTheme',
-        type: 'text_box',
+        type: 'text',
         field: 'classTheme',
         position: { x: 50, y: 150 },
         style: {}
@@ -97,6 +68,13 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
         style: {}
       },
       {
+        id: 'time',
+        type: 'text',
+        field: 'time',
+        position: { x: 200, y: 320 },
+        style: {}
+      },
+      {
         id: 'professorPhoto',
         type: 'image',
         field: 'professorPhotos',
@@ -106,49 +84,40 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
     ];
 
     defaultElements.forEach(element => {
-      addElementToCanvas(fabricCanvas, element, scale, sampleData);
+      addElementToCanvas(fabricCanvas, element, scale);
     });
   };
 
   const handleCanvasReady = async (fabricCanvas: FabricCanvas) => {
-    if (isInitialized) return; // Prevent multiple initializations
+    if (isInitialized) return;
     
     console.log('Canvas ready, initializing...');
-    console.log('Background image URL:', backgroundImageUrl);
     setCanvas(fabricCanvas);
     setIsInitialized(true);
     
     try {
-      // Always try to load background image first
       if (backgroundImageUrl) {
         await loadBackgroundImage(fabricCanvas, backgroundImageUrl, scale);
-        console.log('Background image loaded successfully');
       } else {
-        console.warn('No background image URL provided');
-        // Set a default background color if no image
         fabricCanvas.backgroundColor = '#f5f5f5';
         fabricCanvas.renderAll();
       }
       
-      // Then load existing layout or default elements
       const existingLayout = await getLayout(templateId, formatName);
       if (existingLayout?.layout_config?.elements && existingLayout.layout_config.elements.length > 0) {
-        console.log('Loading existing layout with', existingLayout.layout_config.elements.length, 'elements');
+        console.log('Loading existing layout');
         existingLayout.layout_config.elements.forEach((element: any) => {
-          addElementToCanvas(fabricCanvas, element, scale, createSampleEventData());
+          addElementToCanvas(fabricCanvas, element, scale);
         });
       } else {
-        console.log('No existing layout found, adding default elements');
         addDefaultLayoutElements(fabricCanvas);
       }
     } catch (error) {
       console.error('Error during canvas initialization:', error);
-      // Set background color as fallback
       fabricCanvas.backgroundColor = '#f5f5f5';
       fabricCanvas.renderAll();
-      // Even if layout loading fails, add default elements so the editor is usable
       addDefaultLayoutElements(fabricCanvas);
-      toast.error('Erro ao carregar imagem de fundo, mas o editor está funcionando');
+      toast.error('Erro ao carregar imagem de fundo');
     }
   };
 
@@ -164,8 +133,6 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
       return;
     }
 
-    const sampleData = createSampleEventData();
-    
     const elementConfig = {
       type: element.element_type,
       field: element.field_mapping,
@@ -173,7 +140,7 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
       style: {}
     };
 
-    addElementToCanvas(canvas, elementConfig, scale, sampleData);
+    addElementToCanvas(canvas, elementConfig, scale);
     toast.success('Elemento adicionado!');
   };
 
@@ -192,11 +159,6 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
       console.error('Error deleting element:', error);
       toast.error('Erro ao remover elemento');
     }
-  };
-
-  const handleUpdateObject = (property: string, value: any) => {
-    if (!selectedObject || !canvas) return;
-    updateSelectedObjectProperty(selectedObject, canvas, property, value, scale);
   };
 
   const handleSaveLayout = async () => {
@@ -260,17 +222,6 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
       />
 
       <div className="w-80">
-        <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-          <h3 className="font-medium text-blue-800 mb-2">Editor de Posicionamento</h3>
-          <p className="text-sm text-blue-700">
-            Este editor é apenas para posicionar elementos. Todos os estilos, cores e fontes 
-            são aplicados automaticamente baseados nas configurações do formulário durante a geração.
-          </p>
-          <div className="mt-2 text-xs text-blue-600">
-            <p><strong>Hierarquia Margem:</strong> Título (Black), Tema (Bold), Professor/Data (Regular)</p>
-          </div>
-        </div>
-
         <ElementToolbar
           layoutElements={layoutElements}
           onAddElement={handleAddElement}
@@ -279,7 +230,7 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
         <PropertiesPanel
           selectedObject={selectedObject}
           scale={scale}
-          onUpdateObject={handleUpdateObject}
+          onUpdateObject={() => {}} // Removed real-time updates
           onDeleteSelected={handleDeleteSelected}
         />
       </div>
