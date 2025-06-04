@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -56,7 +55,14 @@ const Index = () => {
   });
   
   const [activeTab, setActiveTab] = useState("input");
-  const { generatedImages, isGenerating, generateImages, downloadZip } = useImageGenerator();
+  const { 
+    generatedImages, 
+    isGenerating, 
+    generationProgress,
+    currentGeneratingFormat,
+    generateImages, 
+    downloadZip 
+  } = useImageGenerator();
   
   const updateEventData = (data: Partial<EventData>) => {
     setEventData((prev) => ({ ...prev, ...data }));
@@ -178,6 +184,8 @@ const Index = () => {
                 onGenerate={handleGenerate}
                 isGenerating={isGenerating}
                 disabled={!isFormReady}
+                generationProgress={generationProgress}
+                currentGeneratingFormat={currentGeneratingFormat}
                 missingFields={[
                   !eventData.title && "Título do evento",
                   !eventData.date && "Data",

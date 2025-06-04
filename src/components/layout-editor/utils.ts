@@ -87,6 +87,38 @@ export const getCurrentFontFamily = (selectedObject: any): string => {
   return selectedObject.fontFamily || '';
 };
 
+export const getMargemFontForField = (field: string): string => {
+  switch (field) {
+    case 'title':
+      return 'Margem-Black';
+    case 'classTheme':
+      return 'Margem-Bold';
+    case 'teacherName':
+      return 'Margem-Regular'; // Medium weight
+    case 'date':
+    case 'time':
+      return 'Margem-Regular';
+    default:
+      return 'Margem-Regular';
+  }
+};
+
+export const getDefaultFontSizeForField = (field: string): number => {
+  switch (field) {
+    case 'title':
+      return 48;
+    case 'classTheme':
+      return 28;
+    case 'teacherName':
+      return 32;
+    case 'date':
+    case 'time':
+      return 24;
+    default:
+      return 24;
+  }
+};
+
 export const availableFonts = [
   'Margem-Regular',
   'Margem-Bold', 

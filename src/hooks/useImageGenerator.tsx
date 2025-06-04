@@ -26,6 +26,8 @@ const platformConfigs = {
 export const useImageGenerator = () => {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [currentGeneratingFormat, setCurrentGeneratingFormat] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const { templates, refetch: refetchTemplates } = useSupabaseTemplates();
   const { logActivity } = useActivityLog();
@@ -40,7 +42,9 @@ export const useImageGenerator = () => {
 
     setIsGenerating(true);
     setError(null);
+    setGenerationProgress(0);
     setGeneratedImages([]); // Clear previous images
+    setCurrentGeneratingFormat("");
 
     try {
       console.log('Starting image generation for event:', eventData);
@@ -66,8 +70,10 @@ export const useImageGenerator = () => {
       
       // Generate images for all formats sequentially
       const formats = Object.keys(platformConfigs) as (keyof typeof platformConfigs)[];
+      const totalFormats = formats.length;
       
-      for (const formatId of formats) {
+      for (let i = 0; i < formats.length; i++) {
+        const formatId = formats[i];
         try {
           const platform = platformConfigs[formatId];
           const formatData = templateToUse?.formats?.find(f => f.format_name === formatId);
@@ -76,6 +82,9 @@ export const useImageGenerator = () => {
             console.warn(`No background image found for format: ${formatId}, skipping...`);
             continue;
           }
+          
+          setCurrentGeneratingFormat(platform.name);
+          setGenerationProgress(Math.round((i / totalFormats) * 100));
           
           console.log(`Generating image for ${formatId}:`, {
             platform,
@@ -128,7 +137,14 @@ export const useImageGenerator = () => {
         }
       }
       
+      // Complete progress
+      setGenerationProgress(100);
+      setCurrentGeneratingFormat("Finalizando...");
+      
       console.log('All images generated:', allGeneratedImages.length);
+      
+      // Wait a moment before setting final results
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Only set images after ALL are generated
       setGeneratedImages(allGeneratedImages);
@@ -156,6 +172,8 @@ export const useImageGenerator = () => {
       return [];
     } finally {
       setIsGenerating(false);
+      setGenerationProgress(0);
+      setCurrentGeneratingFormat("");
     }
   };
 
@@ -189,6 +207,8 @@ export const useImageGenerator = () => {
   return {
     generatedImages,
     isGenerating,
+    generationProgress,
+    currentGeneratingFormat,
     error,
     generateImages,
     downloadZip

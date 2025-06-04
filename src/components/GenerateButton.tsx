@@ -1,5 +1,6 @@
 
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Loader2, Sparkles, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -8,9 +9,18 @@ interface GenerateButtonProps {
   isGenerating: boolean;
   disabled: boolean;
   missingFields: string[];
+  generationProgress?: number;
+  currentGeneratingFormat?: string;
 }
 
-export const GenerateButton = ({ onGenerate, isGenerating, disabled, missingFields }: GenerateButtonProps) => {
+export const GenerateButton = ({ 
+  onGenerate, 
+  isGenerating, 
+  disabled, 
+  missingFields,
+  generationProgress = 0,
+  currentGeneratingFormat = ""
+}: GenerateButtonProps) => {
   return (
     <div className="space-y-4">
       {missingFields.length > 0 && (
@@ -28,6 +38,22 @@ export const GenerateButton = ({ onGenerate, isGenerating, disabled, missingFiel
             </ul>
           </AlertDescription>
         </Alert>
+      )}
+      
+      {isGenerating && (
+        <div className="space-y-3 max-w-md">
+          <div className="text-center">
+            <p className="text-sm font-medium text-gray-700">
+              Gerando artes... {generationProgress}%
+            </p>
+            {currentGeneratingFormat && (
+              <p className="text-xs text-gray-500">
+                {currentGeneratingFormat}
+              </p>
+            )}
+          </div>
+          <Progress value={generationProgress} className="w-full h-2" />
+        </div>
       )}
       
       <Button

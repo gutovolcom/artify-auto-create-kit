@@ -148,9 +148,9 @@ const addElementToCanvas = (
   const textContent = getTextContent(field, eventData);
   if (!textContent) return;
 
-  // Always use styling from eventData (user form), ignore layout config styling
-  const fontSize = style?.fontSize || 24;
-  const fontFamily = style?.fontFamily || 'Arial';
+  // Get the correct font family based on field using Margem hierarchy
+  const fontFamily = getMargemFont(field);
+  const fontSize = style?.fontSize || getDefaultFontSize(field);
   
   // Use colors from eventData (user form settings)
   let textColor = eventData.textColor || '#000000';
@@ -215,13 +215,13 @@ const addDefaultElements = async (
   // Default positions based on format
   const defaultPositions = getDefaultPositions(format, width, height);
   
-  // Add title
+  // Add title with Margem-Black
   if (eventData.title) {
     const title = new FabricText(eventData.title, {
       left: defaultPositions.title.x,
       top: defaultPositions.title.y,
       fontSize: defaultPositions.title.fontSize,
-      fontFamily: 'Arial',
+      fontFamily: 'Margem-Black',
       fill: eventData.textColor || '#000000',
       selectable: false,
       evented: false
@@ -229,13 +229,13 @@ const addDefaultElements = async (
     canvas.add(title);
   }
 
-  // Add date
+  // Add date with Margem-Regular
   if (eventData.date) {
     const date = new FabricText(formatDate(eventData.date, eventData.time), {
       left: defaultPositions.date.x,
       top: defaultPositions.date.y,
       fontSize: defaultPositions.date.fontSize,
-      fontFamily: 'Arial',
+      fontFamily: 'Margem-Regular',
       fill: eventData.textColor || '#000000',
       selectable: false,
       evented: false
@@ -243,13 +243,13 @@ const addDefaultElements = async (
     canvas.add(date);
   }
 
-  // Add teacher name
+  // Add teacher name with Margem-Regular (medium)
   if (eventData.teacherName) {
     const teacherName = new FabricText(eventData.teacherName, {
       left: defaultPositions.teacherName.x,
       top: defaultPositions.teacherName.y,
       fontSize: defaultPositions.teacherName.fontSize,
-      fontFamily: 'Arial',
+      fontFamily: 'Margem-Regular',
       fill: eventData.textColor || '#000000',
       selectable: false,
       evented: false
@@ -257,11 +257,11 @@ const addDefaultElements = async (
     canvas.add(teacherName);
   }
 
-  // Add class theme
+  // Add class theme with Margem-Bold
   if (eventData.classTheme) {
     const text = new FabricText(eventData.classTheme, {
       fontSize: defaultPositions.classTheme.fontSize,
-      fontFamily: 'Arial',
+      fontFamily: 'Margem-Bold',
       fill: eventData.boxFontColor || '#FFFFFF',
       textAlign: 'center'
     });
@@ -412,5 +412,37 @@ const getDefaultPositions = (format: string, width: number, height: number) => {
         teacherName: { x: 50, y: 160, fontSize: 20 },
         classTheme: { x: 50, y: 200, fontSize: 18 }
       };
+  }
+};
+
+const getMargemFont = (field: string): string => {
+  switch (field) {
+    case 'title':
+      return 'Margem-Black';
+    case 'classTheme':
+      return 'Margem-Bold';
+    case 'teacherName':
+      return 'Margem-Regular'; // Medium weight
+    case 'date':
+    case 'time':
+      return 'Margem-Regular';
+    default:
+      return 'Margem-Regular';
+  }
+};
+
+const getDefaultFontSize = (field: string): number => {
+  switch (field) {
+    case 'title':
+      return 48;
+    case 'classTheme':
+      return 28;
+    case 'teacherName':
+      return 32;
+    case 'date':
+    case 'time':
+      return 24;
+    default:
+      return 24;
   }
 };
