@@ -15,15 +15,25 @@ export const loadBackgroundImage = async (
       crossOrigin: 'anonymous'
     }).then((img) => {
       console.log('Background image loaded successfully');
+      
+      // Set the image to cover the entire canvas
       img.set({
+        left: 0,
+        top: 0,
         scaleX: scale,
         scaleY: scale,
         selectable: false,
-        evented: false
+        evented: false,
+        originX: 'left',
+        originY: 'top'
       });
-      canvas.backgroundImage = img;
-      canvas.renderAll();
-      resolve();
+      
+      // Set as background image and render
+      canvas.setBackgroundImage(img, () => {
+        canvas.renderAll();
+        console.log('Background image set and rendered');
+        resolve();
+      });
     }).catch((error) => {
       console.error('Error loading background image:', error);
       reject(error);
