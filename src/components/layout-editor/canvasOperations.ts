@@ -1,3 +1,4 @@
+
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage } from 'fabric';
 import { CanvasElementConfig } from './types';
 
@@ -31,15 +32,18 @@ export const loadBackgroundImage = async (
           left: 0,
           top: 0,
           selectable: false,
-          evented: false
+          evented: false,
+          excludeFromExport: false
         });
       }
       
-      // Use the correct Fabric.js v6 method to set background image
-      canvas.backgroundImage = img;
-      canvas.renderAll();
-      console.log('Background image set successfully');
-      resolve();
+      // Clear any existing background and set the new one
+      canvas.backgroundImage = null;
+      canvas.setBackgroundImage(img, () => {
+        console.log('Background image set successfully');
+        canvas.renderAll();
+        resolve();
+      });
     }).catch((error) => {
       console.error('Error loading background image:', error);
       reject(error);
@@ -77,7 +81,9 @@ export const addElementToCanvas = (
         fill: 'rgba(200,200,200,0.3)',
         stroke: '#666',
         strokeWidth: 2,
-        strokeDashArray: [5, 5]
+        strokeDashArray: [5, 5],
+        selectable: true,
+        evented: true
       });
       
       rect.set({
@@ -87,14 +93,17 @@ export const addElementToCanvas = (
       });
       
       canvas.add(rect);
+      canvas.bringToFront(rect);
     } else {
       // Simple text placeholder
       const text = new FabricText(`[${config.field.toUpperCase()}]`, {
         left: config.position.x * scale,
         top: config.position.y * scale,
-        fontSize: 24 * scale,
-        fill: '#333333',
-        fontFamily: 'Arial'
+        fontSize: (config.style.fontSize || 24) * scale,
+        fill: config.style.color || '#333333',
+        fontFamily: config.style.fontFamily || 'Arial',
+        selectable: true,
+        evented: true
       });
 
       text.set({
@@ -104,9 +113,11 @@ export const addElementToCanvas = (
       });
 
       canvas.add(text);
+      canvas.bringToFront(text);
     }
     
     canvas.renderAll();
+    console.log('Element added and brought to front');
   } catch (error) {
     console.error('Error adding element to canvas:', error);
   }
