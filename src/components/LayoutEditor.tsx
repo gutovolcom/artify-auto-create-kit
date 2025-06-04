@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { Button } from '@/components/ui/button';
@@ -60,7 +59,8 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
         selectable: false,
         evented: false
       });
-      fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas));
+      fabricCanvas.backgroundImage = img;
+      fabricCanvas.renderAll();
     });
 
     // Load existing layout if it exists
