@@ -1,4 +1,3 @@
-
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage } from 'fabric';
 import { CanvasElementConfig } from './types';
 
@@ -37,13 +36,11 @@ export const loadBackgroundImage = async (
         });
       }
       
-      // Clear any existing background and set the new one
-      canvas.backgroundImage = null;
-      canvas.setBackgroundImage(img, () => {
-        console.log('Background image set successfully');
-        canvas.renderAll();
-        resolve();
-      });
+      // Set background image using the correct v6 API
+      canvas.backgroundImage = img;
+      canvas.renderAll();
+      console.log('Background image set successfully');
+      resolve();
     }).catch((error) => {
       console.error('Error loading background image:', error);
       reject(error);
@@ -93,7 +90,8 @@ export const addElementToCanvas = (
       });
       
       canvas.add(rect);
-      canvas.bringToFront(rect);
+      // Move to front using the correct v6 API
+      canvas.moveObjectTo(rect, canvas.getObjects().length - 1);
     } else {
       // Simple text placeholder
       const text = new FabricText(`[${config.field.toUpperCase()}]`, {
@@ -113,11 +111,12 @@ export const addElementToCanvas = (
       });
 
       canvas.add(text);
-      canvas.bringToFront(text);
+      // Move to front using the correct v6 API
+      canvas.moveObjectTo(text, canvas.getObjects().length - 1);
     }
     
     canvas.renderAll();
-    console.log('Element added and brought to front');
+    console.log('Element added and moved to front');
   } catch (error) {
     console.error('Error adding element to canvas:', error);
   }
