@@ -30,15 +30,20 @@ export const addElementToCanvas = (
   elementConfig: CanvasElementConfig,
   scale: number
 ): void => {
-  const config = elementConfig || {
-    position: { x: 50, y: 50 },
-    style: { fontSize: 24, color: '#000000' }
+  // Ensure we have a complete config object with all required properties
+  const config: CanvasElementConfig = {
+    id: elementConfig?.id || `element_${Date.now()}`,
+    type: elementConfig?.type || 'text',
+    field: elementConfig?.field || 'title',
+    position: elementConfig?.position || { x: 50, y: 50 },
+    style: elementConfig?.style || { fontSize: 24, color: '#000000' },
+    constraints: elementConfig?.constraints
   };
 
   if (config.type === 'image') {
     const rect = new Rect({
-      left: (config.position.x || 50) * scale,
-      top: (config.position.y || 50) * scale,
+      left: config.position.x * scale,
+      top: config.position.y * scale,
       width: (config.style.width || 200) * scale,
       height: (config.style.height || 200) * scale,
       fill: 'rgba(0,0,0,0.1)',
@@ -48,16 +53,16 @@ export const addElementToCanvas = (
     });
     
     rect.set({
-      elementId: config.id || `image_${Date.now()}`,
+      elementId: config.id,
       elementType: 'image',
-      fieldMapping: config.field || 'professorPhotos'
+      fieldMapping: config.field
     });
     
     canvas.add(rect);
   } else {
-    const text = new FabricText(getPreviewText(config.field || 'title'), {
-      left: (config.position.x || 50) * scale,
-      top: (config.position.y || 50) * scale,
+    const text = new FabricText(getPreviewText(config.field), {
+      left: config.position.x * scale,
+      top: config.position.y * scale,
       fontSize: (config.style.fontSize || 24) * scale,
       fill: config.style.color || config.style.textColor || '#000000',
       fontFamily: config.style.fontFamily || 'Margem-Regular',
@@ -65,9 +70,9 @@ export const addElementToCanvas = (
     });
 
     text.set({
-      elementId: config.id || `text_${Date.now()}`,
-      elementType: config.type || 'text',
-      fieldMapping: config.field || 'title'
+      elementId: config.id,
+      elementType: config.type,
+      fieldMapping: config.field
     });
 
     if (config.type === 'text_box') {
@@ -85,14 +90,14 @@ export const addElementToCanvas = (
       });
 
       const group = new Group([background, text], {
-        left: (config.position.x || 50) * scale,
-        top: (config.position.y || 50) * scale
+        left: config.position.x * scale,
+        top: config.position.y * scale
       });
 
       group.set({
-        elementId: config.id || `textbox_${Date.now()}`,
+        elementId: config.id,
         elementType: 'text_box',
-        fieldMapping: config.field || 'classTheme'
+        fieldMapping: config.field
       });
 
       canvas.add(group);
