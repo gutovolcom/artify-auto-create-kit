@@ -17,14 +17,9 @@ export const renderCanvasWithTemplate = async (
         width,
         height,
         layoutConfig,
-        eventData: {
-          ...eventData,
-          professorPhotos: eventData.professorPhotos,
-          teacherImages: eventData.teacherImages
-        }
+        eventData
       });
 
-      // Create a temporary canvas element
       const tempCanvas = document.createElement('canvas');
       tempCanvas.width = width;
       tempCanvas.height = height;
@@ -36,11 +31,9 @@ export const renderCanvasWithTemplate = async (
         backgroundColor: '#ffffff'
       });
 
-      // Load background image
       FabricImage.fromURL(backgroundImageUrl, {
         crossOrigin: 'anonymous'
       }).then((bgImg) => {
-        // Scale background image to fit canvas
         const scaleX = width / bgImg.width!;
         const scaleY = height / bgImg.height!;
         
@@ -55,29 +48,22 @@ export const renderCanvasWithTemplate = async (
 
         fabricCanvas.backgroundImage = bgImg;
 
-        // Add text elements based on layout configuration or default positions
         if (layoutConfig?.elements) {
-          console.log('Using custom layout configuration');
+          console.log('Using layout configuration for positioning');
           const promises: Promise<void>[] = [];
           
           layoutConfig.elements.forEach((element: any) => {
             if (element.type === 'image' && element.field === 'professorPhotos') {
-              // Handle professor photo with proper field mapping
-              const photoId = eventData.professorPhotos;
-              if (photoId) {
-                // Find teacher by ID and get image URL
-                const teacherImageUrl = eventData.teacherImages?.[0] || "";
-                if (teacherImageUrl) {
-                  const promise = addProfessorPhotoToCanvas(fabricCanvas, teacherImageUrl, element, width, height);
-                  promises.push(promise);
-                }
+              const teacherImageUrl = eventData.teacherImages?.[0] || "";
+              if (teacherImageUrl) {
+                const promise = addProfessorPhotoToCanvas(fabricCanvas, teacherImageUrl, element, width, height);
+                promises.push(promise);
               }
             } else {
               addElementToCanvas(fabricCanvas, element, eventData, width, height);
             }
           });
 
-          // Wait for all professor photos to load, then render
           Promise.all(promises).then(() => {
             fabricCanvas.renderAll();
             exportCanvas(fabricCanvas, tempCanvas, resolve, reject);
@@ -117,7 +103,6 @@ const exportCanvas = (fabricCanvas: FabricCanvas, tempCanvas: HTMLCanvasElement,
         multiplier: 1
       });
       
-      // Clean up
       fabricCanvas.dispose();
       document.body.removeChild(tempCanvas);
       
@@ -138,30 +123,27 @@ const addElementToCanvas = (
   canvasWidth: number,
   canvasHeight: number
 ) => {
-  const { type, field, position, style } = element;
+  const { type, field, position, size } = element;
   
   if (type === 'image' && field === 'professorPhotos') {
-    // Skip professor photos here, they're handled separately
-    return;
+    return; // Handled separately
   }
 
   const textContent = getTextContent(field, eventData);
   if (!textContent) return;
 
-  // Get the correct font family based on field using Margem hierarchy
+  // ALWAYS use form data for styling, NEVER layout config
   const fontFamily = getMargemFont(field);
-  const fontSize = style?.fontSize || getDefaultFontSize(field);
+  const fontSize = getDefaultFontSize(field);
   
-  // Use colors from eventData (user form settings)
+  // ALWAYS use eventData colors
   let textColor = eventData.textColor || '#000000';
   
   if (field === 'classTheme') {
-    // For class theme, use the specific box colors from eventData
     textColor = eventData.boxFontColor || '#FFFFFF';
   }
 
   if (type === 'text_box' && field === 'classTheme') {
-    // Create text box for class theme using eventData colors
     const text = new FabricText(textContent, {
       fontSize: fontSize,
       fontFamily: fontFamily,
@@ -169,9 +151,9 @@ const addElementToCanvas = (
       textAlign: 'center'
     });
 
-    const padding = style?.padding || 20;
+    const padding = 20;
     const backgroundColor = eventData.boxColor || '#dd303e';
-    const borderRadius = style?.borderRadius || 10;
+    const borderRadius = 10;
 
     const background = new Rect({
       width: text.width! + (padding * 2),
@@ -190,7 +172,6 @@ const addElementToCanvas = (
 
     canvas.add(group);
   } else {
-    // Create regular text using eventData colors
     const text = new FabricText(textContent, {
       left: position?.x || 0,
       top: position?.y || 0,
@@ -212,7 +193,6 @@ const addDefaultElements = async (
   width: number,
   height: number
 ): Promise<void> => {
-  // Default positions based on format
   const defaultPositions = getDefaultPositions(format, width, height);
   
   // Add title with Margem-Black
@@ -243,7 +223,7 @@ const addDefaultElements = async (
     canvas.add(date);
   }
 
-  // Add teacher name with Margem-Regular (medium)
+  // Add teacher name with Margem-Regular
   if (eventData.teacherName) {
     const teacherName = new FabricText(eventData.teacherName, {
       left: defaultPositions.teacherName.x,
@@ -311,10 +291,10 @@ const addProfessorPhotoToCanvas = async (
     FabricImage.fromURL(photoUrl, {
       crossOrigin: 'anonymous'
     }).then((img) => {
-      if (photoElement) {
-        // Use layout configuration
-        const targetWidth = photoElement.style?.width || 200;
-        const targetHeight = photoElement.style?.height || 200;
+      if (photoElement && photoElement.size) {
+        // Use layout configuration for size and position
+        const targetWidth = photoElement.size.width || 200;
+        const targetHeight = photoElement.size.height || 200;
         
         img.set({
           left: photoElement.position?.x || 0,
@@ -386,7 +366,6 @@ const formatDate = (dateString: string, timeString?: string): string => {
 };
 
 const getDefaultPositions = (format: string, width: number, height: number) => {
-  // Return default positions based on format
   switch (format) {
     case 'youtube':
       return {
@@ -422,7 +401,7 @@ const getMargemFont = (field: string): string => {
     case 'classTheme':
       return 'Margem-Bold';
     case 'teacherName':
-      return 'Margem-Regular'; // Medium weight
+      return 'Margem-Regular';
     case 'date':
     case 'time':
       return 'Margem-Regular';

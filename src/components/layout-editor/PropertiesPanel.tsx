@@ -2,16 +2,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trash } from 'lucide-react';
 import { 
   getSelectedElementField, 
-  elementNeedsOnlyPositionAndSize,
-  getCurrentFontSize,
-  getCurrentFontFamily,
-  availableFonts
+  elementNeedsOnlyPositionAndSize
 } from './utils';
 
 interface PropertiesPanelProps {
@@ -47,65 +41,28 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {(() => {
-          if (elementNeedsOnlyPositionAndSize(field)) {
-            return (
-              <div className="text-sm text-gray-600">
-                <p><strong>Foto do Professor</strong></p>
-                <p>Use o mouse para posicionar e redimensionar a área da foto no canvas.</p>
-                <div className="mt-3 p-3 bg-blue-50 rounded-md">
-                  <p className="text-xs font-medium text-blue-800">Dica:</p>
-                  <p className="text-xs text-blue-700">A foto real será aplicada durante a geração das artes baseada na seleção do formulário.</p>
-                </div>
-              </div>
-            );
-          }
-          
-          return (
-            <>
-              <div className="text-sm">
-                <p><strong>Campo:</strong> {field}</p>
-                <p className="text-gray-600 mt-1">Use o mouse para posicionar o elemento no canvas.</p>
-              </div>
+        <div className="text-sm">
+          <p><strong>Campo:</strong> {field}</p>
+          <p className="text-gray-600 mt-1">Use o mouse para posicionar e redimensionar o elemento no canvas.</p>
+        </div>
 
-              <div>
-                <Label>Tamanho da Fonte</Label>
-                <Input
-                  type="number"
-                  value={getCurrentFontSize(selectedObject, scale)}
-                  onChange={(e) => onUpdateObject('fontSize', e.target.value)}
-                  min="8"
-                  max="200"
-                  placeholder="24"
-                />
-              </div>
+        <div className="mt-4 p-3 bg-blue-50 rounded-md">
+          <p className="text-xs font-medium text-blue-800">Editor de Posicionamento:</p>
+          <p className="text-xs text-blue-700">
+            Este editor é apenas para posicionar elementos. Todos os estilos, cores e fontes 
+            são aplicados automaticamente baseados nas configurações do formulário durante a geração.
+          </p>
+        </div>
 
-              <div>
-                <Label>Fonte</Label>
-                <Select
-                  value={getCurrentFontFamily(selectedObject)}
-                  onValueChange={(value) => onUpdateObject('fontFamily', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecionar fonte" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableFonts.map((font) => (
-                      <SelectItem key={font} value={font}>
-                        {font}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="mt-4 p-3 bg-amber-50 rounded-md">
-                <p className="text-xs font-medium text-amber-800">Cores e Estilos:</p>
-                <p className="text-xs text-amber-700">As cores do texto e fundos são configuradas no formulário do evento e aplicadas automaticamente durante a geração.</p>
-              </div>
-            </>
-          );
-        })()}
+        <div className="mt-3 p-3 bg-amber-50 rounded-md">
+          <p className="text-xs font-medium text-amber-800">Hierarchy das Fontes Margem:</p>
+          <ul className="text-xs text-amber-700 mt-1 space-y-1">
+            <li>• Título: Margem-Black</li>
+            <li>• Tema da Aula: Margem-Bold</li>
+            <li>• Professor: Margem-Regular</li>
+            <li>• Data/Hora: Margem-Regular</li>
+          </ul>
+        </div>
       </CardContent>
     </Card>
   );

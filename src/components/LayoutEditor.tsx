@@ -65,103 +65,67 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
   const addDefaultLayoutElements = (fabricCanvas: FabricCanvas) => {
     const sampleData = createSampleEventData();
     
-    // Add default elements with sample styling from event data
+    // Default elements with position only (styling will come from form)
     const defaultElements = [
       {
         id: 'title',
         type: 'text',
         field: 'title',
         position: { x: 50, y: 50 },
-        style: { 
-          fontSize: 32, 
-          color: sampleData.textColor,
-          fontFamily: 'Margem-Regular'
-        }
+        style: {} // Empty - will be populated from form data
       },
       {
         id: 'classTheme',
         type: 'text_box',
         field: 'classTheme',
         position: { x: 50, y: 150 },
-        style: { 
-          fontSize: 24, 
-          backgroundColor: sampleData.boxColor,
-          textColor: sampleData.boxFontColor,
-          fontFamily: 'Margem-Regular',
-          padding: 20,
-          borderRadius: 10
-        }
+        style: {} // Empty - will be populated from form data
       },
       {
         id: 'teacherName',
         type: 'text',
         field: 'teacherName',
         position: { x: 50, y: 250 },
-        style: { 
-          fontSize: 28, 
-          color: sampleData.textColor,
-          fontFamily: 'Margem-Regular'
-        }
+        style: {} // Empty - will be populated from form data
       },
       {
         id: 'date',
         type: 'text',
         field: 'date',
         position: { x: 50, y: 320 },
-        style: { 
-          fontSize: 22, 
-          color: sampleData.textColor,
-          fontFamily: 'Margem-Regular'
-        }
+        style: {} // Empty - will be populated from form data
       },
       {
         id: 'professorPhoto',
         type: 'image',
         field: 'professorPhotos',
         position: { x: formatDimensions.width - 250, y: formatDimensions.height - 250 },
-        style: { 
-          width: 200, 
-          height: 200
-        }
+        style: { width: 200, height: 200 }
       }
     ];
 
     defaultElements.forEach(element => {
-      addElementToCanvas(fabricCanvas, element, scale);
+      addElementToCanvas(fabricCanvas, element, scale, sampleData);
     });
   };
 
   const handleCanvasReady = async (fabricCanvas: FabricCanvas) => {
     setCanvas(fabricCanvas);
     
-    // Load background image
     await loadBackgroundImage(fabricCanvas, backgroundImageUrl, scale);
     
-    // Load existing layout or create default layout
     try {
       const existingLayout = await getLayout(templateId, formatName);
       if (existingLayout?.layout_config?.elements && existingLayout.layout_config.elements.length > 0) {
-        // Load existing layout with updated styling from current event data
+        // Load existing layout with real event data for styling
         existingLayout.layout_config.elements.forEach((element: any) => {
-          // Update element styling with current event data colors
-          const updatedElement = {
-            ...element,
-            style: {
-              ...element.style,
-              color: eventData?.textColor || element.style?.color,
-              backgroundColor: eventData?.boxColor || element.style?.backgroundColor,
-              textColor: eventData?.boxFontColor || element.style?.textColor
-            }
-          };
-          addElementToCanvas(fabricCanvas, updatedElement, scale);
+          addElementToCanvas(fabricCanvas, element, scale, createSampleEventData());
         });
       } else {
-        // Create default layout with current event data
         addDefaultLayoutElements(fabricCanvas);
       }
     } catch (error) {
       console.error('Error loading existing layout:', error);
-      // Fallback to default layout
       addDefaultLayoutElements(fabricCanvas);
     }
   };
@@ -174,20 +138,14 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
 
     const sampleData = createSampleEventData();
     
-    // Create element with current event data styling
     const elementConfig = {
       type: element.element_type,
       field: element.field_mapping,
       position: { x: 50, y: 50 },
-      style: {
-        ...element.default_style,
-        color: sampleData.textColor,
-        backgroundColor: element.field_mapping === 'classTheme' ? sampleData.boxColor : undefined,
-        textColor: element.field_mapping === 'classTheme' ? sampleData.boxFontColor : undefined
-      }
+      style: {} // Only position, no styling
     };
 
-    addElementToCanvas(canvas, elementConfig, scale);
+    addElementToCanvas(canvas, elementConfig, scale, sampleData);
   };
 
   const handleDeleteSelected = () => {
@@ -241,11 +199,14 @@ export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
 
       <div className="w-80">
         <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-          <h3 className="font-medium text-blue-800 mb-2">Editor de Layout</h3>
+          <h3 className="font-medium text-blue-800 mb-2">Editor de Posicionamento</h3>
           <p className="text-sm text-blue-700">
-            Use este editor apenas para posicionar os elementos. As cores e estilos 
-            serão aplicados automaticamente baseados nas configurações do formulário durante a geração.
+            Este editor é apenas para posicionar elementos. Todos os estilos, cores e fontes 
+            são aplicados automaticamente baseados nas configurações do formulário durante a geração.
           </p>
+          <div className="mt-2 text-xs text-blue-600">
+            <p><strong>Hierarquia Margem:</strong> Título (Black), Tema (Bold), Professor/Data (Regular)</p>
+          </div>
         </div>
 
         <ElementToolbar

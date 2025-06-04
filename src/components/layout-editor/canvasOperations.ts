@@ -1,6 +1,6 @@
 
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
-import { getPreviewText } from './utils';
+import { getPreviewText, getMargemFontForField, getDefaultFontSizeForField } from './utils';
 import { CanvasElementConfig } from './types';
 
 export const loadBackgroundImage = async (
@@ -28,15 +28,15 @@ export const loadBackgroundImage = async (
 export const addElementToCanvas = (
   canvas: FabricCanvas,
   elementConfig: CanvasElementConfig,
-  scale: number
+  scale: number,
+  eventData?: any
 ): void => {
-  // Ensure we have a complete config object with all required properties
   const config: CanvasElementConfig = {
     id: elementConfig?.id || `element_${Date.now()}`,
     type: elementConfig?.type || 'text',
     field: elementConfig?.field || 'title',
     position: elementConfig?.position || { x: 50, y: 50 },
-    style: elementConfig?.style || { fontSize: 24, color: '#000000' },
+    style: elementConfig?.style || {},
     constraints: elementConfig?.constraints
   };
 
@@ -52,41 +52,66 @@ export const addElementToCanvas = (
       strokeDashArray: [5, 5]
     });
     
+    // Add proportional resizing constraints
     rect.set({
       elementId: config.id,
       elementType: 'image',
-      fieldMapping: config.field
+      fieldMapping: config.field,
+      lockUniScaling: true, // Maintain aspect ratio
+      centeredScaling: false
     });
     
     canvas.add(rect);
   } else {
-    const text = new FabricText(getPreviewText(config.field), {
+    // Use real data and correct fonts for preview
+    const textContent = getPreviewText(config.field, eventData);
+    const fontFamily = getMargemFontForField(config.field);
+    const fontSize = getDefaultFontSizeForField(config.field) * scale;
+    
+    // Use real colors from eventData if available
+    let textColor = '#000000';
+    if (eventData) {
+      textColor = eventData.textColor || '#000000';
+    }
+
+    const text = new FabricText(textContent, {
       left: config.position.x * scale,
       top: config.position.y * scale,
-      fontSize: (config.style.fontSize || 24) * scale,
-      fill: config.style.color || config.style.textColor || '#000000',
-      fontFamily: config.style.fontFamily || 'Margem-Regular',
-      fontWeight: config.style.fontWeight || 'normal'
+      fontSize: fontSize,
+      fill: textColor,
+      fontFamily: fontFamily,
+      fontWeight: 'normal'
     });
 
     text.set({
       elementId: config.id,
       elementType: config.type,
-      fieldMapping: config.field
+      fieldMapping: config.field,
+      lockUniScaling: true // Prevent text distortion
     });
 
     if (config.type === 'text_box') {
-      const padding = (config.style.padding || 10) * scale;
+      const padding = 20 * scale;
       const bbox = text.getBoundingRect();
+      
+      // Use real box color from eventData if available
+      let boxColor = '#dd303e';
+      let boxTextColor = '#FFFFFF';
+      if (eventData) {
+        boxColor = eventData.boxColor || '#dd303e';
+        boxTextColor = eventData.boxFontColor || '#FFFFFF';
+      }
+      
+      text.set({ fill: boxTextColor });
       
       const background = new Rect({
         left: bbox.left - padding,
         top: bbox.top - padding,
         width: bbox.width + (padding * 2),
         height: bbox.height + (padding * 2),
-        fill: config.style.backgroundColor || '#dd303e',
-        rx: (config.style.borderRadius || 0) * scale,
-        ry: (config.style.borderRadius || 0) * scale
+        fill: boxColor,
+        rx: 10 * scale,
+        ry: 10 * scale
       });
 
       const group = new Group([background, text], {
@@ -97,7 +122,8 @@ export const addElementToCanvas = (
       group.set({
         elementId: config.id,
         elementType: 'text_box',
-        fieldMapping: config.field
+        fieldMapping: config.field,
+        lockUniScaling: true // Maintain proportions
       });
 
       canvas.add(group);
@@ -114,69 +140,46 @@ export const updateSelectedObjectProperty = (
   value: any,
   scale: number
 ): void => {
+  // Only allow position and size updates, no styling
   if (!selectedObject || !canvas) return;
 
   console.log('Updating object property:', property, 'to value:', value);
 
-  if (property === 'fontSize') {
-    const newFontSize = parseInt(value) * scale;
-    
-    if (selectedObject.type === 'group') {
-      const textObject = selectedObject.getObjects().find((obj: any) => obj.type === 'text');
-      if (textObject) {
-        textObject.set({ fontSize: newFontSize });
-        selectedObject.addWithUpdate();
-      }
-    } else if (selectedObject.type === 'text') {
-      selectedObject.set({ fontSize: newFontSize });
-    }
-  } else if (property === 'fontFamily') {
-    if (selectedObject.type === 'group') {
-      const textObject = selectedObject.getObjects().find((obj: any) => obj.type === 'text');
-      if (textObject) {
-        textObject.set({ fontFamily: value });
-        selectedObject.addWithUpdate();
-      }
-    } else if (selectedObject.type === 'text') {
-      selectedObject.set({ fontFamily: value });
-    }
+  // Only handle position and size changes, ignore font/color changes
+  if (property === 'left' || property === 'top' || property === 'scaleX' || property === 'scaleY') {
+    selectedObject.set({ [property]: value });
+    canvas.renderAll();
   }
-
-  canvas.renderAll();
 };
 
 export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any => {
   return canvas.getObjects().map((obj: any) => {
     const position = {
-      x: obj.left / scale,
-      y: obj.top / scale
+      x: Math.round(obj.left / scale),
+      y: Math.round(obj.top / scale)
     };
 
+    // Only save position and size data, NO styling data
     if (obj.elementType === 'image') {
       return {
         id: obj.elementId,
         type: 'image',
         field: obj.fieldMapping,
         position,
-        style: {
-          width: obj.width / scale,
-          height: obj.height / scale
+        size: {
+          width: Math.round((obj.width * obj.scaleX) / scale),
+          height: Math.round((obj.height * obj.scaleY) / scale)
         }
       };
     } else if (obj.elementType === 'text_box') {
-      const textObject = obj.getObjects ? obj.getObjects().find((o: any) => o.type === 'text') : obj;
       return {
         id: obj.elementId,
         type: 'text_box',
         field: obj.fieldMapping,
         position,
-        style: {
-          fontSize: textObject ? textObject.fontSize / scale : 24,
-          fontFamily: textObject ? textObject.fontFamily : 'Margem-Regular',
-          textColor: textObject ? textObject.fill : '#FFFFFF',
-          backgroundColor: '#dd303e',
-          padding: 20,
-          borderRadius: 10
+        size: {
+          width: Math.round((obj.width * obj.scaleX) / scale),
+          height: Math.round((obj.height * obj.scaleY) / scale)
         }
       };
     } else {
@@ -185,10 +188,9 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
         type: 'text',
         field: obj.fieldMapping,
         position,
-        style: {
-          fontSize: obj.fontSize / scale,
-          fontFamily: obj.fontFamily,
-          color: obj.fill
+        size: {
+          width: Math.round((obj.width * obj.scaleX) / scale),
+          height: Math.round((obj.height * obj.scaleY) / scale)
         }
       };
     }
