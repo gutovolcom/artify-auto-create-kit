@@ -80,7 +80,18 @@ export const useLayoutEditor = () => {
         .maybeSingle();
 
       if (error) throw error;
-      return data;
+      
+      // Properly cast the Json type to our LayoutConfig interface
+      if (data) {
+        return {
+          id: data.id,
+          template_id: data.template_id,
+          format_name: data.format_name,
+          layout_config: data.layout_config as LayoutConfig['layout_config']
+        };
+      }
+      
+      return null;
     } catch (error) {
       console.error('Error fetching layout:', error);
       return null;

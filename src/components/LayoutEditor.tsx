@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { fabric } from 'fabric';
+import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -26,8 +26,8 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
   onSave
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
-  const [selectedObject, setSelectedObject] = useState<fabric.Object | null>(null);
+  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
+  const [selectedObject, setSelectedObject] = useState<any>(null);
   const { layoutElements, saveLayout, getLayout } = useLayoutEditor();
   
   // Calculate scale to fit canvas in viewport
@@ -44,14 +44,16 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    const fabricCanvas = new fabric.Canvas(canvasRef.current, {
+    const fabricCanvas = new FabricCanvas(canvasRef.current, {
       width: displayWidth,
       height: displayHeight,
       backgroundColor: '#f5f5f5'
     });
 
     // Load background image
-    fabric.Image.fromURL(backgroundImageUrl, (img) => {
+    FabricImage.fromURL(backgroundImageUrl, {
+      crossOrigin: 'anonymous'
+    }).then((img) => {
       img.set({
         scaleX: scale,
         scaleY: scale,
@@ -59,17 +61,17 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
         evented: false
       });
       fabricCanvas.setBackgroundImage(img, fabricCanvas.renderAll.bind(fabricCanvas));
-    }, { crossOrigin: 'anonymous' });
+    });
 
     // Load existing layout if it exists
     loadExistingLayout(fabricCanvas);
 
     fabricCanvas.on('selection:created', (e) => {
-      setSelectedObject(e.target);
+      setSelectedObject(e.selected?.[0]);
     });
 
     fabricCanvas.on('selection:updated', (e) => {
-      setSelectedObject(e.target);
+      setSelectedObject(e.selected?.[0]);
     });
 
     fabricCanvas.on('selection:cleared', () => {
@@ -83,7 +85,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     };
   }, [templateId, formatName, backgroundImageUrl, displayWidth, displayHeight, scale]);
 
-  const loadExistingLayout = async (fabricCanvas: fabric.Canvas) => {
+  const loadExistingLayout = async (fabricCanvas: FabricCanvas) => {
     try {
       const existingLayout = await getLayout(templateId, formatName);
       if (existingLayout?.layout_config?.elements) {
@@ -96,7 +98,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     }
   };
 
-  const addElementToCanvas = (fabricCanvas: fabric.Canvas, elementConfig?: any) => {
+  const addElementToCanvas = (fabricCanvas: FabricCanvas, elementConfig?: any) => {
     const config = elementConfig || {
       position: { x: 50, y: 50 },
       style: { fontSize: 24, color: '#000000' }
@@ -104,7 +106,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
 
     if (config.type === 'image') {
       // Add placeholder for image elements
-      const rect = new fabric.Rect({
+      const rect = new Rect({
         left: (config.position.x || 50) * scale,
         top: (config.position.y || 50) * scale,
         width: (config.style.width || 200) * scale,
@@ -124,7 +126,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
       fabricCanvas.add(rect);
     } else {
       // Add text elements
-      const text = new fabric.Text(getPreviewText(config.field || 'title'), {
+      const text = new FabricText(getPreviewText(config.field || 'title'), {
         left: (config.position.x || 50) * scale,
         top: (config.position.y || 50) * scale,
         fontSize: (config.style.fontSize || 24) * scale,
@@ -144,7 +146,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
         const padding = (config.style.padding || 10) * scale;
         const bbox = text.getBoundingRect();
         
-        const background = new fabric.Rect({
+        const background = new Rect({
           left: bbox.left - padding,
           top: bbox.top - padding,
           width: bbox.width + (padding * 2),
@@ -154,7 +156,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
           ry: (config.style.borderRadius || 0) * scale
         });
 
-        const group = new fabric.Group([background, text], {
+        const group = new Group([background, text], {
           left: (config.position.x || 50) * scale,
           top: (config.position.y || 50) * scale
         });
