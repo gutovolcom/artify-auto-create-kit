@@ -1,4 +1,3 @@
-
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getPreviewText, getMargemFontForField, getDefaultFontSizeForField } from './utils';
 import { CanvasElementConfig } from './types';
@@ -24,42 +23,34 @@ export const loadBackgroundImage = async (
       console.log('Image dimensions:', img.width, 'x', img.height);
       console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
       
-      // Calculate the scale to fit the image to canvas dimensions
-      const canvasAspectRatio = canvas.width! / canvas.height!;
-      const imageAspectRatio = img.width! / img.height!;
-      
-      let scaleX, scaleY;
-      
-      if (canvasAspectRatio > imageAspectRatio) {
-        // Canvas is wider than image
-        scaleX = canvas.width! / img.width!;
-        scaleY = scaleX;
-      } else {
-        // Canvas is taller than image
-        scaleY = canvas.height! / img.height!;
-        scaleX = scaleY;
+      // Calculate proper scaling to fit canvas
+      if (canvas.width && canvas.height && img.width && img.height) {
+        const scaleX = canvas.width / img.width;
+        const scaleY = canvas.height / img.height;
+        const scale = Math.max(scaleX, scaleY); // Use max to cover entire canvas
+        
+        console.log('Calculated scale:', scale);
+        
+        // Scale the image to cover the entire canvas
+        img.scaleToWidth(canvas.width);
+        img.scaleToHeight(canvas.height);
+        
+        // Position the image at top-left
+        img.set({
+          left: 0,
+          top: 0,
+          selectable: false,
+          evented: false,
+          originX: 'left',
+          originY: 'top'
+        });
       }
       
-      console.log('Calculated scale:', scaleX, scaleY);
-      
-      // Set the image properties to cover the entire canvas
-      img.set({
-        left: 0,
-        top: 0,
-        scaleX: scaleX,
-        scaleY: scaleY,
-        selectable: false,
-        evented: false,
-        originX: 'left',
-        originY: 'top'
-      });
-      
-      // Use the correct Fabric.js v6 API method to set background image
-      canvas.setBackgroundImage(img, () => {
-        canvas.renderAll();
-        console.log('Background image set and canvas rendered');
-        resolve();
-      });
+      // Set background image using the correct property assignment
+      canvas.backgroundImage = img;
+      canvas.renderAll();
+      console.log('Background image set and canvas rendered');
+      resolve();
     }).catch((error) => {
       console.error('Error loading background image:', error);
       reject(error);
