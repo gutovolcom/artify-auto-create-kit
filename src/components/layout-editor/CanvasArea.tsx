@@ -45,7 +45,9 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
   useEffect(() => {
     if (!canvasRef.current || fabricCanvasRef.current) return;
 
-    console.log('Initializing Fabric.js canvas');
+    console.log('Initializing Fabric.js canvas with dimensions:', displayWidth, 'x', displayHeight);
+    console.log('Format dimensions:', formatDimensions);
+    console.log('Scale factor:', scale);
 
     const fabricCanvas = new fabric.Canvas(canvasRef.current, {
       width: displayWidth,
@@ -75,15 +77,29 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
     }
 
     fabricCanvas.on('selection:created', (e) => {
+      console.log('Object selected:', e.selected?.[0]);
       onSelectionChange(e.selected?.[0]);
     });
 
     fabricCanvas.on('selection:updated', (e) => {
+      console.log('Selection updated:', e.selected?.[0]);
       onSelectionChange(e.selected?.[0]);
     });
 
     fabricCanvas.on('selection:cleared', () => {
+      console.log('Selection cleared');
       onSelectionChange(null);
+    });
+
+    // Add object modification logging
+    fabricCanvas.on('object:modified', (e) => {
+      console.log('Object modified:', {
+        target: e.target,
+        left: e.target?.left,
+        top: e.target?.top,
+        scaleX: e.target?.scaleX,
+        scaleY: e.target?.scaleY
+      });
     });
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -145,6 +161,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
             <p>• Use as setas do teclado para mover elementos selecionados</p>
             <p>• Delete/Backspace para remover elemento selecionado</p>
             <p>• Arraste os cantos para redimensionar</p>
+            <p>• Canvas: {displayWidth}x{displayHeight} (escala: {scale.toFixed(2)})</p>
           </div>
         </CardContent>
       </Card>

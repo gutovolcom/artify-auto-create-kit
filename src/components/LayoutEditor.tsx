@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import * as fabric from 'fabric';
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
@@ -37,8 +36,17 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
   const displayWidth = formatDimensions.width * scale;
   const displayHeight = formatDimensions.height * scale;
 
+  console.log('LayoutEditor render:', {
+    formatDimensions,
+    scale,
+    displayWidth,
+    displayHeight,
+    maxCanvasWidth,
+    maxCanvasHeight
+  });
+
   const addDefaultLayoutElements = (fabricCanvas: FabricCanvas) => {
-    console.log('Adding default layout elements');
+    console.log('Adding default layout elements to canvas of size:', displayWidth, 'x', displayHeight);
     
     const defaultElements = [
       {
@@ -46,44 +54,46 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
         type: 'text',
         field: 'title',
         position: { x: 50, y: 50 },
-        style: {}
+        style: { fontSize: 24 }
       },
       {
         id: 'classTheme',
         type: 'text',
         field: 'classTheme',
         position: { x: 50, y: 150 },
-        style: {}
+        style: { fontSize: 20 }
       },
       {
         id: 'teacherName',
         type: 'text',
         field: 'teacherName',
         position: { x: 50, y: 250 },
-        style: {}
+        style: { fontSize: 18 }
       },
       {
         id: 'date',
         type: 'text',
         field: 'date',
         position: { x: 50, y: 320 },
-        style: {}
+        style: { fontSize: 16 }
       },
       {
         id: 'time',
         type: 'text',
         field: 'time',
         position: { x: 200, y: 320 },
-        style: {}
+        style: { fontSize: 16 }
       },
       {
         id: 'professorPhoto',
         type: 'image',
         field: 'professorPhotos',
-        position: { x: formatDimensions.width - 250, y: formatDimensions.height - 250 },
+        position: { x: displayWidth - 250, y: displayHeight - 250 },
         style: { width: 200, height: 200 }
       }
     ];
+
+    console.log('Default elements to add:', defaultElements);
 
     defaultElements.forEach(element => {
       addElementToCanvas(fabricCanvas, element, scale);
@@ -96,9 +106,17 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     try {
       const existingLayout = await getLayout(templateId, formatName);
       if (existingLayout?.layout_config?.elements && existingLayout.layout_config.elements.length > 0) {
-        console.log('Loading existing layout elements');
+        console.log('Loading existing layout elements:', existingLayout.layout_config.elements);
         existingLayout.layout_config.elements.forEach((element: any) => {
-          addElementToCanvas(fabricCanvas, element, scale);
+          // Convert saved layout to expected format
+          const elementConfig = {
+            id: element.id,
+            type: element.type,
+            field: element.field,
+            position: element.position,
+            style: element.style || {}
+          };
+          addElementToCanvas(fabricCanvas, elementConfig, scale);
         });
       } else {
         console.log('No existing layout found, adding default elements');
@@ -139,13 +157,18 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
       return;
     }
 
+    // Position new elements in visible area with some randomness
+    const randomX = 50 + Math.random() * (displayWidth - 300);
+    const randomY = 50 + Math.random() * (displayHeight - 200);
+
     const elementConfig = {
       type: element.element_type,
       field: element.field_mapping,
-      position: { x: 50, y: 50 },
-      style: {}
+      position: { x: randomX, y: randomY },
+      style: { fontSize: 20 }
     };
 
+    console.log('Adding new element:', elementConfig);
     addElementToCanvas(canvas, elementConfig, scale);
     toast.success('Elemento adicionado!');
   };
@@ -175,6 +198,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
 
     try {
       const elements = serializeCanvasLayout(canvas, scale);
+      console.log('Saving layout with elements:', elements);
 
       await saveLayout({
         template_id: templateId,
