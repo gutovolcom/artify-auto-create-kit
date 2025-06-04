@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { renderCanvasWithTemplate } from "@/utils/canvasRenderer";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
 import { useActivityLog } from "@/hooks/useActivityLog";
+import { useLayoutEditor } from "@/hooks/useLayoutEditor";
 
 interface GeneratedImage {
   platform: string;
@@ -26,8 +27,9 @@ export const useImageGenerator = () => {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { templates } = useSupabaseTemplates();
+  const { templates, refetch: refetchTemplates } = useSupabaseTemplates();
   const { logActivity } = useActivityLog();
+  const { getLayout } = useLayoutEditor();
 
   const generateImages = async (eventData: EventData) => {
     if (!eventData.title || !eventData.date || !eventData.kvImageId) {
@@ -42,11 +44,16 @@ export const useImageGenerator = () => {
     try {
       console.log('Starting image generation for event:', eventData.title);
       
+      // Refresh templates to get the latest data
+      await refetchTemplates();
+      
       // Get the selected template from Supabase
       const selectedTemplate = templates.find(t => t.id === eventData.kvImageId);
       if (!selectedTemplate) {
         throw new Error("Template not found");
       }
+      
+      console.log('Selected template:', selectedTemplate);
       
       const newGeneratedImages: GeneratedImage[] = [];
       
@@ -65,13 +72,18 @@ export const useImageGenerator = () => {
           
           console.log(`Generating image for ${formatId}:`, platform);
           
-          // Use the canvas renderer to create the image with the selected template
+          // Get layout configuration for this format
+          const layoutConfig = await getLayout(selectedTemplate.id, formatId);
+          console.log(`Layout config for ${formatId}:`, layoutConfig);
+          
+          // Use the canvas renderer to create the image with the selected template and layout
           const generatedImageUrl = await renderCanvasWithTemplate(
             formatData.image_url,
             eventData,
             platform.width,
             platform.height,
-            formatId
+            formatId,
+            layoutConfig?.layout_config || null
           );
           
           newGeneratedImages.push({

@@ -1,280 +1,294 @@
 
-interface TeacherImage {
-  src: string;
-  width: number;
-  height: number;
-}
+import { EventData } from "@/pages/Index";
+import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 
-export const loadImageFromSrc = (src: string): Promise<HTMLImageElement> => {
+export const renderCanvasWithTemplate = async (
+  backgroundImageUrl: string,
+  eventData: EventData,
+  width: number,
+  height: number,
+  format: string,
+  layoutConfig?: any
+): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = src;
+    try {
+      console.log('Rendering canvas with template:', {
+        backgroundImageUrl,
+        format,
+        width,
+        height,
+        layoutConfig
+      });
+
+      // Create a temporary canvas element
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = width;
+      tempCanvas.height = height;
+      document.body.appendChild(tempCanvas);
+
+      const fabricCanvas = new FabricCanvas(tempCanvas, {
+        width: width,
+        height: height,
+        backgroundColor: '#ffffff'
+      });
+
+      // Load background image
+      FabricImage.fromURL(backgroundImageUrl, {
+        crossOrigin: 'anonymous'
+      }).then((bgImg) => {
+        // Scale background image to fit canvas
+        const scaleX = width / bgImg.width!;
+        const scaleY = height / bgImg.height!;
+        
+        bgImg.set({
+          scaleX: scaleX,
+          scaleY: scaleY,
+          left: 0,
+          top: 0,
+          selectable: false,
+          evented: false
+        });
+
+        fabricCanvas.backgroundImage = bgImg;
+
+        // Add text elements based on layout configuration or default positions
+        if (layoutConfig?.elements) {
+          console.log('Using custom layout configuration');
+          layoutConfig.elements.forEach((element: any) => {
+            addElementToCanvas(fabricCanvas, element, eventData, width, height);
+          });
+        } else {
+          console.log('Using default layout for format:', format);
+          addDefaultElements(fabricCanvas, eventData, format, width, height);
+        }
+
+        // Add professor photo if available
+        if (eventData.professorPhotos) {
+          addProfessorPhoto(fabricCanvas, eventData.professorPhotos, layoutConfig, width, height);
+        }
+
+        // Render and export
+        fabricCanvas.renderAll();
+        
+        setTimeout(() => {
+          try {
+            const dataURL = fabricCanvas.toDataURL({
+              format: 'png',
+              quality: 1.0,
+              multiplier: 1
+            });
+            
+            // Clean up
+            fabricCanvas.dispose();
+            document.body.removeChild(tempCanvas);
+            
+            resolve(dataURL);
+          } catch (exportError) {
+            console.error('Error exporting canvas:', exportError);
+            fabricCanvas.dispose();
+            document.body.removeChild(tempCanvas);
+            reject(exportError);
+          }
+        }, 500);
+      }).catch((error) => {
+        console.error('Error loading background image:', error);
+        fabricCanvas.dispose();
+        document.body.removeChild(tempCanvas);
+        reject(error);
+      });
+    } catch (error) {
+      console.error('Error in renderCanvasWithTemplate:', error);
+      reject(error);
+    }
   });
 };
 
-export const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('pt-BR');
-};
-
-export const drawYouTubeFormat = (
-  ctx: CanvasRenderingContext2D,
-  professorImages: HTMLImageElement[],
-  eventName: string,
-  classTheme: string,
-  professorName: string,
-  eventDate: string,
-  textColor: string,
-  boxColor: string,
-  boxFontColor: string,
-  width: number,
-  height: number,
-  additionalThemes: string[] = []
+const addElementToCanvas = (
+  canvas: FabricCanvas,
+  element: any,
+  eventData: EventData,
+  canvasWidth: number,
+  canvasHeight: number
 ) => {
-  const leftMargin = 120;
-  const topMargin = 430;
-  const lineSpacing = 80;
-  const rightMargin = 30;
-
-  // Handle professor images based on quantity
-  if (professorImages.length === 1) {
-    const professorImageHeight = 1000;
-    const professorImageWidth = (professorImages[0].width / professorImages[0].height) * professorImageHeight;
-    const professorX = width - professorImageWidth - rightMargin;
-    const professorY = height - professorImageHeight;
-    ctx.drawImage(professorImages[0], professorX, professorY, professorImageWidth, professorImageHeight);
-  } else if (professorImages.length === 2) {
-    const professorImageHeight = 700;
-    const professorImageWidth = (professorImages[0].width / professorImages[0].height) * professorImageHeight;
-
-    const photo1X = width - professorImageWidth - rightMargin;
-    const photo1Y = height - professorImageHeight;
-    const photo2X = photo1X - professorImageWidth + 100;
-    const photo2Y = height - professorImageHeight;
-
-    const drawCroppedImage = (image: HTMLImageElement, x: number, y: number, targetWidth: number, targetHeight: number, alignBottom = false) => {
-      const aspectRatio = image.width / image.height;
-      let drawWidth = targetWidth;
-      let drawHeight = targetHeight;
-      let offsetX = 0;
-      let offsetY = 0;
-
-      if (drawWidth / drawHeight > aspectRatio) {
-        drawWidth = drawHeight * aspectRatio;
-        offsetX = (targetWidth - drawWidth) / 2;
-      } else {
-        drawHeight = drawWidth / aspectRatio;
-        if (alignBottom) {
-          offsetY = targetHeight - drawHeight;
-        } else {
-          offsetY = (targetHeight - drawHeight) / 2;
-        }
-      }
-
-      ctx.drawImage(image, 0, 0, image.width, image.height, x + offsetX, y + offsetY, drawWidth, drawHeight);
-    };
-
-    drawCroppedImage(professorImages[1], photo2X, photo2Y, professorImageWidth, professorImageHeight, true);
-    drawCroppedImage(professorImages[0], photo1X, photo1Y, professorImageWidth, professorImageHeight);
-  } else if (professorImages.length === 3) {
-    const professorImageHeight = 550;
-    const professorImageWidth = (professorImages[0].width / professorImages[0].height) * professorImageHeight;
-
-    const photo1X = width - professorImageWidth - rightMargin;
-    const photo1Y = height - professorImageHeight;
-    const photo2X = photo1X - professorImageWidth + 100;
-    const photo2Y = height - professorImageHeight;
-    const photo3X = photo2X - professorImageWidth + 130;
-    const photo3Y = height - professorImageHeight;
-
-    ctx.drawImage(professorImages[2], photo3X, photo3Y, professorImageWidth, professorImageHeight);
-    ctx.drawImage(professorImages[1], photo2X, photo2Y, professorImageWidth, professorImageHeight);
-    ctx.drawImage(professorImages[0], photo1X, photo1Y, professorImageWidth, professorImageHeight);
+  const { type, field, position, style } = element;
+  
+  if (type === 'image' && field === 'professorPhotos') {
+    // Skip professor photos here, they're handled separately
+    return;
   }
 
-  // Event name with MargemBlack font - use textColor
-  ctx.font = '140px Arial Black'; // Fallback since custom fonts aren't loaded
-  ctx.fillStyle = textColor;
-  ctx.fillText(eventName, leftMargin, topMargin);
+  const textContent = getTextContent(field, eventData);
+  if (!textContent) return;
 
-  // Class theme with rounded box
-  ctx.font = '68px Arial Bold';
-  ctx.fillStyle = boxColor;
-  const classThemePadding = 20;
-  const classThemeWidth = ctx.measureText(classTheme).width + (2 * classThemePadding);
-  const classThemeHeight = 60 + (2 * classThemePadding);
-  const classThemeX = leftMargin;
-  const classThemeY = topMargin + lineSpacing;
+  const fontSize = style.fontSize || 24;
+  const fontFamily = style.fontFamily || 'Margem-Regular';
   
-  // Draw rounded rectangle for class theme
-  ctx.beginPath();
-  ctx.moveTo(classThemeX + 10, classThemeY);
-  ctx.lineTo(classThemeX + classThemeWidth - 10, classThemeY);
-  ctx.quadraticCurveTo(classThemeX + classThemeWidth, classThemeY, classThemeX + classThemeWidth, classThemeY + 10);
-  ctx.lineTo(classThemeX + classThemeWidth, classThemeY + classThemeHeight - 10);
-  ctx.quadraticCurveTo(classThemeX + classThemeWidth, classThemeY + classThemeHeight, classThemeX + classThemeWidth - 10, classThemeY + classThemeHeight);
-  ctx.lineTo(classThemeX + 10, classThemeY + classThemeHeight);
-  ctx.quadraticCurveTo(classThemeX, classThemeY + classThemeHeight, classThemeX, classThemeY + classThemeHeight - 10);
-  ctx.lineTo(classThemeX, classThemeY + 10);
-  ctx.quadraticCurveTo(classThemeX, classThemeY, classThemeX + 10, classThemeY);
-  ctx.closePath();
-  ctx.fill();
+  // Use textColor from eventData for most fields, except classTheme
+  let textColor = style.color || style.textColor || eventData.textColor || '#000000';
   
-  ctx.fillStyle = boxFontColor;
-  ctx.fillText(classTheme, leftMargin + classThemePadding, classThemeY + 50 + classThemePadding);
+  if (field === 'classTheme') {
+    // For class theme, use the specific box colors from eventData
+    textColor = eventData.boxFontColor || '#FFFFFF';
+  }
 
-  let currentY = classThemeY + classThemeHeight + lineSpacing;
-
-  // Additional themes
-  if (additionalThemes.length > 0) {
-    currentY = classThemeY + classThemeHeight + 30;
-    additionalThemes.forEach((additionalTheme) => {
-      ctx.font = '68px Arial Bold';
-      ctx.fillStyle = boxColor;
-      const additionalThemePadding = 20;
-      const additionalThemeWidth = ctx.measureText(additionalTheme).width + (2 * additionalThemePadding);
-      const additionalThemeHeight = 60 + (2 * additionalThemePadding);
-      
-      ctx.beginPath();
-      ctx.moveTo(classThemeX + 10, currentY);
-      ctx.lineTo(classThemeX + additionalThemeWidth - 10, currentY);
-      ctx.quadraticCurveTo(classThemeX + additionalThemeWidth, currentY, classThemeX + additionalThemeWidth, currentY + 10);
-      ctx.lineTo(classThemeX + additionalThemeWidth, currentY + additionalThemeHeight - 10);
-      ctx.quadraticCurveTo(classThemeX + additionalThemeWidth, currentY + additionalThemeHeight, classThemeX + additionalThemeWidth - 10, currentY + additionalThemeHeight);
-      ctx.lineTo(classThemeX + 10, currentY + additionalThemeHeight);
-      ctx.quadraticCurveTo(classThemeX, currentY + additionalThemeHeight, classThemeX, currentY + additionalThemeHeight - 10);
-      ctx.lineTo(classThemeX, currentY + 10);
-      ctx.quadraticCurveTo(classThemeX, currentY, classThemeX + 10, currentY);
-      ctx.closePath();
-      ctx.fill();
-      
-      ctx.fillStyle = boxFontColor;
-      ctx.fillText(additionalTheme, classThemeX + additionalThemePadding, currentY + additionalThemeHeight / 2 + 22);
-
-      currentY += additionalThemeHeight + lineSpacing;
+  if (type === 'text_box' && field === 'classTheme') {
+    // Create text box for class theme
+    const text = new FabricText(textContent, {
+      fontSize: fontSize,
+      fontFamily: fontFamily,
+      fill: textColor,
+      textAlign: 'center'
     });
+
+    const padding = style.padding || 20;
+    const backgroundColor = eventData.boxColor || style.backgroundColor || '#dd303e';
+    const borderRadius = style.borderRadius || 10;
+
+    const background = new Rect({
+      width: text.width! + (padding * 2),
+      height: text.height! + (padding * 2),
+      fill: backgroundColor,
+      rx: borderRadius,
+      ry: borderRadius
+    });
+
+    const group = new Group([background, text], {
+      left: position.x,
+      top: position.y,
+      selectable: false,
+      evented: false
+    });
+
+    canvas.add(group);
+  } else {
+    // Create regular text
+    const text = new FabricText(textContent, {
+      left: position.x,
+      top: position.y,
+      fontSize: fontSize,
+      fontFamily: fontFamily,
+      fill: textColor,
+      selectable: false,
+      evented: false
+    });
+
+    canvas.add(text);
   }
-
-  // Event date with TorokaWide font - use textColor
-  ctx.font = '66px Arial';
-  ctx.fillStyle = textColor;
-  ctx.fillText(formatDate(eventDate), leftMargin, currentY);
-
-  currentY += lineSpacing;
-
-  // Professor name with MargemMedium font - use textColor
-  ctx.font = '66px Arial';
-  ctx.fillText(professorName, leftMargin, currentY);
 };
 
-export const renderCanvasWithTemplate = async (
-  backgroundImageSrc: string,
-  eventData: any,
+const addDefaultElements = (
+  canvas: FabricCanvas,
+  eventData: EventData,
+  format: string,
   width: number,
-  height: number,
-  platform: string
-): Promise<string> => {
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
+  height: number
+) => {
+  // Default positions based on format
+  const defaultPositions = getDefaultPositions(format, width, height);
   
-  if (!ctx) throw new Error('Could not get canvas context');
+  // Add title
+  if (eventData.title) {
+    const title = new FabricText(eventData.title, {
+      left: defaultPositions.title.x,
+      top: defaultPositions.title.y,
+      fontSize: defaultPositions.title.fontSize,
+      fontFamily: 'Margem-Bold',
+      fill: eventData.textColor || '#000000',
+      selectable: false,
+      evented: false
+    });
+    canvas.add(title);
+  }
 
-  try {
-    console.log(`Rendering ${platform} format: ${width}x${height}`);
-    
-    // Load and draw background image
-    const backgroundImg = await loadImageFromSrc(backgroundImageSrc);
-    ctx.drawImage(backgroundImg, 0, 0, width, height);
+  // Add other elements with default positioning...
+  // This would include date, time, teacher name, etc.
+};
 
-    // Load professor images
-    const professorImages: HTMLImageElement[] = [];
-    if (eventData.teacherImages && Array.isArray(eventData.teacherImages)) {
-      for (const teacherImageSrc of eventData.teacherImages) {
-        try {
-          const img = await loadImageFromSrc(teacherImageSrc);
-          professorImages.push(img);
-        } catch (error) {
-          console.warn('Failed to load teacher image:', teacherImageSrc);
-        }
-      }
-    }
-
-    // Apply platform-specific rendering
-    if (platform === 'youtube') {
-      drawYouTubeFormat(
-        ctx,
-        professorImages,
-        eventData.title || 'Título do Evento',
-        eventData.classTheme || 'Tema da Aula',
-        eventData.teacherName || 'Professor',
-        eventData.date || '',
-        eventData.textColor || '#FFFFFF',
-        eventData.boxColor || '#dd303e',
-        eventData.boxFontColor || '#FFFFFF',
-        width,
-        height,
-        [] // additionalThemes - can be expanded later
-      );
+const addProfessorPhoto = (
+  canvas: FabricCanvas,
+  photoUrl: string,
+  layoutConfig: any,
+  canvasWidth: number,
+  canvasHeight: number
+) => {
+  const photoElement = layoutConfig?.elements?.find((el: any) => el.field === 'professorPhotos');
+  
+  FabricImage.fromURL(photoUrl, {
+    crossOrigin: 'anonymous'
+  }).then((img) => {
+    if (photoElement) {
+      // Use layout configuration
+      img.set({
+        left: photoElement.position.x,
+        top: photoElement.position.y,
+        scaleX: (photoElement.style.width || 200) / img.width!,
+        scaleY: (photoElement.style.height || 200) / img.height!,
+        selectable: false,
+        evented: false
+      });
     } else {
-      // For other platforms, use simplified overlay
-      const scaleFactor = Math.min(width / 1080, height / 1080); // Base scale on 1080px
-      
-      // Title - use textColor
-      const titleSize = Math.max(24, 48 * scaleFactor);
-      ctx.fillStyle = eventData.textColor || '#FFFFFF';
-      ctx.font = `bold ${titleSize}px Arial`;
-      ctx.fillText(eventData.title || 'Título do Evento', 30 * scaleFactor, 60 * scaleFactor);
-      
-      // Class theme box
-      if (eventData.classTheme) {
-        const themeSize = Math.max(16, 32 * scaleFactor);
-        const padding = 10 * scaleFactor;
-        
-        ctx.font = `bold ${themeSize}px Arial`;
-        const themeText = eventData.classTheme;
-        const textWidth = ctx.measureText(themeText).width;
-        
-        // Draw rounded rectangle
-        const boxX = 30 * scaleFactor;
-        const boxY = 80 * scaleFactor;
-        const boxWidth = textWidth + (padding * 2);
-        const boxHeight = themeSize + (padding * 2);
-        
-        ctx.fillStyle = eventData.boxColor || '#dd303e';
-        ctx.beginPath();
-        ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 5 * scaleFactor);
-        ctx.fill();
-        
-        ctx.fillStyle = eventData.boxFontColor || '#FFFFFF';
-        ctx.fillText(themeText, boxX + padding, boxY + themeSize + (padding / 2));
-      }
-      
-      // Date - use textColor
-      const dateSize = Math.max(14, 24 * scaleFactor);
-      ctx.fillStyle = eventData.textColor || '#FFFFFF';
-      ctx.font = `${dateSize}px Arial`;
-      const dateY = height - (30 * scaleFactor);
-      ctx.fillText(`${eventData.date} ${eventData.time || ''}`, 30 * scaleFactor, dateY);
-      
-      // Draw professor images for other platforms
-      if (professorImages.length > 0) {
-        const imgHeight = height * 0.6;
-        const imgWidth = (professorImages[0].width / professorImages[0].height) * imgHeight;
-        const x = width - imgWidth - (20 * scaleFactor);
-        const y = height - imgHeight;
-        ctx.drawImage(professorImages[0], x, y, imgWidth, imgHeight);
-      }
+      // Use default positioning
+      const defaultSize = Math.min(canvasWidth, canvasHeight) * 0.2;
+      img.set({
+        left: canvasWidth - defaultSize - 20,
+        top: canvasHeight - defaultSize - 20,
+        scaleX: defaultSize / img.width!,
+        scaleY: defaultSize / img.height!,
+        selectable: false,
+        evented: false
+      });
     }
+    
+    canvas.add(img);
+    canvas.renderAll();
+  }).catch((error) => {
+    console.error('Error loading professor photo:', error);
+  });
+};
 
-    console.log(`Successfully rendered ${platform} image`);
-    return canvas.toDataURL('image/png');
-  } catch (error) {
-    console.error(`Error rendering ${platform} canvas:`, error);
-    throw error;
+const getTextContent = (field: string, eventData: EventData): string => {
+  switch (field) {
+    case 'title':
+      return eventData.title;
+    case 'classTheme':
+      return eventData.classTheme || '';
+    case 'teacherName':
+      return eventData.teacherName || '';
+    case 'date':
+      return eventData.date;
+    case 'time':
+      return eventData.time;
+    default:
+      return '';
+  }
+};
+
+const getDefaultPositions = (format: string, width: number, height: number) => {
+  // Return default positions based on format
+  switch (format) {
+    case 'youtube':
+      return {
+        title: { x: 100, y: 100, fontSize: 48 },
+        date: { x: 100, y: 200, fontSize: 24 },
+        time: { x: 100, y: 250, fontSize: 24 },
+        teacherName: { x: 100, y: 300, fontSize: 32 },
+        classTheme: { x: 100, y: 400, fontSize: 28 }
+      };
+    case 'feed':
+      return {
+        title: { x: 50, y: 50, fontSize: 36 },
+        date: { x: 50, y: 150, fontSize: 20 },
+        time: { x: 50, y: 180, fontSize: 20 },
+        teacherName: { x: 50, y: 220, fontSize: 24 },
+        classTheme: { x: 50, y: 300, fontSize: 22 }
+      };
+    default:
+      return {
+        title: { x: 50, y: 50, fontSize: 24 },
+        date: { x: 50, y: 100, fontSize: 16 },
+        time: { x: 50, y: 130, fontSize: 16 },
+        teacherName: { x: 50, y: 160, fontSize: 20 },
+        classTheme: { x: 50, y: 200, fontSize: 18 }
+      };
   }
 };

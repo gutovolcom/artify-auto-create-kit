@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, FileImage, Loader2 } from "lucide-react";
+import { PlusCircle, FileImage, Loader2, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
@@ -13,10 +13,15 @@ interface ImageSelectorProps {
 }
 
 export const ImageSelector = ({ selectedImageId, onSelect }: ImageSelectorProps) => {
-  const { templates, loading } = useSupabaseTemplates();
+  const { templates, loading, refetch } = useSupabaseTemplates();
 
   const handleAddTemplate = () => {
     toast.info("Para adicionar templates, use o painel administrativo");
+  };
+
+  const handleRefresh = async () => {
+    await refetch();
+    toast.success("Templates atualizados!");
   };
 
   if (loading) {
@@ -36,14 +41,24 @@ export const ImageSelector = ({ selectedImageId, onSelect }: ImageSelectorProps)
     <Card className="h-full">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Selecione a Imagem Principal (KV)</CardTitle>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleAddTemplate}
-        >
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Adicionar Template
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Atualizar
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleAddTemplate}
+          >
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Adicionar Template
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {templates.length === 0 ? (
@@ -98,6 +113,11 @@ export const ImageSelector = ({ selectedImageId, onSelect }: ImageSelectorProps)
                     </div>
                     <div className="p-2 text-center text-sm font-medium">
                       {template.name}
+                      {template.layouts && template.layouts.length > 0 && (
+                        <div className="text-xs text-blue-600 mt-1">
+                          Layout personalizado
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

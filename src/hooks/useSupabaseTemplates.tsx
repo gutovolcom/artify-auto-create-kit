@@ -38,16 +38,19 @@ export const useSupabaseTemplates = () => {
 
   const fetchTemplates = async () => {
     try {
+      setLoading(true);
       const { data: templatesData, error: templatesError } = await supabase
         .from('templates')
         .select(`
           *,
           formats:template_formats(*),
           layouts:template_layouts(*)
-        `);
+        `)
+        .order('updated_at', { ascending: false });
 
       if (templatesError) throw templatesError;
 
+      console.log('Fetched templates with layouts:', templatesData);
       setTemplates(templatesData || []);
     } catch (error) {
       console.error('Error fetching templates:', error);
@@ -111,6 +114,7 @@ export const useSupabaseTemplates = () => {
 
       await Promise.all(formatPromises);
       
+      // Refresh templates to get the latest data
       await fetchTemplates();
       toast.success('Template criado com sucesso!');
       return templateData.id;
@@ -126,16 +130,26 @@ export const useSupabaseTemplates = () => {
       // Upload new image
       const imageUrl = await uploadImage(file, templateId, formatName);
       
-      // Update the format record
-      const { error } = await supabase
+      // Update the format record and template updated_at
+      const { error: formatError } = await supabase
         .from('template_formats')
         .update({ image_url: imageUrl })
         .eq('template_id', templateId)
         .eq('format_name', formatName);
 
-      if (error) throw error;
+      if (formatError) throw formatError;
 
+      // Update template's updated_at timestamp
+      const { error: templateError } = await supabase
+        .from('templates')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', templateId);
+
+      if (templateError) throw templateError;
+
+      // Refresh templates to get the latest data
       await fetchTemplates();
+      console.log('Template format updated, refreshing data');
       return imageUrl;
     } catch (error) {
       console.error('Error updating template format:', error);
