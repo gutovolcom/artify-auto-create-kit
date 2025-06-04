@@ -23,30 +23,13 @@ export const loadBackgroundImage = async (
       console.log('Image dimensions:', img.width, 'x', img.height);
       console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
       
-      // Calculate proper scaling to fit canvas
-      if (canvas.width && canvas.height && img.width && img.height) {
-        const scaleX = canvas.width / img.width;
-        const scaleY = canvas.height / img.height;
-        const scale = Math.max(scaleX, scaleY); // Use max to cover entire canvas
-        
-        console.log('Calculated scale:', scale);
-        
-        // Scale the image to cover the entire canvas
-        img.scaleToWidth(canvas.width);
-        img.scaleToHeight(canvas.height);
-        
-        // Position the image at top-left
-        img.set({
-          left: 0,
-          top: 0,
-          selectable: false,
-          evented: false,
-          originX: 'left',
-          originY: 'top'
-        });
-      }
+      // Simply set the image as background without any scaling
+      img.set({
+        selectable: false,
+        evented: false
+      });
       
-      // Set background image using the correct property assignment
+      // Set background image directly
       canvas.backgroundImage = img;
       canvas.renderAll();
       console.log('Background image set and canvas rendered');
