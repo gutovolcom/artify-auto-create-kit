@@ -21,13 +21,33 @@ export const loadBackgroundImage = async (
       crossOrigin: 'anonymous'
     }).then((img) => {
       console.log('Background image loaded successfully:', img);
+      console.log('Image dimensions:', img.width, 'x', img.height);
+      console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
       
-      // Set the image to cover the entire canvas
+      // Calculate the scale to fit the image to canvas dimensions
+      const canvasAspectRatio = canvas.width! / canvas.height!;
+      const imageAspectRatio = img.width! / img.height!;
+      
+      let scaleX, scaleY;
+      
+      if (canvasAspectRatio > imageAspectRatio) {
+        // Canvas is wider than image
+        scaleX = canvas.width! / img.width!;
+        scaleY = scaleX;
+      } else {
+        // Canvas is taller than image
+        scaleY = canvas.height! / img.height!;
+        scaleX = scaleY;
+      }
+      
+      console.log('Calculated scale:', scaleX, scaleY);
+      
+      // Set the image properties to cover the entire canvas
       img.set({
         left: 0,
         top: 0,
-        scaleX: scale,
-        scaleY: scale,
+        scaleX: scaleX,
+        scaleY: scaleY,
         selectable: false,
         evented: false,
         originX: 'left',
