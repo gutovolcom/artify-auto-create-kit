@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Trash } from 'lucide-react';
 import { 
   getSelectedElementField, 
-  elementNeedsFontProperties, 
   elementNeedsOnlyPositionAndSize,
   getCurrentFontSize,
   getCurrentFontFamily,
@@ -52,68 +51,59 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           if (elementNeedsOnlyPositionAndSize(field)) {
             return (
               <div className="text-sm text-gray-600">
-                <p>Foto do Professor</p>
-                <p>Use o mouse para posicionar a imagem no canvas.</p>
+                <p><strong>Foto do Professor</strong></p>
+                <p>Use o mouse para posicionar e redimensionar a área da foto no canvas.</p>
+                <div className="mt-3 p-3 bg-blue-50 rounded-md">
+                  <p className="text-xs font-medium text-blue-800">Dica:</p>
+                  <p className="text-xs text-blue-700">A foto real será aplicada durante a geração das artes baseada na seleção do formulário.</p>
+                </div>
               </div>
             );
           }
           
-          if (elementNeedsFontProperties(field)) {
-            return (
-              <>
-                <div>
-                  <Label>Tamanho da Fonte</Label>
-                  <Input
-                    type="number"
-                    value={getCurrentFontSize(selectedObject, scale)}
-                    onChange={(e) => onUpdateObject('fontSize', e.target.value)}
-                    min="8"
-                    max="200"
-                    placeholder="24"
-                  />
-                </div>
-
-                <div>
-                  <Label>Fonte</Label>
-                  <Select
-                    value={getCurrentFontFamily(selectedObject)}
-                    onValueChange={(value) => onUpdateObject('fontFamily', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecionar fonte" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableFonts.map((font) => (
-                        <SelectItem key={font} value={font}>
-                          {font}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {field === 'classTheme' && (
-                  <div className="text-sm text-gray-600 p-2 bg-blue-50 rounded">
-                    <p><strong>Tema da Aula:</strong></p>
-                    <p>A cor do texto e do fundo são configuradas no painel do usuário.</p>
-                  </div>
-                )}
-
-                {['title', 'teacherName', 'date', 'time'].includes(field) && (
-                  <div className="text-sm text-gray-600 p-2 bg-blue-50 rounded">
-                    <p><strong>Cor do Texto:</strong></p>
-                    <p>Configure a cor no painel do usuário no campo "Cor do texto".</p>
-                  </div>
-                )}
-              </>
-            );
-          }
-          
           return (
-            <div className="text-sm text-gray-600">
-              <p>Elemento selecionado: {field}</p>
-              <p>Use o mouse para posicionar no canvas.</p>
-            </div>
+            <>
+              <div className="text-sm">
+                <p><strong>Campo:</strong> {field}</p>
+                <p className="text-gray-600 mt-1">Use o mouse para posicionar o elemento no canvas.</p>
+              </div>
+
+              <div>
+                <Label>Tamanho da Fonte</Label>
+                <Input
+                  type="number"
+                  value={getCurrentFontSize(selectedObject, scale)}
+                  onChange={(e) => onUpdateObject('fontSize', e.target.value)}
+                  min="8"
+                  max="200"
+                  placeholder="24"
+                />
+              </div>
+
+              <div>
+                <Label>Fonte</Label>
+                <Select
+                  value={getCurrentFontFamily(selectedObject)}
+                  onValueChange={(value) => onUpdateObject('fontFamily', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar fonte" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableFonts.map((font) => (
+                      <SelectItem key={font} value={font}>
+                        {font}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="mt-4 p-3 bg-amber-50 rounded-md">
+                <p className="text-xs font-medium text-amber-800">Cores e Estilos:</p>
+                <p className="text-xs text-amber-700">As cores do texto e fundos são configuradas no formulário do evento e aplicadas automaticamente durante a geração.</p>
+              </div>
+            </>
           );
         })()}
       </CardContent>

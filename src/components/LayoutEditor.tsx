@@ -14,11 +14,26 @@ import {
   serializeCanvasLayout
 } from './layout-editor/canvasOperations';
 
-export const LayoutEditor: React.FC<LayoutEditorProps> = ({
+interface ExtendedLayoutEditorProps extends LayoutEditorProps {
+  eventData?: {
+    title: string;
+    classTheme: string;
+    teacherName: string;
+    date: string;
+    time: string;
+    textColor: string;
+    boxColor: string;
+    boxFontColor: string;
+    teacherImages?: string[];
+  };
+}
+
+export const LayoutEditor: React.FC<ExtendedLayoutEditorProps> = ({
   templateId,
   formatName,
   backgroundImageUrl,
   formatDimensions,
+  eventData,
   onSave
 }) => {
   const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
@@ -35,22 +50,119 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
   const displayWidth = formatDimensions.width * scale;
   const displayHeight = formatDimensions.height * scale;
 
+  const createSampleEventData = () => ({
+    title: eventData?.title || 'Título do Evento',
+    classTheme: eventData?.classTheme || 'Tema da Aula',
+    teacherName: eventData?.teacherName || 'Nome do Professor',
+    date: eventData?.date || '2024-01-25',
+    time: eventData?.time || '19:00',
+    textColor: eventData?.textColor || '#FFFFFF',
+    boxColor: eventData?.boxColor || '#dd303e',
+    boxFontColor: eventData?.boxFontColor || '#FFFFFF',
+    teacherImages: eventData?.teacherImages || []
+  });
+
+  const addDefaultLayoutElements = (fabricCanvas: FabricCanvas) => {
+    const sampleData = createSampleEventData();
+    
+    // Add default elements with sample styling from event data
+    const defaultElements = [
+      {
+        id: 'title',
+        type: 'text',
+        field: 'title',
+        position: { x: 50, y: 50 },
+        style: { 
+          fontSize: 32, 
+          color: sampleData.textColor,
+          fontFamily: 'Margem-Regular'
+        }
+      },
+      {
+        id: 'classTheme',
+        type: 'text_box',
+        field: 'classTheme',
+        position: { x: 50, y: 150 },
+        style: { 
+          fontSize: 24, 
+          backgroundColor: sampleData.boxColor,
+          textColor: sampleData.boxFontColor,
+          fontFamily: 'Margem-Regular',
+          padding: 20,
+          borderRadius: 10
+        }
+      },
+      {
+        id: 'teacherName',
+        type: 'text',
+        field: 'teacherName',
+        position: { x: 50, y: 250 },
+        style: { 
+          fontSize: 28, 
+          color: sampleData.textColor,
+          fontFamily: 'Margem-Regular'
+        }
+      },
+      {
+        id: 'date',
+        type: 'text',
+        field: 'date',
+        position: { x: 50, y: 320 },
+        style: { 
+          fontSize: 22, 
+          color: sampleData.textColor,
+          fontFamily: 'Margem-Regular'
+        }
+      },
+      {
+        id: 'professorPhoto',
+        type: 'image',
+        field: 'professorPhotos',
+        position: { x: formatDimensions.width - 250, y: formatDimensions.height - 250 },
+        style: { 
+          width: 200, 
+          height: 200
+        }
+      }
+    ];
+
+    defaultElements.forEach(element => {
+      addElementToCanvas(fabricCanvas, element, scale);
+    });
+  };
+
   const handleCanvasReady = async (fabricCanvas: FabricCanvas) => {
     setCanvas(fabricCanvas);
     
     // Load background image
     await loadBackgroundImage(fabricCanvas, backgroundImageUrl, scale);
     
-    // Load existing layout
+    // Load existing layout or create default layout
     try {
       const existingLayout = await getLayout(templateId, formatName);
-      if (existingLayout?.layout_config?.elements) {
+      if (existingLayout?.layout_config?.elements && existingLayout.layout_config.elements.length > 0) {
+        // Load existing layout with updated styling from current event data
         existingLayout.layout_config.elements.forEach((element: any) => {
-          addElementToCanvas(fabricCanvas, element, scale);
+          // Update element styling with current event data colors
+          const updatedElement = {
+            ...element,
+            style: {
+              ...element.style,
+              color: eventData?.textColor || element.style?.color,
+              backgroundColor: eventData?.boxColor || element.style?.backgroundColor,
+              textColor: eventData?.boxFontColor || element.style?.textColor
+            }
+          };
+          addElementToCanvas(fabricCanvas, updatedElement, scale);
         });
+      } else {
+        // Create default layout with current event data
+        addDefaultLayoutElements(fabricCanvas);
       }
     } catch (error) {
       console.error('Error loading existing layout:', error);
+      // Fallback to default layout
+      addDefaultLayoutElements(fabricCanvas);
     }
   };
 
@@ -60,12 +172,22 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     const element = layoutElements.find(el => el.field_mapping === elementType);
     if (!element) return;
 
-    addElementToCanvas(canvas, {
+    const sampleData = createSampleEventData();
+    
+    // Create element with current event data styling
+    const elementConfig = {
       type: element.element_type,
       field: element.field_mapping,
       position: { x: 50, y: 50 },
-      style: element.default_style
-    }, scale);
+      style: {
+        ...element.default_style,
+        color: sampleData.textColor,
+        backgroundColor: element.field_mapping === 'classTheme' ? sampleData.boxColor : undefined,
+        textColor: element.field_mapping === 'classTheme' ? sampleData.boxFontColor : undefined
+      }
+    };
+
+    addElementToCanvas(canvas, elementConfig, scale);
   };
 
   const handleDeleteSelected = () => {
@@ -118,6 +240,14 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
       />
 
       <div className="w-80">
+        <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+          <h3 className="font-medium text-blue-800 mb-2">Editor de Layout</h3>
+          <p className="text-sm text-blue-700">
+            Use este editor apenas para posicionar os elementos. As cores e estilos 
+            serão aplicados automaticamente baseados nas configurações do formulário durante a geração.
+          </p>
+        </div>
+
         <ElementToolbar
           layoutElements={layoutElements}
           onAddElement={handleAddElement}

@@ -1,4 +1,3 @@
-
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 
@@ -63,11 +62,15 @@ export const renderCanvasWithTemplate = async (
           
           layoutConfig.elements.forEach((element: any) => {
             if (element.type === 'image' && element.field === 'professorPhotos') {
-              // Handle professor photo separately as it's async
-              const photoUrl = eventData.professorPhotos || eventData.teacherImages?.[0];
-              if (photoUrl) {
-                const promise = addProfessorPhotoToCanvas(fabricCanvas, photoUrl, element, width, height);
-                promises.push(promise);
+              // Handle professor photo with proper field mapping
+              const photoId = eventData.professorPhotos;
+              if (photoId) {
+                // Find teacher by ID and get image URL
+                const teacherImageUrl = eventData.teacherImages?.[0] || "";
+                if (teacherImageUrl) {
+                  const promise = addProfessorPhotoToCanvas(fabricCanvas, teacherImageUrl, element, width, height);
+                  promises.push(promise);
+                }
               }
             } else {
               addElementToCanvas(fabricCanvas, element, eventData, width, height);
@@ -145,11 +148,12 @@ const addElementToCanvas = (
   const textContent = getTextContent(field, eventData);
   if (!textContent) return;
 
+  // Always use styling from eventData (user form), ignore layout config styling
   const fontSize = style?.fontSize || 24;
   const fontFamily = style?.fontFamily || 'Arial';
   
-  // Use textColor from eventData for most fields, except classTheme
-  let textColor = style?.color || style?.textColor || eventData.textColor || '#000000';
+  // Use colors from eventData (user form settings)
+  let textColor = eventData.textColor || '#000000';
   
   if (field === 'classTheme') {
     // For class theme, use the specific box colors from eventData
@@ -157,7 +161,7 @@ const addElementToCanvas = (
   }
 
   if (type === 'text_box' && field === 'classTheme') {
-    // Create text box for class theme
+    // Create text box for class theme using eventData colors
     const text = new FabricText(textContent, {
       fontSize: fontSize,
       fontFamily: fontFamily,
@@ -166,7 +170,7 @@ const addElementToCanvas = (
     });
 
     const padding = style?.padding || 20;
-    const backgroundColor = eventData.boxColor || style?.backgroundColor || '#dd303e';
+    const backgroundColor = eventData.boxColor || '#dd303e';
     const borderRadius = style?.borderRadius || 10;
 
     const background = new Rect({
@@ -186,7 +190,7 @@ const addElementToCanvas = (
 
     canvas.add(group);
   } else {
-    // Create regular text
+    // Create regular text using eventData colors
     const text = new FabricText(textContent, {
       left: position?.x || 0,
       top: position?.y || 0,
@@ -282,10 +286,10 @@ const addDefaultElements = async (
   }
 
   // Add professor photo with default positioning
-  const photoUrl = eventData.professorPhotos || eventData.teacherImages?.[0];
-  if (photoUrl) {
+  const teacherImageUrl = eventData.teacherImages?.[0];
+  if (teacherImageUrl) {
     try {
-      await addProfessorPhotoToCanvas(canvas, photoUrl, null, width, height);
+      await addProfessorPhotoToCanvas(canvas, teacherImageUrl, null, width, height);
     } catch (error) {
       console.error('Error adding professor photo with default positioning:', error);
     }

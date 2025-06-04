@@ -40,7 +40,7 @@ export const useImageGenerator = () => {
 
     setIsGenerating(true);
     setError(null);
-    setGeneratedImages([]); // Clear previous images immediately
+    setGeneratedImages([]); // Clear previous images
 
     try {
       console.log('Starting image generation for event:', eventData);
@@ -62,9 +62,9 @@ export const useImageGenerator = () => {
       const templateToUse = selectedTemplate || templates.find(t => t.id === eventData.kvImageId);
       console.log('Using template for generation:', templateToUse);
       
-      const newGeneratedImages: GeneratedImage[] = [];
+      const allGeneratedImages: GeneratedImage[] = [];
       
-      // Generate images for all formats sequentially to avoid race conditions
+      // Generate images for all formats sequentially
       const formats = Object.keys(platformConfigs) as (keyof typeof platformConfigs)[];
       
       for (const formatId of formats) {
@@ -119,11 +119,8 @@ export const useImageGenerator = () => {
             bgImageUrl: formatData.image_url,
           };
           
-          newGeneratedImages.push(newImage);
+          allGeneratedImages.push(newImage);
           console.log(`Successfully generated image for ${formatId}`);
-          
-          // Update state with each generated image for progressive display
-          setGeneratedImages(prev => [...prev, newImage]);
           
         } catch (error) {
           console.error(`Error generating image for ${formatId}:`, error);
@@ -131,22 +128,25 @@ export const useImageGenerator = () => {
         }
       }
       
-      console.log('All images generated:', newGeneratedImages.length);
+      console.log('All images generated:', allGeneratedImages.length);
       
-      if (newGeneratedImages.length > 0) {
+      // Only set images after ALL are generated
+      setGeneratedImages(allGeneratedImages);
+      
+      if (allGeneratedImages.length > 0) {
         // Log the activity
         try {
-          await logActivity(eventData, newGeneratedImages.map(img => img.platform));
+          await logActivity(eventData, allGeneratedImages.map(img => img.platform));
         } catch (logError) {
           console.warn('Failed to log activity:', logError);
         }
         
-        toast.success(`${newGeneratedImages.length} imagens geradas com sucesso!`);
+        toast.success(`${allGeneratedImages.length} imagens geradas com sucesso!`);
       } else {
         toast.error("Nenhuma imagem foi gerada. Verifique os templates e tente novamente.");
       }
       
-      return newGeneratedImages;
+      return allGeneratedImages;
     } catch (err) {
       console.error('Image generation error:', err);
       const errorMessage = err instanceof Error ? err.message : "Erro ao gerar imagens. Tente novamente.";
