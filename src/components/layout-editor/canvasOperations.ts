@@ -1,5 +1,8 @@
-import { Canvas as FabricCanvas, FabricText, Rect, FabricImage } from 'fabric';
+
+import { fabric } from 'fabric';
 import { CanvasElementConfig } from './types';
+
+type FabricCanvas = fabric.Canvas;
 
 export const loadBackgroundImage = async (
   canvas: FabricCanvas,
@@ -15,7 +18,7 @@ export const loadBackgroundImage = async (
       return;
     }
     
-    FabricImage.fromURL(backgroundImageUrl, {
+    fabric.Image.fromURL(backgroundImageUrl, {
       crossOrigin: 'anonymous'
     }).then((img) => {
       console.log('Background image loaded successfully');
@@ -70,7 +73,7 @@ export const addElementToCanvas = (
 
   try {
     if (config.type === 'image') {
-      const rect = new Rect({
+      const rect = new fabric.Rect({
         left: config.position.x * scale,
         top: config.position.y * scale,
         width: (config.style.width || 200) * scale,
@@ -94,7 +97,7 @@ export const addElementToCanvas = (
       canvas.moveObjectTo(rect, canvas.getObjects().length - 1);
     } else {
       // Simple text placeholder
-      const text = new FabricText(`[${config.field.toUpperCase()}]`, {
+      const text = new fabric.Text(`[${config.field.toUpperCase()}]`, {
         left: config.position.x * scale,
         top: config.position.y * scale,
         fontSize: (config.style.fontSize || 24) * scale,

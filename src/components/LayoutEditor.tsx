@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { fabric } from 'fabric';
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
 import { toast } from 'sonner';
 import { LayoutEditorProps } from './layout-editor/types';
@@ -10,6 +11,8 @@ import {
   addElementToCanvas, 
   serializeCanvasLayout
 } from './layout-editor/canvasOperations';
+
+type FabricCanvas = fabric.Canvas;
 
 export const LayoutEditor: React.FC<LayoutEditorProps> = ({
   templateId,

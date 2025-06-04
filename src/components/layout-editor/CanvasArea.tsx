@@ -1,9 +1,12 @@
+
 import React, { useRef, useEffect } from 'react';
-import { Canvas as FabricCanvas } from 'fabric';
+import { fabric } from 'fabric';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Trash, Save } from 'lucide-react';
 import { loadBackgroundImage } from './canvasOperations';
+
+type FabricCanvas = fabric.Canvas;
 
 interface CanvasAreaProps {
   formatName: string;
@@ -44,7 +47,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
 
     console.log('Initializing Fabric.js canvas');
 
-    const fabricCanvas = new FabricCanvas(canvasRef.current, {
+    const fabricCanvas = new fabric.Canvas(canvasRef.current, {
       width: displayWidth,
       height: displayHeight,
       backgroundColor: '#f5f5f5'
