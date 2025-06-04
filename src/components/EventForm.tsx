@@ -31,6 +31,16 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
   const { teachers, loading } = useSupabaseTeachers();
   const { templates } = useSupabaseTemplates();
 
+  // Define formatDisplayNames before using it
+  const formatDisplayNames = {
+    youtube: "YouTube",
+    feed: "Feed",
+    stories: "Stories", 
+    bannerGCO: "Banner GCO",
+    ledStudio: "LED Studio",
+    LP: "LP"
+  };
+
   // Update teacher images when teacher selection changes
   useEffect(() => {
     if (eventData.professorPhotos) {
@@ -51,15 +61,6 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
         label: formatDisplayNames[f.format_name as keyof typeof formatDisplayNames] || f.format_name
       })) || []
     : [];
-
-  const formatDisplayNames = {
-    youtube: "YouTube",
-    feed: "Feed",
-    stories: "Stories", 
-    bannerGCO: "Banner GCO",
-    ledStudio: "LED Studio",
-    LP: "LP"
-  };
 
   const backgroundColorOptions = [
     { id: "red", label: "Vermelho", color: "#dd303e", textColor: "#FFFFFF" },
