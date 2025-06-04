@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +24,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
   formatDimensions,
   displayWidth,
   displayHeight,
+  scale,
   canvas,
   selectedObject,
   onCanvasReady,
