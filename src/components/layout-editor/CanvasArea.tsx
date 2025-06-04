@@ -1,5 +1,6 @@
+
 import React, { useRef, useEffect } from 'react';
-import fabric from 'fabric';
+import * as fabric from 'fabric';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Trash, Save } from 'lucide-react';

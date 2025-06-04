@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import fabric from 'fabric';
+import * as fabric from 'fabric';
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
 import { toast } from 'sonner';
 import { LayoutEditorProps } from './layout-editor/types';

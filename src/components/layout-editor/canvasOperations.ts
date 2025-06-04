@@ -1,4 +1,5 @@
-import fabric from 'fabric';
+
+import * as fabric from 'fabric';
 import { CanvasElementConfig } from './types';
 
 type FabricCanvas = fabric.Canvas;
