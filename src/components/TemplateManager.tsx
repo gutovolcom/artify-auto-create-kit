@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,8 +20,12 @@ const formatSpecs = {
 };
 
 export const TemplateManager = () => {
-  const { templates, loading, createTemplate, deleteTemplate } = useSupabaseTemplates();
+  const { templates, loading, createTemplate, deleteTemplate, updateTemplateFormat } = useSupabaseTemplates();
   const [isCreating, setIsCreating] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<{
+    templateId: string;
+    templateName: string;
+  } | null>(null);
   const [editingLayout, setEditingLayout] = useState<{
     templateId: string;
     formatName: string;
@@ -28,6 +33,7 @@ export const TemplateManager = () => {
   } | null>(null);
   const [newTemplateName, setNewTemplateName] = useState("");
   const [newTemplateFiles, setNewTemplateFiles] = useState<Record<string, File>>({});
+  const [editTemplateFiles, setEditTemplateFiles] = useState<Record<string, File>>({});
   const [creating, setCreatingState] = useState(false);
 
   const handleCreateTemplate = async () => {
@@ -58,11 +64,41 @@ export const TemplateManager = () => {
     }
   };
 
-  const handleFileUpload = (format: string, file: File) => {
-    setNewTemplateFiles(prev => ({
-      ...prev,
-      [format]: file
-    }));
+  const handleUpdateTemplate = async () => {
+    if (!editingTemplate) return;
+
+    const updatedFormats = Object.keys(editTemplateFiles);
+    if (updatedFormats.length === 0) {
+      toast.error("Selecione pelo menos um formato para atualizar!");
+      return;
+    }
+
+    try {
+      for (const formatName of updatedFormats) {
+        const file = editTemplateFiles[formatName];
+        await updateTemplateFormat(editingTemplate.templateId, formatName, file);
+      }
+      
+      setEditingTemplate(null);
+      setEditTemplateFiles({});
+      toast.success("Template atualizado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao atualizar template");
+    }
+  };
+
+  const handleFileUpload = (format: string, file: File, isEdit = false) => {
+    if (isEdit) {
+      setEditTemplateFiles(prev => ({
+        ...prev,
+        [format]: file
+      }));
+    } else {
+      setNewTemplateFiles(prev => ({
+        ...prev,
+        [format]: file
+      }));
+    }
   };
 
   const resetForm = () => {
@@ -70,8 +106,17 @@ export const TemplateManager = () => {
     setNewTemplateFiles({});
   };
 
+  const resetEditForm = () => {
+    setEditTemplateFiles({});
+  };
+
   const openLayoutEditor = (templateId: string, formatName: string, imageUrl: string) => {
     setEditingLayout({ templateId, formatName, imageUrl });
+  };
+
+  const openTemplateEditor = (templateId: string, templateName: string) => {
+    setEditingTemplate({ templateId, templateName });
+    setEditTemplateFiles({});
   };
 
   if (loading) {
@@ -194,6 +239,15 @@ export const TemplateManager = () => {
               
               <div className="flex gap-2">
                 <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openTemplateEditor(template.id, template.name)}
+                  className="flex items-center gap-1"
+                >
+                  <Edit className="h-3 w-3" />
+                  Editar
+                </Button>
+                <Button
                   variant="destructive"
                   size="sm"
                   onClick={() => deleteTemplate(template.id)}
@@ -205,6 +259,66 @@ export const TemplateManager = () => {
           </Card>
         ))}
       </div>
+
+      {/* Template Edit Dialog */}
+      <Dialog open={!!editingTemplate} onOpenChange={() => setEditingTemplate(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Template: {editingTemplate?.templateName}</DialogTitle>
+          </DialogHeader>
+          {editingTemplate && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Selecione os formatos que deseja atualizar com novas imagens:
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Object.entries(formatSpecs).map(([formatKey, spec]) => (
+                  <Card key={formatKey}>
+                    <CardHeader>
+                      <CardTitle className="text-sm">
+                        {spec.label} ({spec.width}x{spec.height})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleFileUpload(formatKey, file, true);
+                          }
+                        }}
+                      />
+                      {editTemplateFiles[formatKey] && (
+                        <div className="mt-2 text-sm text-green-600">
+                          ✓ {editTemplateFiles[formatKey].name}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleUpdateTemplate}
+                  disabled={Object.keys(editTemplateFiles).length === 0}
+                >
+                  Atualizar Template
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  setEditingTemplate(null);
+                  resetEditForm();
+                }}>
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Layout Editor Dialog */}
       <Dialog open={!!editingLayout} onOpenChange={() => setEditingLayout(null)}>

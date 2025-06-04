@@ -121,6 +121,28 @@ export const useSupabaseTemplates = () => {
     }
   };
 
+  const updateTemplateFormat = async (templateId: string, formatName: string, file: File) => {
+    try {
+      // Upload new image
+      const imageUrl = await uploadImage(file, templateId, formatName);
+      
+      // Update the format record
+      const { error } = await supabase
+        .from('template_formats')
+        .update({ image_url: imageUrl })
+        .eq('template_id', templateId)
+        .eq('format_name', formatName);
+
+      if (error) throw error;
+
+      await fetchTemplates();
+      return imageUrl;
+    } catch (error) {
+      console.error('Error updating template format:', error);
+      throw error;
+    }
+  };
+
   const deleteTemplate = async (id: string) => {
     try {
       const { error } = await supabase
@@ -138,14 +160,11 @@ export const useSupabaseTemplates = () => {
     }
   };
 
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
-
   return {
     templates,
     loading,
     createTemplate,
+    updateTemplateFormat,
     deleteTemplate,
     refetch: fetchTemplates
   };

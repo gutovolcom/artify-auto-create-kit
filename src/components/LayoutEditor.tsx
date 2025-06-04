@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
 import { toast } from 'sonner';
+import { Trash } from 'lucide-react';
 
 interface LayoutEditorProps {
   templateId: string;
@@ -39,6 +41,15 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
   
   const displayWidth = formatDimensions.width * scale;
   const displayHeight = formatDimensions.height * scale;
+
+  // Available fonts - only the ones in the fonts folder
+  const availableFonts = [
+    'Margem-Regular',
+    'Margem-Bold', 
+    'Margem-Black',
+    'Arial', // Keep some system fonts as fallback
+    'Arial Black'
+  ];
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -78,9 +89,18 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
       setSelectedObject(null);
     });
 
+    // Add keyboard event listener for delete key
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        deleteSelectedObject();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
     setCanvas(fabricCanvas);
 
     return () => {
+      document.removeEventListener('keydown', handleKeyDown);
       fabricCanvas.dispose();
     };
   }, [templateId, formatName, backgroundImageUrl, displayWidth, displayHeight, scale]);
@@ -131,7 +151,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
         top: (config.position.y || 50) * scale,
         fontSize: (config.style.fontSize || 24) * scale,
         fill: config.style.color || config.style.textColor || '#000000',
-        fontFamily: config.style.fontFamily || 'Arial',
+        fontFamily: config.style.fontFamily || 'Margem-Regular',
         fontWeight: config.style.fontWeight || 'normal'
       });
 
@@ -199,11 +219,21 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     });
   };
 
+  const deleteSelectedObject = () => {
+    if (!selectedObject || !canvas) return;
+    
+    canvas.remove(selectedObject);
+    setSelectedObject(null);
+    canvas.renderAll();
+    toast.success('Elemento removido!');
+  };
+
   const updateSelectedObject = (property: string, value: any) => {
     if (!selectedObject || !canvas) return;
 
     if (property === 'fontSize') {
-      selectedObject.set({ fontSize: value * scale });
+      const newFontSize = value * scale;
+      selectedObject.set({ fontSize: newFontSize });
     } else if (property === 'fill' || property === 'color') {
       selectedObject.set({ fill: value });
     } else if (property === 'fontFamily') {
@@ -294,6 +324,16 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
               <Button onClick={saveCurrentLayout}>
                 Salvar Layout
               </Button>
+              {selectedObject && (
+                <Button 
+                  variant="destructive" 
+                  onClick={deleteSelectedObject}
+                  className="flex items-center gap-2"
+                >
+                  <Trash className="h-4 w-4" />
+                  Remover Elemento
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -322,7 +362,17 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
         {selectedObject && (
           <Card className="mt-4">
             <CardHeader>
-              <CardTitle>Propriedades</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                Propriedades
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={deleteSelectedObject}
+                  className="flex items-center gap-1"
+                >
+                  <Trash className="h-3 w-3" />
+                </Button>
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -331,6 +381,8 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
                   type="number"
                   value={Math.round((selectedObject as any).fontSize / scale) || 24}
                   onChange={(e) => updateSelectedObject('fontSize', parseInt(e.target.value))}
+                  min="8"
+                  max="200"
                 />
               </div>
               
@@ -346,17 +398,18 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
               <div>
                 <Label>Fonte</Label>
                 <Select
-                  value={(selectedObject as any).fontFamily || 'Arial'}
+                  value={(selectedObject as any).fontFamily || 'Margem-Regular'}
                   onValueChange={(value) => updateSelectedObject('fontFamily', value)}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Arial">Arial</SelectItem>
-                    <SelectItem value="Arial Black">Arial Black</SelectItem>
-                    <SelectItem value="Times New Roman">Times New Roman</SelectItem>
-                    <SelectItem value="Helvetica">Helvetica</SelectItem>
+                    {availableFonts.map((font) => (
+                      <SelectItem key={font} value={font}>
+                        {font}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
