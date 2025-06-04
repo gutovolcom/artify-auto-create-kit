@@ -41,7 +41,18 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  
+  // Use refs to store the latest callback functions
+  const onSelectionChangeRef = useRef(onSelectionChange);
+  const onDeleteSelectedRef = useRef(onDeleteSelected);
+  const onBackgroundLoadedRef = useRef(onBackgroundLoaded);
+  
+  // Update refs when callbacks change
+  onSelectionChangeRef.current = onSelectionChange;
+  onDeleteSelectedRef.current = onDeleteSelected;
+  onBackgroundLoadedRef.current = onBackgroundLoaded;
 
+  // Initialize canvas only once
   useEffect(() => {
     if (!canvasRef.current || fabricCanvasRef.current) return;
 
@@ -61,37 +72,33 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
       loadBackgroundImage(fabricCanvas, backgroundImageUrl, scale)
         .then(() => {
           console.log('Background image loaded successfully');
-          // Call the callback to let LayoutEditor know the background is loaded
-          onBackgroundLoaded?.();
+          onBackgroundLoadedRef.current?.();
         })
         .catch((error) => {
           console.error('Error loading background image:', error);
           fabricCanvas.backgroundColor = '#f5f5f5';
           fabricCanvas.renderAll();
-          // Still call the callback even if image fails to load
-          onBackgroundLoaded?.();
+          onBackgroundLoadedRef.current?.();
         });
     } else {
-      // If no background image, call the callback immediately
-      onBackgroundLoaded?.();
+      onBackgroundLoadedRef.current?.();
     }
 
     fabricCanvas.on('selection:created', (e) => {
       console.log('Object selected:', e.selected?.[0]);
-      onSelectionChange(e.selected?.[0]);
+      onSelectionChangeRef.current(e.selected?.[0]);
     });
 
     fabricCanvas.on('selection:updated', (e) => {
       console.log('Selection updated:', e.selected?.[0]);
-      onSelectionChange(e.selected?.[0]);
+      onSelectionChangeRef.current(e.selected?.[0]);
     });
 
     fabricCanvas.on('selection:cleared', () => {
       console.log('Selection cleared');
-      onSelectionChange(null);
+      onSelectionChangeRef.current(null);
     });
 
-    // Add object modification logging
     fabricCanvas.on('object:modified', (e) => {
       console.log('Object modified:', {
         target: e.target,
@@ -105,7 +112,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
-        onDeleteSelected();
+        onDeleteSelectedRef.current();
       }
     };
 
@@ -120,7 +127,27 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
         fabricCanvasRef.current = null;
       }
     };
-  }, [displayWidth, displayHeight, backgroundImageUrl, scale, onCanvasReady, onSelectionChange, onDeleteSelected, onBackgroundLoaded]);
+  }, []); // Only run once
+
+  // Handle background image changes separately to avoid canvas recreation
+  useEffect(() => {
+    if (!fabricCanvasRef.current || !backgroundImageUrl) return;
+
+    console.log('Background image URL changed, updating background:', backgroundImageUrl);
+    loadBackgroundImage(fabricCanvasRef.current, backgroundImageUrl, scale)
+      .then(() => {
+        console.log('Background image updated successfully');
+        onBackgroundLoadedRef.current?.();
+      })
+      .catch((error) => {
+        console.error('Error updating background image:', error);
+        if (fabricCanvasRef.current) {
+          fabricCanvasRef.current.backgroundColor = '#f5f5f5';
+          fabricCanvasRef.current.renderAll();
+        }
+        onBackgroundLoadedRef.current?.();
+      });
+  }, [backgroundImageUrl, scale]);
 
   return (
     <div className="flex-1">
