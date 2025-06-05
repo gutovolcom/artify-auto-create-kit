@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import * as fabric from 'fabric';
 import { toast } from 'sonner';
-import { addElementToCanvas } from '@/components/layout-editor/canvasOperations';
+import { addElementToCanvas, serializeCanvasLayout } from '@/components/layout-editor/canvasOperations';
 
 type FabricCanvas = fabric.Canvas;
 
@@ -14,10 +14,12 @@ interface UseCanvasManagerProps {
   displayWidth: number;
   displayHeight: number;
   scale: number;
+  layoutDraft: any[];
   setCanvas: (canvas: FabricCanvas | null) => void;
   setLoadingState: (state: any) => void;
   setLayoutLoadAttempts: (attempts: number) => void;
   setLoadingError: (error: string | null) => void;
+  setLayoutDraft: (draft: any[]) => void;
   getLayout: (templateId: string, formatName: string) => Promise<any>;
 }
 
@@ -30,12 +32,20 @@ export const useCanvasManager = ({
   displayWidth,
   displayHeight,
   scale,
+  layoutDraft,
   setCanvas,
   setLoadingState,
   setLayoutLoadAttempts,
   setLoadingError,
+  setLayoutDraft,
   getLayout
 }: UseCanvasManagerProps) => {
+
+  const updateLayoutDraft = (fabricCanvas: FabricCanvas) => {
+    const elements = serializeCanvasLayout(fabricCanvas, scale);
+    setLayoutDraft(elements);
+    console.log("Layout updated in real time", elements);
+  };
 
   const addDefaultLayoutElements = (fabricCanvas: FabricCanvas) => {
     console.log('Adding default layout elements to canvas');
@@ -153,6 +163,8 @@ export const useCanvasManager = ({
         toast.info('Layout padrão aplicado');
       }
       
+      // Update layout draft after loading elements
+      updateLayoutDraft(fabricCanvas);
       setLoadingState('ready');
       return true;
     } catch (error) {
@@ -162,6 +174,7 @@ export const useCanvasManager = ({
       // Fallback to default layout
       console.log('Falling back to default layout');
       addDefaultLayoutElements(fabricCanvas);
+      updateLayoutDraft(fabricCanvas);
       setLoadingState('ready');
       toast.error('Erro ao carregar layout salvo, usando layout padrão');
       return false;
@@ -198,6 +211,27 @@ export const useCanvasManager = ({
     canvasRef.current = fabricCanvas;
     setLoadingState('initializing');
     
+    // Add real-time event listeners for layout tracking
+    fabricCanvas.on('object:modified', () => {
+      console.log('[✔] Element modified, updating layout draft');
+      updateLayoutDraft(fabricCanvas);
+    });
+
+    fabricCanvas.on('object:moving', () => {
+      console.log('[✔] Element moving, updating layout draft');
+      updateLayoutDraft(fabricCanvas);
+    });
+
+    fabricCanvas.on('object:scaling', () => {
+      console.log('[✔] Element scaling, updating layout draft');
+      updateLayoutDraft(fabricCanvas);
+    });
+
+    fabricCanvas.on('object:rotating', () => {
+      console.log('[✔] Element rotating, updating layout draft');
+      updateLayoutDraft(fabricCanvas);
+    });
+    
     // Try to load elements immediately when canvas is ready
     setTimeout(() => {
       loadLayoutIfReady(templateId, formatName);
@@ -232,9 +266,7 @@ export const useCanvasManager = ({
       // Set up a timeout to load elements even if background doesn't load
       loadingTimeoutRef.current = setTimeout(() => {
         console.log('Timeout triggered for loading elements');
-        // Note: We can't call loadLayoutIfReady here without templateId/formatName
-        // This will be handled by the parent component
-      }, 2000); // 2 second timeout
+      }, 2000);
     }
 
     return () => {

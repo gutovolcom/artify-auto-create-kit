@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
 import { useLayoutEditorState } from '@/hooks/useLayoutEditorState';
@@ -30,6 +29,8 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     setLoadingError,
     layoutLoadAttempts,
     setLayoutLoadAttempts,
+    layoutDraft,
+    setLayoutDraft,
     canvasRef,
     loadingTimeoutRef,
     resetState
@@ -50,7 +51,8 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     formatName,
     loadingState,
     layoutLoadAttempts,
-    canvasReady: !!canvas
+    canvasReady: !!canvas,
+    layoutDraftSize: layoutDraft.length
   });
 
   const {
@@ -67,10 +69,12 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     displayWidth,
     displayHeight,
     scale,
+    layoutDraft,
     setCanvas,
     setLoadingState,
     setLayoutLoadAttempts,
     setLoadingError,
+    setLayoutDraft,
     getLayout
   });
 
@@ -86,6 +90,8 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     displayWidth,
     displayHeight,
     layoutElements,
+    layoutDraft,
+    setLayoutDraft,
     saveLayout,
     templateId,
     formatName,

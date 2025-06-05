@@ -21,6 +21,8 @@ interface UseLayoutOperationsProps {
   displayWidth: number;
   displayHeight: number;
   layoutElements: LayoutElement[];
+  layoutDraft: any[];
+  setLayoutDraft: (draft: any[]) => void;
   saveLayout: (config: any) => Promise<void>;
   templateId: string;
   formatName: string;
@@ -35,11 +37,20 @@ export const useLayoutOperations = ({
   displayWidth,
   displayHeight,
   layoutElements,
+  layoutDraft,
+  setLayoutDraft,
   saveLayout,
   templateId,
   formatName,
   onSave
 }: UseLayoutOperationsProps) => {
+
+  const updateLayoutDraft = () => {
+    if (!canvas) return;
+    const elements = serializeCanvasLayout(canvas, scale);
+    setLayoutDraft(elements);
+    console.log("Layout draft updated after element addition/deletion", elements);
+  };
 
   const handleAddElement = (elementType: string) => {
     if (!canvas) {
@@ -78,6 +89,7 @@ export const useLayoutOperations = ({
 
     console.log('Adding new element:', elementConfig);
     addElementToCanvas(canvas, elementConfig, scale);
+    updateLayoutDraft();
     toast.success('Elemento adicionado!');
   };
 
@@ -92,6 +104,7 @@ export const useLayoutOperations = ({
       canvas.remove(selectedObject);
       setSelectedObject(null);
       canvas.renderAll();
+      updateLayoutDraft();
       toast.success('Elemento removido!');
     } catch (error) {
       console.error('Error deleting element:', error);
@@ -106,8 +119,9 @@ export const useLayoutOperations = ({
     }
 
     try {
-      const elements = serializeCanvasLayout(canvas, scale);
-      console.log('Saving layout with elements:', elements.length, 'elements');
+      // Use layout draft if available, otherwise serialize fresh
+      const elements = layoutDraft.length > 0 ? layoutDraft : serializeCanvasLayout(canvas, scale);
+      console.log('Saving layout with elements from draft:', elements.length, 'elements');
 
       await saveLayout({
         template_id: templateId,

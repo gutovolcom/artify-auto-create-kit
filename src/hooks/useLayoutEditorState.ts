@@ -11,6 +11,7 @@ export const useLayoutEditorState = () => {
   const [loadingState, setLoadingState] = useState<LoadingState>('idle');
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const [layoutLoadAttempts, setLayoutLoadAttempts] = useState(0);
+  const [layoutDraft, setLayoutDraft] = useState<any[]>([]);
 
   // Refs to store latest callbacks and prevent stale closures
   const canvasRef = useRef<FabricCanvas | null>(null);
@@ -21,6 +22,7 @@ export const useLayoutEditorState = () => {
     setLoadingState('idle');
     setLayoutLoadAttempts(0);
     setLoadingError(null);
+    setLayoutDraft([]);
     canvasRef.current = null;
     
     if (loadingTimeoutRef.current) {
@@ -40,6 +42,8 @@ export const useLayoutEditorState = () => {
     setLoadingError,
     layoutLoadAttempts,
     setLayoutLoadAttempts,
+    layoutDraft,
+    setLayoutDraft,
     canvasRef,
     loadingTimeoutRef,
     resetState
