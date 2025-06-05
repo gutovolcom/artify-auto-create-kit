@@ -53,8 +53,8 @@ export const addElementToCanvas = (
     });
 
     const group = new Group([background, text], {
-      left: position?.x || 0,
-      top: position?.y || 0,
+      left: position?.x ?? 0,
+      top: position?.y ?? 0,
       selectable: false,
       evented: false
     });
@@ -62,8 +62,8 @@ export const addElementToCanvas = (
     canvas.add(group);
   } else {
     const text = new FabricText(textContent, {
-      left: position?.x || 0,
-      top: position?.y || 0,
+      left: position?.x ?? 0,
+      top: position?.y ?? 0,
       fontSize: formatStyle.fontSize,
       fontFamily: formatStyle.fontFamily,
       fill: formatStyle.color,
@@ -101,8 +101,8 @@ export const addProfessorPhotoToCanvas = async (
         });
         
         img.set({
-          left: photoElement.position?.x || 0,
-          top: photoElement.position?.y || 0,
+          left: photoElement.position?.x ?? 0,
+          top: photoElement.position?.y ?? 0,
           scaleX: targetWidth / img.width!,
           scaleY: targetHeight / img.height!,
           selectable: false,
