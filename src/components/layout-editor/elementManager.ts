@@ -39,8 +39,12 @@ export const addElementToCanvas = (
   };
 
   // Enhanced size handling - check multiple sources for dimensions
-  const elementWidth = config.style?.width || config.size?.width || (config.type === 'image' ? 200 : 100);
-  const elementHeight = config.style?.height || config.size?.height || (config.type === 'image' ? 200 : 50);
+  const elementWidth = config.style?.width || 
+                      elementConfig.size?.width || 
+                      (config.type === 'image' ? 200 : 100);
+  const elementHeight = config.style?.height || 
+                       elementConfig.size?.height || 
+                       (config.type === 'image' ? 200 : 50);
 
   // Validate and constrain position if format is provided
   if (format) {
