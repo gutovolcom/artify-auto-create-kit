@@ -1,5 +1,6 @@
 
 import React from 'react';
+import * as fabric from 'fabric';
 import { useCanvasSetup } from '@/hooks/useCanvasSetup';
 
 type FabricCanvas = fabric.Canvas;
