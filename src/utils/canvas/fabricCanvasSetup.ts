@@ -48,6 +48,14 @@ export const setupCanvasContainer = (width: number, height: number): HTMLCanvasE
   const tempCanvas = document.createElement('canvas');
   tempCanvas.width = width;
   tempCanvas.height = height;
+  
+  // Create an invisible and off-screen canvas
+  tempCanvas.style.position = 'absolute';
+  tempCanvas.style.left = '-9999px';
+  tempCanvas.style.top = '0';
+  tempCanvas.style.opacity = '0';
+  tempCanvas.style.pointerEvents = 'none';
+  
   document.body.appendChild(tempCanvas);
   return tempCanvas;
 };
