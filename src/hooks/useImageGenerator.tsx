@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { EventData } from "@/pages/Index";
 import { toast } from "sonner";
@@ -6,6 +5,7 @@ import { renderCanvasWithTemplate } from "@/utils/canvasRenderer";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
 import { useActivityLog } from "@/hooks/useActivityLog";
 import { useLayoutEditor } from "@/hooks/useLayoutEditor";
+import { platformConfigs } from "@/lib/platformConfigs";
 
 interface GeneratedImage {
   platform: string;
@@ -13,15 +13,6 @@ interface GeneratedImage {
   url: string;
   bgImageUrl?: string;
 }
-
-const platformConfigs = {
-  youtube: { name: "YouTube", width: 1920, height: 1080 },
-  feed: { name: "Feed", width: 1080, height: 1080 },
-  stories: { name: "Stories", width: 1080, height: 1920 },
-  bannerGCO: { name: "Banner GCO", width: 255, height: 192 },
-  ledStudio: { name: "LED Studio", width: 1024, height: 256 },
-  LP: { name: "LP", width: 800, height: 776 },
-};
 
 // Helper function to normalize teacher photos to always be an array
 const normalizeTeacherPhotos = (eventData: EventData): string[] => {

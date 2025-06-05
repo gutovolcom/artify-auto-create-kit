@@ -1,40 +1,9 @@
 
-export interface PlatformConfig {
-  name: string;
-  dimensions: {
-    width: number;
-    height: number;
-  };
-  aspectRatio: string;
-  formats: string[];
-}
-
-export const platformConfigs: Record<string, PlatformConfig> = {
-  youtube: {
-    name: "YouTube",
-    dimensions: {
-      width: 1280,
-      height: 720
-    },
-    aspectRatio: "16:9",
-    formats: ["cover", "thumbnail"]
-  },
-  instagram: {
-    name: "Instagram",
-    dimensions: {
-      width: 1080,
-      height: 1080
-    },
-    aspectRatio: "1:1",
-    formats: ["feed", "story"]
-  },
-  linkedin: {
-    name: "LinkedIn",
-    dimensions: {
-      width: 1200,
-      height: 627
-    },
-    aspectRatio: "1.91:1",
-    formats: ["post", "cover"]
-  }
+export const platformConfigs = {
+  youtube: { name: "YouTube", width: 1920, height: 1080 },
+  feed: { name: "Feed", width: 1080, height: 1080 },
+  stories: { name: "Stories", width: 1080, height: 1920 },
+  bannerGCO: { name: "Banner GCO", width: 255, height: 192 },
+  ledStudio: { name: "LED Studio", width: 1024, height: 256 },
+  LP: { name: "LP", width: 800, height: 776 },
 };
