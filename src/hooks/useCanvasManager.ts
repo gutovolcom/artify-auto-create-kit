@@ -1,7 +1,10 @@
-import { useEffect } from 'react';
+
+import { useEffect, useCallback } from 'react';
 import * as fabric from 'fabric';
 import { toast } from 'sonner';
-import { addElementToCanvas, serializeCanvasLayout } from '@/components/layout-editor/canvasOperations';
+import { addElementToCanvas } from '@/components/layout-editor/elementManager';
+import { serializeCanvasLayout } from '@/components/layout-editor/layoutSerializer';
+import { constrainToCanvas } from '@/utils/positionValidation';
 
 type FabricCanvas = fabric.Canvas;
 
@@ -10,16 +13,19 @@ interface UseCanvasManagerProps {
   canvasRef: React.MutableRefObject<FabricCanvas | null>;
   loadingState: string;
   layoutLoadAttempts: number;
+  isLoadingLayout: boolean;
   loadingTimeoutRef: React.MutableRefObject<NodeJS.Timeout | null>;
+  layoutUpdateTimeoutRef: React.MutableRefObject<NodeJS.Timeout | null>;
   displayWidth: number;
   displayHeight: number;
   scale: number;
   layoutDraft: any[];
   setCanvas: (canvas: FabricCanvas | null) => void;
   setLoadingState: (state: any) => void;
-  setLayoutLoadAttempts: (attempts: number) => void;
+  incrementLayoutAttempts: () => void;
   setLoadingError: (error: string | null) => void;
   setLayoutDraft: (draft: any[]) => void;
+  setIsLoadingLayout: (loading: boolean) => void;
   getLayout: (templateId: string, formatName: string) => Promise<any>;
 }
 
@@ -28,27 +34,82 @@ export const useCanvasManager = ({
   canvasRef,
   loadingState,
   layoutLoadAttempts,
+  isLoadingLayout,
   loadingTimeoutRef,
+  layoutUpdateTimeoutRef,
   displayWidth,
   displayHeight,
   scale,
   layoutDraft,
   setCanvas,
   setLoadingState,
-  setLayoutLoadAttempts,
+  incrementLayoutAttempts,
   setLoadingError,
   setLayoutDraft,
+  setIsLoadingLayout,
   getLayout
 }: UseCanvasManagerProps) => {
 
-  const updateLayoutDraft = (fabricCanvas: FabricCanvas) => {
-    const elements = serializeCanvasLayout(fabricCanvas, scale);
+  // Optimized layout draft update with boundary validation
+  const updateLayoutDraft = useCallback((fabricCanvas: FabricCanvas, format?: string) => {
+    const elements = serializeCanvasLayout(fabricCanvas, scale, format);
     setLayoutDraft(elements);
-    console.log("Layout updated in real time", elements);
-  };
+    console.log("📝 Layout updated with boundary validation for format:", format, elements.length, "elements");
+  }, [scale, setLayoutDraft]);
 
-  const addDefaultLayoutElements = (fabricCanvas: FabricCanvas) => {
-    console.log('Adding default layout elements to canvas');
+  // Enhanced boundary-aware element event handlers
+  const setupCanvasEventListeners = useCallback((fabricCanvas: FabricCanvas, format?: string) => {
+    // Remove existing listeners to prevent duplicates
+    fabricCanvas.off('object:modified');
+    fabricCanvas.off('object:moving');
+    fabricCanvas.off('object:scaling');
+
+    // Consolidated event handler with boundary validation
+    const handleElementChange = (e: fabric.ModifiedEvent) => {
+      const obj = e.target;
+      if (!obj || !format) {
+        updateLayoutDraft(fabricCanvas, format);
+        return;
+      }
+
+      // Real-time boundary constraint during interaction
+      const unscaledX = (obj.left || 0) / scale;
+      const unscaledY = (obj.top || 0) / scale;
+      const objWidth = ((obj.width || 100) * (obj.scaleX || 1));
+      const objHeight = ((obj.height || 50) * (obj.scaleY || 1));
+
+      const constrained = constrainToCanvas(
+        {
+          position: { x: unscaledX, y: unscaledY },
+          size: { width: objWidth / scale, height: objHeight / scale }
+        },
+        format,
+        10 // 10px margin
+      );
+
+      // Apply constraints if position changed
+      if (constrained.position.x !== unscaledX || constrained.position.y !== unscaledY) {
+        obj.set({
+          left: constrained.position.x * scale,
+          top: constrained.position.y * scale
+        });
+        fabricCanvas.renderAll();
+        console.log(`🚧 Element constrained to boundaries:`, constrained.position);
+      }
+
+      updateLayoutDraft(fabricCanvas, format);
+    };
+
+    // Attach optimized event listeners
+    fabricCanvas.on('object:modified', handleElementChange);
+    fabricCanvas.on('object:moving', handleElementChange);
+    fabricCanvas.on('object:scaling', handleElementChange);
+
+    console.log('✅ Canvas event listeners setup with boundary validation');
+  }, [scale, updateLayoutDraft]);
+
+  const addDefaultLayoutElements = useCallback((fabricCanvas: FabricCanvas, format?: string) => {
+    console.log('📋 Adding default layout elements to canvas for format:', format);
     
     const defaultElements = [
       {
@@ -90,42 +151,44 @@ export const useCanvasManager = ({
         id: 'teacherImages',
         type: 'image',
         field: 'teacherImages',
-        position: { x: displayWidth - 250, y: displayHeight - 250 },
+        position: { x: Math.max(50, displayWidth - 250), y: Math.max(50, displayHeight - 250) },
         style: { width: 200, height: 200 }
       }
     ];
 
     defaultElements.forEach(element => {
-      addElementToCanvas(fabricCanvas, element, scale);
+      addElementToCanvas(fabricCanvas, element, scale, format);
     });
-  };
 
-  const clearCanvasObjects = (fabricCanvas: FabricCanvas) => {
-    console.log('Clearing canvas objects');
+    setupCanvasEventListeners(fabricCanvas, format);
+  }, [displayWidth, displayHeight, scale, setupCanvasEventListeners]);
+
+  const clearCanvasObjects = useCallback((fabricCanvas: FabricCanvas) => {
+    console.log('🧹 Clearing canvas objects');
     const objects = fabricCanvas.getObjects();
     objects.forEach(obj => {
       fabricCanvas.remove(obj);
     });
     fabricCanvas.renderAll();
-  };
+  }, []);
 
-  const loadLayoutElements = async (fabricCanvas: FabricCanvas, templateId: string, formatName: string) => {
-    if (!fabricCanvas) {
-      console.warn('Cannot load layout: canvas not available');
+  const loadLayoutElements = useCallback(async (fabricCanvas: FabricCanvas, templateId: string, formatName: string) => {
+    if (!fabricCanvas || isLoadingLayout) {
+      console.warn('⚠️ Cannot load layout: canvas not available or already loading');
       return false;
     }
 
-    console.log('Loading layout elements for template:', templateId, 'format:', formatName);
+    console.log('📥 Loading layout elements for template:', templateId, 'format:', formatName);
+    setIsLoadingLayout(true);
     setLoadingState('loading-elements');
     setLoadingError(null);
     
     try {
-      // Clear existing objects first
       clearCanvasObjects(fabricCanvas);
       
       const existingLayout = await getLayout(templateId, formatName);
       if (existingLayout?.layout_config?.elements && existingLayout.layout_config.elements.length > 0) {
-        console.log('Loading existing layout elements:', existingLayout.layout_config.elements.length, 'elements');
+        console.log('📂 Loading existing layout elements:', existingLayout.layout_config.elements.length, 'elements');
         
         // Deduplicate elements by field before adding to canvas
         const uniqueElements = new Map();
@@ -134,7 +197,7 @@ export const useCanvasManager = ({
         });
         
         const elementsToLoad = Array.from(uniqueElements.values());
-        console.log('After deduplication:', elementsToLoad.length, 'unique elements');
+        console.log('🔍 After deduplication:', elementsToLoad.length, 'unique elements');
         
         elementsToLoad.forEach((element: any) => {
           const elementConfig = {
@@ -142,6 +205,7 @@ export const useCanvasManager = ({
             type: element.type,
             field: element.field,
             position: element.position,
+            size: element.size, // Preserve saved size
             style: {
               fontSize: element.style?.fontSize || 24,
               fontFamily: element.style?.fontFamily || 'Arial',
@@ -151,122 +215,113 @@ export const useCanvasManager = ({
               ...element.style
             }
           };
-          console.log('Adding element from saved layout:', elementConfig.field, 'at position:', elementConfig.position);
-          addElementToCanvas(fabricCanvas, elementConfig, scale);
+          console.log('➕ Adding element from saved layout:', elementConfig.field, 'with preserved size:', elementConfig.size);
+          addElementToCanvas(fabricCanvas, elementConfig, scale, formatName);
         });
         
-        console.log('Successfully loaded', elementsToLoad.length, 'elements from saved layout');
+        setupCanvasEventListeners(fabricCanvas, formatName);
+        console.log('✅ Successfully loaded', elementsToLoad.length, 'elements from saved layout');
         toast.success(`Layout carregado: ${elementsToLoad.length} elementos`);
       } else {
-        console.log('No existing layout found, adding default elements');
-        addDefaultLayoutElements(fabricCanvas);
+        console.log('📋 No existing layout found, adding default elements');
+        addDefaultLayoutElements(fabricCanvas, formatName);
         toast.info('Layout padrão aplicado');
       }
       
-      // Update layout draft after loading elements
-      updateLayoutDraft(fabricCanvas);
+      updateLayoutDraft(fabricCanvas, formatName);
       setLoadingState('ready');
       return true;
     } catch (error) {
-      console.error('Error loading layout:', error);
+      console.error('❌ Error loading layout:', error);
       setLoadingError(`Erro ao carregar layout: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
       
-      // Fallback to default layout
-      console.log('Falling back to default layout');
-      addDefaultLayoutElements(fabricCanvas);
-      updateLayoutDraft(fabricCanvas);
+      console.log('🔄 Falling back to default layout');
+      addDefaultLayoutElements(fabricCanvas, formatName);
+      updateLayoutDraft(fabricCanvas, formatName);
       setLoadingState('ready');
       toast.error('Erro ao carregar layout salvo, usando layout padrão');
       return false;
+    } finally {
+      setIsLoadingLayout(false);
     }
-  };
+  }, [isLoadingLayout, setIsLoadingLayout, setLoadingState, setLoadingError, clearCanvasObjects, getLayout, addDefaultLayoutElements, setupCanvasEventListeners, updateLayoutDraft, scale]);
 
-  const loadLayoutIfReady = async (templateId: string, formatName: string) => {
+  const loadLayoutIfReady = useCallback(async (templateId: string, formatName: string) => {
     const currentCanvas = canvasRef.current;
-    if (!currentCanvas || loadingState === 'loading-elements' || loadingState === 'ready') {
-      console.log('Skipping load - conditions not met:', {
+    if (!currentCanvas || isLoadingLayout || loadingState === 'loading-elements' || loadingState === 'ready') {
+      console.log('⏸️ Skipping load - conditions not met:', {
         hasCanvas: !!currentCanvas,
+        isLoadingLayout,
         loadingState,
         attempts: layoutLoadAttempts
       });
       return;
     }
 
-    console.log('Attempting to load layout elements, attempt:', layoutLoadAttempts + 1);
-    setLayoutLoadAttempts(layoutLoadAttempts + 1);
+    if (layoutLoadAttempts >= 3) {
+      console.log('⚠️ Max layout load attempts reached');
+      setLoadingError('Máximo de tentativas de carregamento atingido');
+      return;
+    }
+
+    console.log('🚀 Attempting to load layout elements, attempt:', layoutLoadAttempts + 1);
+    incrementLayoutAttempts();
     
     const success = await loadLayoutElements(currentCanvas, templateId, formatName);
-    if (success) {
-      // Clear any pending timeout
-      if (loadingTimeoutRef.current) {
-        clearTimeout(loadingTimeoutRef.current);
-        loadingTimeoutRef.current = null;
-      }
+    if (success && loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+      loadingTimeoutRef.current = null;
     }
-  };
+  }, [canvasRef, isLoadingLayout, loadingState, layoutLoadAttempts, incrementLayoutAttempts, setLoadingError, loadLayoutElements, loadingTimeoutRef]);
 
-  const handleCanvasReady = (fabricCanvas: FabricCanvas, templateId: string, formatName: string) => {
-    console.log('Canvas ready callback triggered');
+  const handleCanvasReady = useCallback((fabricCanvas: FabricCanvas, templateId: string, formatName: string) => {
+    console.log('🎨 Canvas ready callback triggered');
     setCanvas(fabricCanvas);
     canvasRef.current = fabricCanvas;
     setLoadingState('initializing');
-    
-    // Add real-time event listeners for layout tracking
-    fabricCanvas.on('object:modified', () => {
-      console.log('[✔] Element modified, updating layout draft');
-      updateLayoutDraft(fabricCanvas);
-    });
-
-    fabricCanvas.on('object:moving', () => {
-      console.log('[✔] Element moving, updating layout draft');
-      updateLayoutDraft(fabricCanvas);
-    });
-
-    fabricCanvas.on('object:scaling', () => {
-      console.log('[✔] Element scaling, updating layout draft');
-      updateLayoutDraft(fabricCanvas);
-    });
-
-    fabricCanvas.on('object:rotating', () => {
-      console.log('[✔] Element rotating, updating layout draft');
-      updateLayoutDraft(fabricCanvas);
-    });
     
     // Try to load elements immediately when canvas is ready
     setTimeout(() => {
       loadLayoutIfReady(templateId, formatName);
     }, 100);
-  };
+  }, [setCanvas, canvasRef, setLoadingState, loadLayoutIfReady]);
 
-  const handleBackgroundLoaded = (templateId: string, formatName: string) => {
-    console.log('Background loaded callback triggered');
+  const handleBackgroundLoaded = useCallback((templateId: string, formatName: string) => {
+    console.log('🖼️ Background loaded callback triggered');
     setLoadingState('loading-background');
     
     // Try to load elements when background is ready
     setTimeout(() => {
       loadLayoutIfReady(templateId, formatName);
     }, 100);
-  };
+  }, [setLoadingState, loadLayoutIfReady]);
 
-  const handleManualReload = async (templateId: string, formatName: string) => {
+  const handleManualReload = useCallback(async (templateId: string, formatName: string) => {
     if (!canvasRef.current) {
       toast.error('Canvas não está disponível');
       return;
     }
     
-    console.log('Manual reload triggered');
-    setLayoutLoadAttempts(0);
+    console.log('🔄 Manual reload triggered');
+    setIsLoadingLayout(false); // Reset loading state
     setLoadingState('loading-elements');
     await loadLayoutElements(canvasRef.current, templateId, formatName);
-  };
+  }, [canvasRef, setIsLoadingLayout, setLoadingState, loadLayoutElements]);
 
-  // Set up fallback timeout for loading elements
+  // Optimized effect with proper dependency management
   useEffect(() => {
-    if (canvas && loadingState !== 'ready' && layoutLoadAttempts < 3) {
-      // Set up a timeout to load elements even if background doesn't load
+    // Clear any existing timeout
+    if (loadingTimeoutRef.current) {
+      clearTimeout(loadingTimeoutRef.current);
+      loadingTimeoutRef.current = null;
+    }
+
+    // Only set timeout if canvas exists but layout isn't ready and we haven't exceeded attempts
+    if (canvas && loadingState !== 'ready' && !isLoadingLayout && layoutLoadAttempts < 3) {
       loadingTimeoutRef.current = setTimeout(() => {
-        console.log('Timeout triggered for loading elements');
-      }, 2000);
+        console.log('⏰ Timeout triggered for loading elements');
+        // Don't call loadLayoutIfReady here to prevent loops
+      }, 3000);
     }
 
     return () => {
@@ -275,12 +330,13 @@ export const useCanvasManager = ({
         loadingTimeoutRef.current = null;
       }
     };
-  }, [canvas, loadingState, layoutLoadAttempts]);
+  }, [canvas, loadingState, isLoadingLayout]); // Removed layoutLoadAttempts to prevent loop
 
   return {
     handleCanvasReady,
     handleBackgroundLoaded,
     handleManualReload,
-    loadLayoutIfReady
+    loadLayoutIfReady,
+    updateLayoutDraft
   };
 };

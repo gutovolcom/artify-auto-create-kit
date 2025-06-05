@@ -11,7 +11,7 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
   }
 
   try {
-    console.log('🚫 Serializing canvas layout - UNSCALED COORDINATES with boundary validation');
+    console.log('🚫 Serializing canvas layout with enhanced boundary validation');
     console.log('Canvas objects to serialize:', canvas.getObjects().length);
     console.log('Scale factor:', scale, 'Format:', format);
     
@@ -22,12 +22,21 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
         y: Math.round((obj.top || 0) / scale)
       };
 
-      // Calculate actual element dimensions
+      // Enhanced dimension calculation with fallback chain
       let width: number, height: number;
 
       if (obj.elementType === 'image') {
-        width = Math.round((obj.width || 200) * (obj.scaleX || 1));
-        height = Math.round((obj.height || 200) * (obj.scaleY || 1));
+        // For images, check multiple sources for original dimensions
+        width = obj.originalWidth || Math.round((obj.width || 200) * (obj.scaleX || 1));
+        height = obj.originalHeight || Math.round((obj.height || 200) * (obj.scaleY || 1));
+        
+        console.log(`🖼️ Image element ${obj.fieldMapping} dimensions:`, {
+          originalWidth: obj.originalWidth,
+          originalHeight: obj.originalHeight,
+          calculatedWidth: Math.round((obj.width || 200) * (obj.scaleX || 1)),
+          calculatedHeight: Math.round((obj.height || 200) * (obj.scaleY || 1)),
+          finalSize: { width, height }
+        });
       } else {
         width = Math.round((obj.width || 100) * (obj.scaleX || 1));
         height = Math.round((obj.height || 50) * (obj.scaleY || 1));
@@ -38,20 +47,38 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
         size: { width, height }
       };
 
-      // Validate position if format is provided
+      // Enhanced boundary validation and auto-correction
       if (format) {
         const validation = validateElementPosition(elementBounds, format);
         if (!validation.isValid) {
           console.warn(`⚠️ Element ${obj.fieldMapping} has boundary violations:`, validation.violations);
-          // Auto-correct the position
-          const corrected = constrainToCanvas(elementBounds, format);
+          // Auto-correct the position and size if needed
+          const corrected = constrainToCanvas(elementBounds, format, 20); // 20px margin
           unscaledPosition.x = corrected.position.x;
           unscaledPosition.y = corrected.position.y;
-          console.log(`✅ Auto-corrected position for ${obj.fieldMapping}:`, corrected.position);
+          
+          // Also constrain size if element is too large for format
+          const formatDims = getFormatDimensions(format);
+          const maxWidth = formatDims.width - unscaledPosition.x - 20;
+          const maxHeight = formatDims.height - unscaledPosition.y - 20;
+          
+          if (width > maxWidth) {
+            width = Math.max(50, maxWidth);
+            console.log(`📏 Constrained width from ${elementBounds.size.width} to ${width}`);
+          }
+          if (height > maxHeight) {
+            height = Math.max(30, maxHeight);
+            console.log(`📏 Constrained height from ${elementBounds.size.height} to ${height}`);
+          }
+          
+          console.log(`✅ Auto-corrected ${obj.fieldMapping}:`, {
+            position: corrected.position,
+            size: { width, height }
+          });
         }
       }
 
-      console.log(`🎯 Serializing ${obj.fieldMapping} - UNSCALED coordinates:`, {
+      console.log(`🎯 Serializing ${obj.fieldMapping}:`, {
         elementId: obj.elementId,
         fieldMapping: obj.fieldMapping,
         position: unscaledPosition,
@@ -60,7 +87,7 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
         scaleFactor: scale
       });
 
-      // Create clean serializable object with UNSCALED COORDINATES
+      // Create clean serializable object with boundary-validated coordinates
       const baseElement = {
         id: obj.elementId || `element_${Date.now()}`,
         field: obj.fieldMapping || 'unknown',
@@ -88,12 +115,12 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
       }
     });
 
-    console.log('✅ Layout serialized successfully - UNSCALED coordinates with boundary validation:', elements);
+    console.log('✅ Layout serialized with enhanced boundary validation:', elements);
     
-    // Log format dimensions for reference
     if (format) {
       const formatDims = getFormatDimensions(format);
       console.log(`📐 Format ${format} dimensions:`, formatDims);
+      console.log(`🔍 All elements validated against ${formatDims.width}x${formatDims.height} canvas`);
     }
     
     return elements;

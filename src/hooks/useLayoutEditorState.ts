@@ -12,23 +12,56 @@ export const useLayoutEditorState = () => {
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const [layoutLoadAttempts, setLayoutLoadAttempts] = useState(0);
   const [layoutDraft, setLayoutDraft] = useState<any[]>([]);
+  const [isLoadingLayout, setIsLoadingLayout] = useState(false); // Prevent concurrent loads
 
   // Refs to store latest callbacks and prevent stale closures
   const canvasRef = useRef<FabricCanvas | null>(null);
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const layoutUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounced layout draft update to prevent excessive state changes
+  const debouncedSetLayoutDraft = (draft: any[]) => {
+    if (layoutUpdateTimeoutRef.current) {
+      clearTimeout(layoutUpdateTimeoutRef.current);
+    }
+    
+    layoutUpdateTimeoutRef.current = setTimeout(() => {
+      setLayoutDraft(draft);
+      console.log('📝 Layout draft updated (debounced):', draft.length, 'elements');
+    }, 150); // 150ms debounce
+  };
 
   const resetState = () => {
-    console.log('Resetting layout editor state');
+    console.log('🔄 Resetting layout editor state');
     setLoadingState('idle');
     setLayoutLoadAttempts(0);
     setLoadingError(null);
     setLayoutDraft([]);
+    setIsLoadingLayout(false);
     canvasRef.current = null;
     
+    // Clear all timeouts
     if (loadingTimeoutRef.current) {
       clearTimeout(loadingTimeoutRef.current);
       loadingTimeoutRef.current = null;
     }
+    if (layoutUpdateTimeoutRef.current) {
+      clearTimeout(layoutUpdateTimeoutRef.current);
+      layoutUpdateTimeoutRef.current = null;
+    }
+  };
+
+  const safeSetLoadingState = (newState: LoadingState) => {
+    console.log(`🔄 Loading state: ${loadingState} → ${newState}`);
+    setLoadingState(newState);
+  };
+
+  const incrementLayoutAttempts = () => {
+    setLayoutLoadAttempts(prev => {
+      const newCount = prev + 1;
+      console.log(`🔄 Layout load attempt: ${newCount}`);
+      return newCount;
+    });
   };
 
   return {
@@ -37,15 +70,19 @@ export const useLayoutEditorState = () => {
     selectedObject,
     setSelectedObject,
     loadingState,
-    setLoadingState,
+    setLoadingState: safeSetLoadingState,
     loadingError,
     setLoadingError,
     layoutLoadAttempts,
     setLayoutLoadAttempts,
+    incrementLayoutAttempts,
     layoutDraft,
-    setLayoutDraft,
+    setLayoutDraft: debouncedSetLayoutDraft,
+    isLoadingLayout,
+    setIsLoadingLayout,
     canvasRef,
     loadingTimeoutRef,
+    layoutUpdateTimeoutRef,
     resetState
   };
 };

@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import * as fabric from 'fabric';
 import { addElementToCanvas } from '@/components/layout-editor/elementManager';
@@ -27,6 +28,7 @@ interface UseLayoutOperationsProps {
   templateId: string;
   formatName: string;
   onSave?: () => void;
+  updateLayoutDraft: (canvas: FabricCanvas, format?: string) => void;
 }
 
 export const useLayoutOperations = ({
@@ -42,16 +44,9 @@ export const useLayoutOperations = ({
   saveLayout,
   templateId,
   formatName,
-  onSave
+  onSave,
+  updateLayoutDraft
 }: UseLayoutOperationsProps) => {
-
-  const updateLayoutDraft = () => {
-    if (!canvas) return;
-    // Pass format name for boundary validation
-    const elements = serializeCanvasLayout(canvas, scale, formatName);
-    setLayoutDraft(elements);
-    console.log("Layout draft updated with boundary validation for format:", formatName, elements);
-  };
 
   const handleAddElement = (elementType: string) => {
     if (!canvas) {
@@ -72,10 +67,15 @@ export const useLayoutOperations = ({
       canvas.remove(duplicate);
     });
 
-    // Position new elements in visible area with some randomness
-    const randomX = 50 + Math.random() * (displayWidth - 300);
-    const randomY = 50 + Math.random() * (displayHeight - 200);
+    // Position new elements in visible area with format-aware positioning
+    const safeMargin = 50;
+    const maxX = Math.max(safeMargin, displayWidth - 300);
+    const maxY = Math.max(safeMargin, displayHeight - 200);
+    
+    const randomX = safeMargin + Math.random() * (maxX - safeMargin);
+    const randomY = safeMargin + Math.random() * (maxY - safeMargin);
 
+    // Enhanced element configuration with proper size handling
     const elementConfig = {
       id: `${elementType}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: element.element_type,
@@ -84,13 +84,15 @@ export const useLayoutOperations = ({
       style: { 
         fontSize: 20,
         fontFamily: 'Arial',
-        color: '#333333'
+        color: '#333333',
+        // Add default sizes for different element types
+        ...(element.element_type === 'image' ? { width: 200, height: 200 } : {})
       }
     };
 
-    console.log('Adding new element:', elementConfig);
-    addElementToCanvas(canvas, elementConfig, scale);
-    updateLayoutDraft();
+    console.log('➕ Adding new element with format validation:', elementConfig);
+    addElementToCanvas(canvas, elementConfig, scale, formatName);
+    updateLayoutDraft(canvas, formatName);
     toast.success('Elemento adicionado!');
   };
 
@@ -101,14 +103,14 @@ export const useLayoutOperations = ({
     }
     
     try {
-      console.log('Deleting selected object:', selectedObject.elementId);
+      console.log('🗑️ Deleting selected object:', selectedObject.elementId);
       canvas.remove(selectedObject);
       setSelectedObject(null);
       canvas.renderAll();
-      updateLayoutDraft();
+      updateLayoutDraft(canvas, formatName);
       toast.success('Elemento removido!');
     } catch (error) {
-      console.error('Error deleting element:', error);
+      console.error('❌ Error deleting element:', error);
       toast.error('Erro ao remover elemento');
     }
   };
@@ -122,7 +124,7 @@ export const useLayoutOperations = ({
     try {
       // Use layout draft if available, otherwise serialize fresh with format validation
       const elements = layoutDraft.length > 0 ? layoutDraft : serializeCanvasLayout(canvas, scale, formatName);
-      console.log('Saving layout with validated elements for format:', formatName, 'Elements count:', elements.length);
+      console.log('💾 Saving layout with validated elements for format:', formatName, 'Elements count:', elements.length);
 
       await saveLayout({
         template_id: templateId,
@@ -132,7 +134,7 @@ export const useLayoutOperations = ({
 
       onSave?.();
     } catch (error) {
-      console.error('Error saving layout:', error);
+      console.error('❌ Error saving layout:', error);
     }
   };
 

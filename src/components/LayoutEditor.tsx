@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
 import { useLayoutEditorState } from '@/hooks/useLayoutEditorState';
@@ -28,11 +29,14 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     loadingError,
     setLoadingError,
     layoutLoadAttempts,
-    setLayoutLoadAttempts,
+    incrementLayoutAttempts,
     layoutDraft,
     setLayoutDraft,
+    isLoadingLayout,
+    setIsLoadingLayout,
     canvasRef,
     loadingTimeoutRef,
+    layoutUpdateTimeoutRef,
     resetState
   } = useLayoutEditorState();
 
@@ -46,35 +50,42 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
   const displayWidth = formatDimensions.width * scale;
   const displayHeight = formatDimensions.height * scale;
 
-  console.log('LayoutEditor render:', {
+  console.log('🎨 LayoutEditor render:', {
     templateId,
     formatName,
     loadingState,
     layoutLoadAttempts,
+    isLoadingLayout,
     canvasReady: !!canvas,
-    layoutDraftSize: layoutDraft.length
+    layoutDraftSize: layoutDraft.length,
+    scale,
+    formatDimensions
   });
 
   const {
     handleCanvasReady,
     handleBackgroundLoaded,
     handleManualReload,
-    loadLayoutIfReady
+    loadLayoutIfReady,
+    updateLayoutDraft
   } = useCanvasManager({
     canvas,
     canvasRef,
     loadingState,
     layoutLoadAttempts,
+    isLoadingLayout,
     loadingTimeoutRef,
+    layoutUpdateTimeoutRef,
     displayWidth,
     displayHeight,
     scale,
     layoutDraft,
     setCanvas,
     setLoadingState,
-    setLayoutLoadAttempts,
+    incrementLayoutAttempts,
     setLoadingError,
     setLayoutDraft,
+    setIsLoadingLayout,
     getLayout
   });
 
@@ -95,26 +106,27 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     saveLayout,
     templateId,
     formatName,
-    onSave
+    onSave,
+    updateLayoutDraft
   });
 
-  // Reset state when template or format changes
+  // Reset state when template or format changes - FIXED to prevent loops
   useEffect(() => {
-    console.log('Template or format changed, resetting state');
+    console.log('🔄 Template or format changed, resetting state');
     resetState();
-  }, [templateId, formatName]);
+  }, [templateId, formatName, resetState]);
 
-  // Set up fallback timeout trigger
+  // Cleanup timeouts on unmount
   useEffect(() => {
-    if (canvas && loadingState !== 'ready' && layoutLoadAttempts < 3) {
-      const timeoutId = setTimeout(() => {
-        console.log('Timeout triggered for loading elements');
-        loadLayoutIfReady(templateId, formatName);
-      }, 2000);
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [canvas, loadingState, layoutLoadAttempts, templateId, formatName]);
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+      if (layoutUpdateTimeoutRef.current) {
+        clearTimeout(layoutUpdateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (elementsLoading) {
     return (
