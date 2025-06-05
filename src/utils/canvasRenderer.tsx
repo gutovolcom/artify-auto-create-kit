@@ -33,11 +33,15 @@ export const renderCanvasWithTemplate = async (
           const promises: Promise<void>[] = [];
           
           layoutConfig.elements.forEach((element: any) => {
-            if (element.type === 'image' && element.field === 'teacherImages') {
+            // Handle both teacherImages and professorPhotos field names for backward compatibility
+            if (element.type === 'image' && (element.field === 'teacherImages' || element.field === 'professorPhotos')) {
               const teacherImageUrl = eventData.teacherImages?.[0] || "";
               if (teacherImageUrl) {
+                console.log('Adding teacher photo from field:', element.field, 'URL:', teacherImageUrl);
                 const promise = addProfessorPhotoToCanvas(fabricCanvas, teacherImageUrl, element, width, height);
                 promises.push(promise);
+              } else {
+                console.warn('No teacher image URL found in eventData.teacherImages');
               }
             } else {
               addElementToCanvas(fabricCanvas, element, eventData, width, height, format);

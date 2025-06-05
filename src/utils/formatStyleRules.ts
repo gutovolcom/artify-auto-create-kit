@@ -1,4 +1,3 @@
-
 import { EventData } from "@/pages/Index";
 
 // User color configuration for dynamic color application
@@ -35,6 +34,13 @@ const styleMap = {
     date: { fontFamily: 'Margem-Regular', fontSize: 24 },
     time: { fontFamily: 'Margem-Regular', fontSize: 24 },
     teacherName: { fontFamily: 'Margem-Regular', fontSize: 32 }
+  },
+  LP: {
+    title: { fontFamily: 'Margem-Black', fontSize: 80 },
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 40 },
+    date: { fontFamily: 'Roboto Condensed', fontSize: 36 },
+    time: { fontFamily: 'Roboto Condensed', fontSize: 36 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 42 }
   }
 };
 
