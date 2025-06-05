@@ -6,6 +6,8 @@ import { PlusCircle, FileImage, Loader2, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
+import { useLayoutEditor } from "@/hooks/useLayoutEditor";
+import { useState } from "react";
 
 interface ImageSelectorProps {
   selectedImageId: string | null;
@@ -14,14 +16,31 @@ interface ImageSelectorProps {
 
 export const ImageSelector = ({ selectedImageId, onSelect }: ImageSelectorProps) => {
   const { templates, loading, refetch } = useSupabaseTemplates();
+  const { refreshAllLayouts } = useLayoutEditor();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleAddTemplate = () => {
     toast.info("Para adicionar templates, use o painel administrativo");
   };
 
   const handleRefresh = async () => {
-    await refetch();
-    toast.success("Templates atualizados!");
+    setIsRefreshing(true);
+    try {
+      console.log('Starting complete refresh: templates + layouts');
+      
+      // Refresh templates first
+      await refetch();
+      
+      // Then refresh all layout caches
+      await refreshAllLayouts();
+      
+      toast.success("Templates e layouts atualizados!");
+    } catch (error) {
+      console.error('Error during refresh:', error);
+      toast.error("Erro ao atualizar dados");
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   if (loading) {
@@ -46,9 +65,14 @@ export const ImageSelector = ({ selectedImageId, onSelect }: ImageSelectorProps)
             variant="outline" 
             size="sm" 
             onClick={handleRefresh}
+            disabled={isRefreshing}
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Atualizar
+            {isRefreshing ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            {isRefreshing ? 'Atualizando...' : 'Atualizar'}
           </Button>
           <Button 
             variant="outline" 

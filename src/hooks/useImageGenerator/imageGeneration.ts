@@ -9,7 +9,7 @@ import { GeneratedImage } from "./types";
 export const generateImagesForFormats = async (
   eventData: EventData,
   selectedTemplate: any,
-  getLayout: (templateId: string, formatName: string) => Promise<any>,
+  getLayout: (templateId: string, formatName: string, forceRefresh?: boolean) => Promise<any>,
   setGenerationProgress: (progress: number) => void,
   setCurrentGeneratingFormat: (format: string) => void
 ): Promise<GeneratedImage[]> => {
@@ -40,9 +40,9 @@ export const generateImagesForFormats = async (
         eventData
       });
       
-      // Get layout configuration for this format
-      const layoutConfig = await getLayout(selectedTemplate.id, formatId);
-      console.log(`Layout config for ${formatId}:`, layoutConfig);
+      // Force refresh layout configuration to get the latest saved data
+      const layoutConfig = await getLayout(selectedTemplate.id, formatId, true);
+      console.log(`Fresh layout config for ${formatId}:`, layoutConfig);
       
       // Prepare the complete event data for rendering with normalized teacher photos
       const completeEventData: EventData = {
@@ -59,7 +59,7 @@ export const generateImagesForFormats = async (
       
       console.log(`Complete event data for ${formatId}:`, completeEventData);
       
-      // Use the canvas renderer to create the image with the correct background
+      // Use the canvas renderer to create the image with the correct background and fresh layout
       const generatedImageUrl = await renderCanvasWithTemplate(
         formatData.image_url, // Use the template's background image
         completeEventData,
@@ -77,7 +77,7 @@ export const generateImagesForFormats = async (
       };
       
       allGeneratedImages.push(newImage);
-      console.log(`Successfully generated image for ${formatId}`);
+      console.log(`Successfully generated image for ${formatId} with fresh layout data`);
       
     } catch (error) {
       console.error(`Error generating image for ${formatId}:`, error);

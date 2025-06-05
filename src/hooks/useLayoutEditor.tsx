@@ -32,6 +32,7 @@ export const useLayoutEditor = () => {
   const [layoutElements, setLayoutElements] = useState<LayoutElement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [layoutCache, setLayoutCache] = useState<Map<string, LayoutConfig | null>>(new Map());
 
   const fetchLayoutElements = async () => {
     try {
@@ -79,7 +80,15 @@ export const useLayoutEditor = () => {
         throw error;
       }
       
-      console.log('Layout saved successfully');
+      // Invalidate cache for this specific layout
+      const cacheKey = `${layoutConfig.template_id}-${layoutConfig.format_name}`;
+      setLayoutCache(prev => {
+        const newCache = new Map(prev);
+        newCache.delete(cacheKey);
+        return newCache;
+      });
+      
+      console.log('Layout saved successfully and cache invalidated');
       toast.success('Layout salvo com sucesso!');
     } catch (error) {
       console.error('Error saving layout:', error);
@@ -88,9 +97,17 @@ export const useLayoutEditor = () => {
     }
   };
 
-  const getLayout = async (templateId: string, formatName: string): Promise<LayoutConfig | null> => {
+  const getLayout = async (templateId: string, formatName: string, forceRefresh: boolean = false): Promise<LayoutConfig | null> => {
     try {
-      console.log('Fetching layout for template:', templateId, 'format:', formatName);
+      const cacheKey = `${templateId}-${formatName}`;
+      
+      // Return cached result if available and not forcing refresh
+      if (!forceRefresh && layoutCache.has(cacheKey)) {
+        console.log('Returning cached layout for:', templateId, formatName);
+        return layoutCache.get(cacheKey) || null;
+      }
+      
+      console.log('Fetching fresh layout for template:', templateId, 'format:', formatName);
       
       const { data, error } = await supabase
         .from('template_layouts')
@@ -101,27 +118,54 @@ export const useLayoutEditor = () => {
 
       if (error) {
         console.error('Error fetching layout:', error);
-        // Don't throw error for missing layout, just return null
+        // Cache null result to avoid repeated failed requests
+        setLayoutCache(prev => new Map(prev).set(cacheKey, null));
         return null;
       }
       
+      let result: LayoutConfig | null = null;
       if (data) {
         console.log('Layout found:', data);
-        return {
+        result = {
           id: data.id,
           template_id: data.template_id,
           format_name: data.format_name,
           layout_config: data.layout_config as LayoutConfig['layout_config']
         };
+      } else {
+        console.log('No existing layout found');
       }
       
-      console.log('No existing layout found');
-      return null;
+      // Cache the result
+      setLayoutCache(prev => new Map(prev).set(cacheKey, result));
+      return result;
     } catch (error) {
       console.error('Error fetching layout:', error);
-      // Return null instead of showing error to prevent infinite loops
       return null;
     }
+  };
+
+  const invalidateLayoutCache = (templateId?: string, formatName?: string) => {
+    if (templateId && formatName) {
+      // Invalidate specific layout
+      const cacheKey = `${templateId}-${formatName}`;
+      setLayoutCache(prev => {
+        const newCache = new Map(prev);
+        newCache.delete(cacheKey);
+        console.log('Invalidated layout cache for:', cacheKey);
+        return newCache;
+      });
+    } else {
+      // Invalidate all cached layouts
+      setLayoutCache(new Map());
+      console.log('Invalidated all layout cache');
+    }
+  };
+
+  const refreshAllLayouts = async () => {
+    console.log('Refreshing all layout data...');
+    setLayoutCache(new Map());
+    toast.success('Cache de layouts atualizado!');
   };
 
   useEffect(() => {
@@ -134,6 +178,8 @@ export const useLayoutEditor = () => {
     error,
     saveLayout,
     getLayout,
+    invalidateLayoutCache,
+    refreshAllLayouts,
     refetch: fetchLayoutElements
   };
 };

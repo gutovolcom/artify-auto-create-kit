@@ -17,7 +17,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
   const [error, setError] = useState<string | null>(null);
   const { templates, refetch: refetchTemplates } = useSupabaseTemplates();
   const { logActivity } = useActivityLog();
-  const { getLayout } = useLayoutEditor();
+  const { getLayout, refreshAllLayouts } = useLayoutEditor();
 
   const generateImages = async (eventData: EventData) => {
     const validation = validateEventData(eventData);
@@ -36,8 +36,10 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
     try {
       console.log('Starting image generation for event:', eventData);
       
-      // Refresh templates to get the latest data
+      // Refresh templates and layout data to get the latest versions
+      console.log('Refreshing templates and layouts before generation...');
       await refetchTemplates();
+      await refreshAllLayouts();
       
       // Get the selected template from the refreshed data
       const selectedTemplate = templates.find(t => t.id === eventData.kvImageId);
@@ -51,12 +53,12 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
       }
       
       const templateToUse = selectedTemplate || templates.find(t => t.id === eventData.kvImageId);
-      console.log('Using template for generation:', templateToUse);
+      console.log('Using template for generation with fresh data:', templateToUse);
       
       const allGeneratedImages = await generateImagesForFormats(
         eventData,
         templateToUse,
-        getLayout,
+        getLayout, // This will force refresh layouts during generation
         setGenerationProgress,
         setCurrentGeneratingFormat
       );
@@ -65,7 +67,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
       setGenerationProgress(100);
       setCurrentGeneratingFormat("Finalizando...");
       
-      console.log('All images generated:', allGeneratedImages.length);
+      console.log('All images generated with fresh layout data:', allGeneratedImages.length);
       
       // Wait a moment before setting final results
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -81,7 +83,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
           console.warn('Failed to log activity:', logError);
         }
         
-        toast.success(`${allGeneratedImages.length} imagens geradas com sucesso!`);
+        toast.success(`${allGeneratedImages.length} imagens geradas com layouts atualizados!`);
       } else {
         toast.error("Nenhuma imagem foi gerada. Verifique os templates e tente novamente.");
       }
