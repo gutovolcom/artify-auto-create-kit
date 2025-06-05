@@ -12,6 +12,8 @@ export const renderCanvasWithTemplate = async (
   height: number,
   format: string,
   layoutConfig?: any
+  console.log("[DEBUG] layoutConfig recebido:", layoutConfig);
+  console.log("[DEBUG] layoutConfig.elements:", layoutConfig?.elements);
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
     try {
@@ -28,7 +30,7 @@ export const renderCanvasWithTemplate = async (
       const fabricCanvas = createFabricCanvas(tempCanvas, width, height);
 
       loadBackgroundImageToCanvas(fabricCanvas, backgroundImageUrl, width, height).then(() => {
-        if (layoutConfig?.elements) {
+        if (layoutConfig?.elements && layoutConfig.elements.length > 0) {
           console.log('Using layout configuration for positioning ONLY (ignoring any saved styles)');
           const promises: Promise<void>[] = [];
           
