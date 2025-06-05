@@ -13,6 +13,10 @@ export interface CanvasElementConfig {
   field: string;
   position: { x: number; y: number };
   style: any;
+  size?: {
+    width: number;
+    height: number;
+  };
   constraints?: any;
 }
 
