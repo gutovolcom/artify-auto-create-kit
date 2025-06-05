@@ -12,9 +12,10 @@ export const renderCanvasWithTemplate = async (
   height: number,
   format: string,
   layoutConfig?: any
+): Promise<string> => {
   console.log("[DEBUG] layoutConfig recebido:", layoutConfig);
   console.log("[DEBUG] layoutConfig.elements:", layoutConfig?.elements);
-): Promise<string> => {
+  
   return new Promise((resolve, reject) => {
     try {
       console.log('Rendering canvas with template:', {
