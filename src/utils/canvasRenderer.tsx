@@ -33,6 +33,7 @@ export const renderCanvasWithTemplate = async (
           const promises: Promise<void>[] = [];
           
           layoutConfig.elements.forEach((element: any) => {
+            console.log('Loaded element:', element)
             // Handle both teacherImages and professorPhotos field names for backward compatibility
             if (element.type === 'image' && (element.field === 'teacherImages' || element.field === 'professorPhotos')) {
               const teacherImageUrl = eventData.teacherImages?.[0] || "";
