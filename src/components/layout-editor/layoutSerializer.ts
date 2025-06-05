@@ -16,8 +16,8 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
     const elements = canvas.getObjects().map((obj: any) => {
       // Use direct position values - positioning only
       const position = {
-        x: Math.round(obj.left || 0),
-        y: Math.round(obj.top || 0)
+        x: Math.round((obj.left || 0) / scale),
+        y: Math.round((obj.top || 0) / scale)
       };
 
       // Calculate dimensions separately
