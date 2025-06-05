@@ -1,5 +1,5 @@
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import * as fabric from 'fabric';
 import { toast } from 'sonner';
 import { addElementToCanvas } from '@/components/layout-editor/elementManager';
@@ -50,21 +50,30 @@ export const useCanvasManager = ({
   getLayout
 }: UseCanvasManagerProps) => {
 
-  // Optimized layout draft update with boundary validation
+  // Store event listeners in refs to prevent loss during resets
+  const eventListenersAttachedRef = useRef(false);
+
+  // Immediate layout draft update - no debounce
   const updateLayoutDraft = useCallback((fabricCanvas: FabricCanvas, format?: string) => {
     const elements = serializeCanvasLayout(fabricCanvas, scale, format);
     setLayoutDraft(elements);
-    console.log("📝 Layout updated with boundary validation for format:", format, elements.length, "elements");
+    console.log("📝 Layout updated immediately with boundary validation for format:", format, elements.length, "elements");
   }, [scale, setLayoutDraft]);
 
-  // Enhanced boundary-aware element event handlers
+  // Enhanced boundary-aware element event handlers with persistence protection
   const setupCanvasEventListeners = useCallback((fabricCanvas: FabricCanvas, format?: string) => {
-    // Remove existing listeners to prevent duplicates
+    // Prevent duplicate event listeners
+    if (eventListenersAttachedRef.current) {
+      console.log('⚠️ Event listeners already attached, skipping');
+      return;
+    }
+
+    // Remove any existing listeners first
     fabricCanvas.off('object:modified');
     fabricCanvas.off('object:moving');
     fabricCanvas.off('object:scaling');
 
-    // Consolidated event handler with boundary validation
+    // Consolidated event handler with boundary validation and immediate persistence
     const handleElementChange = (e: fabric.ModifiedEvent) => {
       const obj = e.target;
       if (!obj || !format) {
@@ -97,6 +106,7 @@ export const useCanvasManager = ({
         console.log(`🚧 Element constrained to boundaries:`, constrained.position);
       }
 
+      // Immediate update - no debounce
       updateLayoutDraft(fabricCanvas, format);
     };
 
@@ -105,7 +115,8 @@ export const useCanvasManager = ({
     fabricCanvas.on('object:moving', handleElementChange);
     fabricCanvas.on('object:scaling', handleElementChange);
 
-    console.log('✅ Canvas event listeners setup with boundary validation');
+    eventListenersAttachedRef.current = true;
+    console.log('✅ Canvas event listeners setup with boundary validation and immediate persistence');
   }, [scale, updateLayoutDraft]);
 
   const addDefaultLayoutElements = useCallback((fabricCanvas: FabricCanvas, format?: string) => {
@@ -161,7 +172,8 @@ export const useCanvasManager = ({
     });
 
     setupCanvasEventListeners(fabricCanvas, format);
-  }, [displayWidth, displayHeight, scale, setupCanvasEventListeners]);
+    updateLayoutDraft(fabricCanvas, format);
+  }, [displayWidth, displayHeight, scale, setupCanvasEventListeners, updateLayoutDraft]);
 
   const clearCanvasObjects = useCallback((fabricCanvas: FabricCanvas) => {
     console.log('🧹 Clearing canvas objects');
@@ -170,6 +182,9 @@ export const useCanvasManager = ({
       fabricCanvas.remove(obj);
     });
     fabricCanvas.renderAll();
+    
+    // Reset event listener flag when clearing
+    eventListenersAttachedRef.current = false;
   }, []);
 
   const loadLayoutElements = useCallback(async (fabricCanvas: FabricCanvas, templateId: string, formatName: string) => {
@@ -205,7 +220,7 @@ export const useCanvasManager = ({
             type: element.type,
             field: element.field,
             position: element.position,
-            size: element.size, // Preserve saved size
+            size: element.size,
             style: {
               fontSize: element.style?.fontSize || 24,
               fontFamily: element.style?.fontFamily || 'Arial',
@@ -220,6 +235,7 @@ export const useCanvasManager = ({
         });
         
         setupCanvasEventListeners(fabricCanvas, formatName);
+        updateLayoutDraft(fabricCanvas, formatName);
         console.log('✅ Successfully loaded', elementsToLoad.length, 'elements from saved layout');
         toast.success(`Layout carregado: ${elementsToLoad.length} elementos`);
       } else {
@@ -228,7 +244,6 @@ export const useCanvasManager = ({
         toast.info('Layout padrão aplicado');
       }
       
-      updateLayoutDraft(fabricCanvas, formatName);
       setLoadingState('ready');
       return true;
     } catch (error) {
@@ -237,7 +252,6 @@ export const useCanvasManager = ({
       
       console.log('🔄 Falling back to default layout');
       addDefaultLayoutElements(fabricCanvas, formatName);
-      updateLayoutDraft(fabricCanvas, formatName);
       setLoadingState('ready');
       toast.error('Erro ao carregar layout salvo, usando layout padrão');
       return false;
@@ -303,24 +317,22 @@ export const useCanvasManager = ({
     }
     
     console.log('🔄 Manual reload triggered');
-    setIsLoadingLayout(false); // Reset loading state
+    setIsLoadingLayout(false);
+    eventListenersAttachedRef.current = false; // Reset listener flag
     setLoadingState('loading-elements');
     await loadLayoutElements(canvasRef.current, templateId, formatName);
   }, [canvasRef, setIsLoadingLayout, setLoadingState, loadLayoutElements]);
 
-  // Optimized effect with proper dependency management
+  // Simplified effect without layoutLoadAttempts to prevent loops
   useEffect(() => {
-    // Clear any existing timeout
     if (loadingTimeoutRef.current) {
       clearTimeout(loadingTimeoutRef.current);
       loadingTimeoutRef.current = null;
     }
 
-    // Only set timeout if canvas exists but layout isn't ready and we haven't exceeded attempts
     if (canvas && loadingState !== 'ready' && !isLoadingLayout && layoutLoadAttempts < 3) {
       loadingTimeoutRef.current = setTimeout(() => {
         console.log('⏰ Timeout triggered for loading elements');
-        // Don't call loadLayoutIfReady here to prevent loops
       }, 3000);
     }
 
@@ -330,7 +342,7 @@ export const useCanvasManager = ({
         loadingTimeoutRef.current = null;
       }
     };
-  }, [canvas, loadingState, isLoadingLayout]); // Removed layoutLoadAttempts to prevent loop
+  }, [canvas, loadingState, isLoadingLayout]);
 
   return {
     handleCanvasReady,

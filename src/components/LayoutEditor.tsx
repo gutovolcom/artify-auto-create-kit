@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
 import { useLayoutEditorState } from '@/hooks/useLayoutEditorState';
 import { useCanvasManager } from '@/hooks/useCanvasManager';
@@ -39,6 +39,10 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     layoutUpdateTimeoutRef,
     resetState
   } = useLayoutEditorState();
+
+  // Use refs to track previous values and prevent unnecessary resets
+  const previousTemplateRef = useRef<string | null>(null);
+  const previousFormatRef = useRef<string | null>(null);
 
   const maxCanvasWidth = 800;
   const maxCanvasHeight = 600;
@@ -110,11 +114,29 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = ({
     updateLayoutDraft
   });
 
-  // Reset state when template or format changes - FIXED to prevent loops
+  // Fixed: Only reset when template or format actually changes
   useEffect(() => {
-    console.log('🔄 Template or format changed, resetting state');
-    resetState();
-  }, [templateId, formatName, resetState]);
+    const hasTemplateChanged = previousTemplateRef.current !== templateId;
+    const hasFormatChanged = previousFormatRef.current !== formatName;
+    
+    console.log('[DEBUG] useEffect check:', { 
+      templateId, 
+      formatName, 
+      hasTemplateChanged, 
+      hasFormatChanged,
+      previous: {
+        template: previousTemplateRef.current,
+        format: previousFormatRef.current
+      }
+    });
+
+    if (hasTemplateChanged || hasFormatChanged) {
+      console.log('🔄 Template or format actually changed, resetting state');
+      previousTemplateRef.current = templateId;
+      previousFormatRef.current = formatName;
+      resetState();
+    }
+  }, [templateId, formatName]); // Removed resetState from dependencies
 
   // Cleanup timeouts on unmount
   useEffect(() => {
