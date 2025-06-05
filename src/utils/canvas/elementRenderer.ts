@@ -22,11 +22,18 @@ export const addElementToCanvas = (
   const textContent = getTextContent(field, eventData);
   if (!textContent) return;
 
-  // ✅ CRITICAL: Completely ignore any styles from layout editor
-  // Only use position and size from layout configuration
-  console.log(`🚫 Ignoring layout editor styles for ${field} - using format-specific styles only`);
+  // Apply DIRECT coordinates from layout (already unscaled)
+  const elementX = position?.x ?? 0;
+  const elementY = position?.y ?? 0;
   
-  // ✅ Get format-specific styling using the new function
+  console.log(`🎯 Applying DIRECT coordinates for ${field}:`, {
+    x: elementX,
+    y: elementY,
+    canvasSize: { width: canvasWidth, height: canvasHeight },
+    format
+  });
+
+  // Get format-specific styling
   const userColors = getUserColors(eventData);
   const formatStyle = getStyleForField(format, field, userColors);
   
@@ -53,8 +60,8 @@ export const addElementToCanvas = (
     });
 
     const group = new Group([background, text], {
-      left: position?.x ?? 0,
-      top: position?.y ?? 0,
+      left: elementX,
+      top: elementY,
       selectable: false,
       evented: false
     });
@@ -62,8 +69,8 @@ export const addElementToCanvas = (
     canvas.add(group);
   } else {
     const text = new FabricText(textContent, {
-      left: position?.x ?? 0,
-      top: position?.y ?? 0,
+      left: elementX,
+      top: elementY,
       fontSize: formatStyle.fontSize,
       fontFamily: formatStyle.fontFamily,
       fill: formatStyle.color,
@@ -88,21 +95,24 @@ export const addProfessorPhotoToCanvas = async (
     FabricImage.fromURL(photoUrl, {
       crossOrigin: 'anonymous'
     }).then((img) => {
-      if (photoElement && photoElement.size) {
-  // Use layout configuration for size and position
-  const targetWidth = photoElement.size.width || 200;
-  const targetHeight = photoElement.size.height || 200;
-  
-  console.log('Using layout position and size:', {
-    x: photoElement.position?.x,
-    y: photoElement.position?.y,
-    width: targetWidth,
-    height: targetHeight
+      if (photoElement && photoElement.position && photoElement.size) {
+        // Use DIRECT layout coordinates (already unscaled)
+        const targetWidth = photoElement.size.width || 200;
+        const targetHeight = photoElement.size.height || 200;
+        const elementX = photoElement.position.x;
+        const elementY = photoElement.position.y;
+        
+        console.log('🖼️ Using DIRECT layout position for teacher photo:', {
+          x: elementX,
+          y: elementY,
+          width: targetWidth,
+          height: targetHeight,
+          canvasSize: { width: canvasWidth, height: canvasHeight }
         });
         
         img.set({
-          left: photoElement.position?.x ?? 0,
-          top: photoElement.position?.y ?? 0,
+          left: elementX,
+          top: elementY,
           scaleX: targetWidth / img.width!,
           scaleY: targetHeight / img.height!,
           selectable: false,

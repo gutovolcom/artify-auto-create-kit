@@ -1,26 +1,28 @@
 
 import * as fabric from 'fabric';
+import { validateElementPosition, constrainToCanvas, getFormatDimensions } from '@/utils/positionValidation';
 
 type FabricCanvas = fabric.Canvas;
 
-export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any => {
+export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, format?: string): any => {
   if (!canvas) {
     console.warn('Cannot serialize layout: canvas is not available');
     return [];
   }
 
   try {
-    console.log('🚫 Serializing canvas layout - POSITION AND SIZE ONLY (no styles)');
+    console.log('🚫 Serializing canvas layout - UNSCALED COORDINATES with boundary validation');
     console.log('Canvas objects to serialize:', canvas.getObjects().length);
+    console.log('Scale factor:', scale, 'Format:', format);
     
     const elements = canvas.getObjects().map((obj: any) => {
-      // Use direct position values - positioning only
-      const position = {
+      // Calculate UNSCALED position (real canvas coordinates)
+      const unscaledPosition = {
         x: Math.round((obj.left || 0) / scale),
         y: Math.round((obj.top || 0) / scale)
       };
 
-      // Calculate dimensions separately
+      // Calculate actual element dimensions
       let width: number, height: number;
 
       if (obj.elementType === 'image') {
@@ -31,21 +33,38 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
         height = Math.round((obj.height || 50) * (obj.scaleY || 1));
       }
 
-      console.log(`🎯 Serializing ${obj.fieldMapping} - POSITION ONLY:`, {
+      const elementBounds = {
+        position: unscaledPosition,
+        size: { width, height }
+      };
+
+      // Validate position if format is provided
+      if (format) {
+        const validation = validateElementPosition(elementBounds, format);
+        if (!validation.isValid) {
+          console.warn(`⚠️ Element ${obj.fieldMapping} has boundary violations:`, validation.violations);
+          // Auto-correct the position
+          const corrected = constrainToCanvas(elementBounds, format);
+          unscaledPosition.x = corrected.position.x;
+          unscaledPosition.y = corrected.position.y;
+          console.log(`✅ Auto-corrected position for ${obj.fieldMapping}:`, corrected.position);
+        }
+      }
+
+      console.log(`🎯 Serializing ${obj.fieldMapping} - UNSCALED coordinates:`, {
         elementId: obj.elementId,
         fieldMapping: obj.fieldMapping,
-        position,
+        position: unscaledPosition,
         size: { width, height },
-        type: obj.elementType
+        type: obj.elementType,
+        scaleFactor: scale
       });
 
-      // ✅ CRITICAL: Create clean serializable object with POSITION ONLY - NO STYLING
+      // Create clean serializable object with UNSCALED COORDINATES
       const baseElement = {
         id: obj.elementId || `element_${Date.now()}`,
         field: obj.fieldMapping || 'unknown',
-        position
-        // ✅ IMPORTANT: NO fontSize, fontFamily, color properties saved!
-        // These will come from format-specific rules during generation
+        position: unscaledPosition
       };
 
       if (obj.elementType === 'image') {
@@ -69,7 +88,14 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number): any 
       }
     });
 
-    console.log('✅ Layout serialized successfully - POSITIONING ONLY (styles will come from format rules):', elements);
+    console.log('✅ Layout serialized successfully - UNSCALED coordinates with boundary validation:', elements);
+    
+    // Log format dimensions for reference
+    if (format) {
+      const formatDims = getFormatDimensions(format);
+      console.log(`📐 Format ${format} dimensions:`, formatDims);
+    }
+    
     return elements;
   } catch (error) {
     console.error('Error serializing canvas layout:', error);

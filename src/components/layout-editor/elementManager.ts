@@ -1,13 +1,15 @@
 
 import * as fabric from 'fabric';
 import { CanvasElementConfig } from './types';
+import { constrainToCanvas, getFormatDimensions } from '@/utils/positionValidation';
 
 type FabricCanvas = fabric.Canvas;
 
 export const addElementToCanvas = (
   canvas: FabricCanvas,
   elementConfig: CanvasElementConfig,
-  scale: number
+  scale: number,
+  format?: string
 ): void => {
   if (!canvas) {
     console.error('Canvas is not available');
@@ -28,29 +30,46 @@ export const addElementToCanvas = (
     type: elementConfig?.type || 'text',
     field: elementConfig?.field || 'title',
     position: elementConfig?.position || { x: 50, y: 50 },
-    // ✅ CRITICAL: Use only basic preview styles for layout editor - NO ACTUAL STYLING
     style: {
-      fontSize: 24,        // Fixed preview size
-      fontFamily: 'Arial', // Fixed preview font  
-      color: '#333333',    // Fixed preview color
+      fontSize: 24,
+      fontFamily: 'Arial',
+      color: '#333333',
       ...elementConfig?.style
     }
   };
 
-  console.log('🎨 Adding element to canvas with PREVIEW STYLING ONLY (real styles come from format rules):', config);
-  console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
-  console.log('Scale factor:', scale);
+  // Validate and constrain position if format is provided
+  if (format) {
+    const elementSize = {
+      width: config.style.width || (config.type === 'image' ? 200 : 100),
+      height: config.style.height || (config.type === 'image' ? 200 : 50)
+    };
+    
+    const constrainedElement = constrainToCanvas(
+      { position: config.position, size: elementSize },
+      format
+    );
+    
+    config.position = constrainedElement.position;
+    console.log(`🛡️ Position validated for format ${format}:`, config.position);
+  }
+
+  console.log('🎨 Adding element to canvas with VALIDATED position:', config);
   
-  // Use direct positioning without scale multiplication
-  const elementX = config.position.x;
-  const elementY = config.position.y;
+  // Apply scaled position for display in layout editor
+  const elementX = config.position.x * scale;
+  const elementY = config.position.y * scale;
   
-  console.log('Element will be positioned at:', { x: elementX, y: elementY });
+  console.log('Element positioning:', {
+    unscaled: config.position,
+    scaled: { x: elementX, y: elementY },
+    scaleFactor: scale
+  });
 
   try {
     if (config.type === 'image') {
-      const imageWidth = (config.style.width || 200);
-      const imageHeight = (config.style.height || 200);
+      const imageWidth = (config.style.width || 200) * scale;
+      const imageHeight = (config.style.height || 200) * scale;
       
       const rect = new fabric.Rect({
         left: elementX,
@@ -74,10 +93,9 @@ export const addElementToCanvas = (
       canvas.add(rect);
       console.log('Image element added at:', { left: rect.left, top: rect.top, id: config.id });
     } else {
-      // Text element - use ONLY preview styling for layout editor
-      const fontSize = 24; // Fixed preview size
-      const fontFamily = 'Arial'; // Fixed preview font
-      const color = '#333333'; // Fixed preview color
+      const fontSize = 24 * scale;
+      const fontFamily = 'Arial';
+      const color = '#333333';
       
       const text = new fabric.Text(`[${config.field.toUpperCase()}]`, {
         left: elementX,
@@ -93,8 +111,6 @@ export const addElementToCanvas = (
         elementId: config.id,
         elementType: config.type,
         fieldMapping: config.field
-        // ✅ CRITICAL: DO NOT store any styling properties here
-        // Real styles will come from format-specific rules during generation
       });
 
       canvas.add(text);
@@ -107,8 +123,7 @@ export const addElementToCanvas = (
     canvas.moveObjectTo(addedElement, objects.length - 1);
     canvas.renderAll();
     
-    console.log('Element added successfully:', config.id);
-    console.log('Total canvas objects:', canvas.getObjects().length);
+    console.log('Element added successfully with boundary validation:', config.id);
   } catch (error) {
     console.error('Error adding element to canvas:', error);
   }

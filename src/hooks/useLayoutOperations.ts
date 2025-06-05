@@ -1,7 +1,7 @@
-
 import { toast } from 'sonner';
 import * as fabric from 'fabric';
-import { addElementToCanvas, serializeCanvasLayout } from '@/components/layout-editor/canvasOperations';
+import { addElementToCanvas } from '@/components/layout-editor/elementManager';
+import { serializeCanvasLayout } from '@/components/layout-editor/layoutSerializer';
 
 type FabricCanvas = fabric.Canvas;
 
@@ -47,9 +47,10 @@ export const useLayoutOperations = ({
 
   const updateLayoutDraft = () => {
     if (!canvas) return;
-    const elements = serializeCanvasLayout(canvas, scale);
+    // Pass format name for boundary validation
+    const elements = serializeCanvasLayout(canvas, scale, formatName);
     setLayoutDraft(elements);
-    console.log("Layout draft updated after element addition/deletion", elements);
+    console.log("Layout draft updated with boundary validation for format:", formatName, elements);
   };
 
   const handleAddElement = (elementType: string) => {
@@ -119,9 +120,9 @@ export const useLayoutOperations = ({
     }
 
     try {
-      // Use layout draft if available, otherwise serialize fresh
-      const elements = layoutDraft.length > 0 ? layoutDraft : serializeCanvasLayout(canvas, scale);
-      console.log('Saving layout with elements from draft:', elements.length, 'elements');
+      // Use layout draft if available, otherwise serialize fresh with format validation
+      const elements = layoutDraft.length > 0 ? layoutDraft : serializeCanvasLayout(canvas, scale, formatName);
+      console.log('Saving layout with validated elements for format:', formatName, 'Elements count:', elements.length);
 
       await saveLayout({
         template_id: templateId,
