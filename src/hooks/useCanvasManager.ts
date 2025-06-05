@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import * as fabric from 'fabric';
 import { toast } from 'sonner';
@@ -17,7 +16,7 @@ interface UseCanvasManagerProps {
   scale: number;
   setCanvas: (canvas: FabricCanvas | null) => void;
   setLoadingState: (state: any) => void;
-  setLayoutLoadAttempts: (fn: (prev: number) => number) => void;
+  setLayoutLoadAttempts: (attempts: number) => void;
   setLoadingError: (error: string | null) => void;
   getLayout: (templateId: string, formatName: string) => Promise<any>;
 }
@@ -181,7 +180,7 @@ export const useCanvasManager = ({
     }
 
     console.log('Attempting to load layout elements, attempt:', layoutLoadAttempts + 1);
-    setLayoutLoadAttempts(prev => prev + 1);
+    setLayoutLoadAttempts(layoutLoadAttempts + 1);
     
     const success = await loadLayoutElements(currentCanvas, templateId, formatName);
     if (success) {
