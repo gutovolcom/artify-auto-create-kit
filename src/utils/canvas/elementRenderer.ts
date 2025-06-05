@@ -89,15 +89,15 @@ export const addProfessorPhotoToCanvas = async (
       crossOrigin: 'anonymous'
     }).then((img) => {
       if (photoElement && photoElement.size) {
-        // Use layout configuration for size and position
-        const targetWidth = photoElement.size.width || 200;
-        const targetHeight = photoElement.size.height || 200;
-        
-        console.log('Using layout position and size:', {
-          x: photoElement.position?.x,
-          y: photoElement.position?.y,
-          width: targetWidth,
-          height: targetHeight
+  // Use layout configuration for size and position
+  const targetWidth = photoElement.size.width || 200;
+  const targetHeight = photoElement.size.height || 200;
+  
+  console.log('Using layout position and size:', {
+    x: photoElement.position?.x,
+    y: photoElement.position?.y,
+    width: targetWidth,
+    height: targetHeight
         });
         
         img.set({
