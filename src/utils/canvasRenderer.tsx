@@ -1,6 +1,9 @@
+
 import { EventData } from "@/pages/Index";
-import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
-import { getStyleForField, getUserColors } from './formatStyleRules';
+import { createFabricCanvas, loadBackgroundImageToCanvas, setupCanvasContainer, cleanupCanvas } from './canvas/fabricCanvasSetup';
+import { exportCanvasToDataURL } from './canvas/canvasExporter';
+import { addElementToCanvas, addProfessorPhotoToCanvas } from './canvas/elementRenderer';
+import { addDefaultElements } from './canvas/defaultLayoutRenderer';
 
 export const renderCanvasWithTemplate = async (
   backgroundImageUrl: string,
@@ -21,34 +24,10 @@ export const renderCanvasWithTemplate = async (
         eventData
       });
 
-      const tempCanvas = document.createElement('canvas');
-      tempCanvas.width = width;
-      tempCanvas.height = height;
-      document.body.appendChild(tempCanvas);
+      const tempCanvas = setupCanvasContainer(width, height);
+      const fabricCanvas = createFabricCanvas(tempCanvas, width, height);
 
-      const fabricCanvas = new FabricCanvas(tempCanvas, {
-        width: width,
-        height: height,
-        backgroundColor: '#ffffff'
-      });
-
-      FabricImage.fromURL(backgroundImageUrl, {
-        crossOrigin: 'anonymous'
-      }).then((bgImg) => {
-        const scaleX = width / bgImg.width!;
-        const scaleY = height / bgImg.height!;
-        
-        bgImg.set({
-          scaleX: scaleX,
-          scaleY: scaleY,
-          left: 0,
-          top: 0,
-          selectable: false,
-          evented: false
-        });
-
-        fabricCanvas.backgroundImage = bgImg;
-
+      loadBackgroundImageToCanvas(fabricCanvas, backgroundImageUrl, width, height).then(() => {
         if (layoutConfig?.elements) {
           console.log('Using layout configuration for positioning ONLY (ignoring any saved styles)');
           const promises: Promise<void>[] = [];
@@ -67,25 +46,24 @@ export const renderCanvasWithTemplate = async (
 
           Promise.all(promises).then(() => {
             fabricCanvas.renderAll();
-            exportCanvas(fabricCanvas, tempCanvas, resolve, reject);
+            exportCanvasToDataURL(fabricCanvas, tempCanvas).then(resolve).catch(reject);
           }).catch((error) => {
             console.error('Error loading professor photos:', error);
             fabricCanvas.renderAll();
-            exportCanvas(fabricCanvas, tempCanvas, resolve, reject);
+            exportCanvasToDataURL(fabricCanvas, tempCanvas).then(resolve).catch(reject);
           });
         } else {
           console.log('Using default layout for format:', format);
           addDefaultElements(fabricCanvas, eventData, format, width, height).then(() => {
-            exportCanvas(fabricCanvas, tempCanvas, resolve, reject);
+            exportCanvasToDataURL(fabricCanvas, tempCanvas).then(resolve).catch(reject);
           }).catch((error) => {
             console.error('Error in default layout:', error);
-            exportCanvas(fabricCanvas, tempCanvas, resolve, reject);
+            exportCanvasToDataURL(fabricCanvas, tempCanvas).then(resolve).catch(reject);
           });
         }
       }).catch((error) => {
         console.error('Error loading background image:', error);
-        fabricCanvas.dispose();
-        document.body.removeChild(tempCanvas);
+        cleanupCanvas(fabricCanvas, tempCanvas);
         reject(error);
       });
     } catch (error) {
@@ -93,309 +71,4 @@ export const renderCanvasWithTemplate = async (
       reject(error);
     }
   });
-};
-
-const exportCanvas = (fabricCanvas: FabricCanvas, tempCanvas: HTMLCanvasElement, resolve: (value: string) => void, reject: (reason?: any) => void) => {
-  setTimeout(() => {
-    try {
-      const dataURL = fabricCanvas.toDataURL({
-        format: 'png',
-        quality: 1.0,
-        multiplier: 1
-      });
-      
-      fabricCanvas.dispose();
-      document.body.removeChild(tempCanvas);
-      
-      resolve(dataURL);
-    } catch (exportError) {
-      console.error('Error exporting canvas:', exportError);
-      fabricCanvas.dispose();
-      document.body.removeChild(tempCanvas);
-      reject(exportError);
-    }
-  }, 500);
-};
-
-const addElementToCanvas = (
-  canvas: FabricCanvas,
-  element: any,
-  eventData: EventData,
-  canvasWidth: number,
-  canvasHeight: number,
-  format: string
-) => {
-  const { type, field, position, size } = element;
-  
-  if (type === 'image' && field === 'teacherImages') {
-    return; // Handled separately
-  }
-
-  const textContent = getTextContent(field, eventData);
-  if (!textContent) return;
-
-  // ✅ CRITICAL: Completely ignore any styles from layout editor
-  // Only use position and size from layout configuration
-  console.log(`🚫 Ignoring layout editor styles for ${field} - using format-specific styles only`);
-  
-  // ✅ Get format-specific styling using the new function
-  const userColors = getUserColors(eventData);
-  const formatStyle = getStyleForField(format, field, userColors);
-  
-  console.log(`✅ Applied format-specific style for ${format}.${field}:`, formatStyle);
-
-  if (type === 'text_box' && field === 'classTheme') {
-    const text = new FabricText(textContent, {
-      fontSize: formatStyle.fontSize,
-      fontFamily: formatStyle.fontFamily,
-      fill: formatStyle.color,
-      textAlign: 'center'
-    });
-
-    const padding = 20;
-    const backgroundColor = eventData.boxColor || '#dd303e';
-    const borderRadius = 10;
-
-    const background = new Rect({
-      width: text.width! + (padding * 2),
-      height: text.height! + (padding * 2),
-      fill: backgroundColor,
-      rx: borderRadius,
-      ry: borderRadius
-    });
-
-    const group = new Group([background, text], {
-      left: position?.x || 0,
-      top: position?.y || 0,
-      selectable: false,
-      evented: false
-    });
-
-    canvas.add(group);
-  } else {
-    const text = new FabricText(textContent, {
-      left: position?.x || 0,
-      top: position?.y || 0,
-      fontSize: formatStyle.fontSize,
-      fontFamily: formatStyle.fontFamily,
-      fill: formatStyle.color,
-      selectable: false,
-      evented: false
-    });
-
-    canvas.add(text);
-  }
-};
-
-const addDefaultElements = async (
-  canvas: FabricCanvas,
-  eventData: EventData,
-  format: string,
-  width: number,
-  height: number
-): Promise<void> => {
-  const defaultPositions = getDefaultPositions(format, width, height);
-  const userColors = getUserColors(eventData);
-  
-  // Add title with format-specific styling
-  if (eventData.title) {
-    const titleStyle = getStyleForField(format, 'title', userColors);
-    const title = new FabricText(eventData.title, {
-      left: defaultPositions.title.x,
-      top: defaultPositions.title.y,
-      fontSize: titleStyle.fontSize,
-      fontFamily: titleStyle.fontFamily,
-      fill: titleStyle.color,
-      selectable: false,
-      evented: false
-    });
-    canvas.add(title);
-  }
-
-  // Add date with format-specific styling
-  if (eventData.date) {
-    const dateStyle = getStyleForField(format, 'date', userColors);
-    const date = new FabricText(formatDate(eventData.date, eventData.time), {
-      left: defaultPositions.date.x,
-      top: defaultPositions.date.y,
-      fontSize: dateStyle.fontSize,
-      fontFamily: dateStyle.fontFamily,
-      fill: dateStyle.color,
-      selectable: false,
-      evented: false
-    });
-    canvas.add(date);
-  }
-
-  // Add teacher name with format-specific styling
-  if (eventData.teacherName) {
-    const teacherStyle = getStyleForField(format, 'teacherName', userColors);
-    const teacherName = new FabricText(eventData.teacherName, {
-      left: defaultPositions.teacherName.x,
-      top: defaultPositions.teacherName.y,
-      fontSize: teacherStyle.fontSize,
-      fontFamily: teacherStyle.fontFamily,
-      fill: teacherStyle.color,
-      selectable: false,
-      evented: false
-    });
-    canvas.add(teacherName);
-  }
-
-  // Add class theme with format-specific styling
-  if (eventData.classTheme) {
-    const themeStyle = getStyleForField(format, 'classTheme', userColors);
-    const text = new FabricText(eventData.classTheme, {
-      fontSize: themeStyle.fontSize,
-      fontFamily: themeStyle.fontFamily,
-      fill: themeStyle.color,
-      textAlign: 'center'
-    });
-
-    const padding = 20;
-    const background = new Rect({
-      width: text.width! + (padding * 2),
-      height: text.height! + (padding * 2),
-      fill: eventData.boxColor || '#dd303e',
-      rx: 10,
-      ry: 10
-    });
-
-    const group = new Group([background, text], {
-      left: defaultPositions.classTheme.x,
-      top: defaultPositions.classTheme.y,
-      selectable: false,
-      evented: false
-    });
-
-    canvas.add(group);
-  }
-
-  // Add professor photo with default positioning
-  const teacherImageUrl = eventData.teacherImages?.[0];
-  if (teacherImageUrl) {
-    try {
-      await addProfessorPhotoToCanvas(canvas, teacherImageUrl, null, width, height);
-    } catch (error) {
-      console.error('Error adding professor photo with default positioning:', error);
-    }
-  }
-
-  canvas.renderAll();
-};
-
-const addProfessorPhotoToCanvas = async (
-  canvas: FabricCanvas,
-  photoUrl: string,
-  photoElement: any | null,
-  canvasWidth: number,
-  canvasHeight: number
-): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    console.log('Adding professor photo:', photoUrl);
-    
-    FabricImage.fromURL(photoUrl, {
-      crossOrigin: 'anonymous'
-    }).then((img) => {
-      if (photoElement && photoElement.size) {
-        // Use layout configuration for size and position
-        const targetWidth = photoElement.size.width || 200;
-        const targetHeight = photoElement.size.height || 200;
-        
-        img.set({
-          left: photoElement.position?.x || 0,
-          top: photoElement.position?.y || 0,
-          scaleX: targetWidth / img.width!,
-          scaleY: targetHeight / img.height!,
-          selectable: false,
-          evented: false
-        });
-      } else {
-        // Use default positioning
-        const defaultSize = Math.min(canvasWidth, canvasHeight) * 0.2;
-        img.set({
-          left: canvasWidth - defaultSize - 20,
-          top: canvasHeight - defaultSize - 20,
-          scaleX: defaultSize / img.width!,
-          scaleY: defaultSize / img.height!,
-          selectable: false,
-          evented: false
-        });
-      }
-      
-      canvas.add(img);
-      canvas.renderAll();
-      resolve();
-    }).catch((error) => {
-      console.error('Error loading professor photo:', error);
-      reject(error);
-    });
-  });
-};
-
-const getTextContent = (field: string, eventData: EventData): string => {
-  switch (field) {
-    case 'title':
-      return eventData.title;
-    case 'classTheme':
-      return eventData.classTheme || '';
-    case 'teacherName':
-      return eventData.teacherName || '';
-    case 'date':
-      return formatDate(eventData.date, eventData.time);
-    case 'time':
-      return eventData.time || '';
-    default:
-      return '';
-  }
-};
-
-const formatDate = (dateString: string, timeString?: string): string => {
-  if (!dateString) return "";
-  
-  const date = new Date(dateString);
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  
-  let formattedDateTime = `${day}/${month}`;
-  
-  if (timeString) {
-    const [hours, minutes] = timeString.split(':');
-    if (minutes === '00') {
-      formattedDateTime += `, às ${hours}h`;
-    } else {
-      formattedDateTime += `, às ${hours}h${minutes}`;
-    }
-  }
-  
-  return formattedDateTime;
-};
-
-const getDefaultPositions = (format: string, width: number, height: number) => {
-  switch (format) {
-    case 'youtube':
-      return {
-        title: { x: 100, y: 100, fontSize: 48 },
-        date: { x: 100, y: 200, fontSize: 24 },
-        time: { x: 100, y: 250, fontSize: 24 },
-        teacherName: { x: 100, y: 300, fontSize: 32 },
-        classTheme: { x: 100, y: 400, fontSize: 28 }
-      };
-    case 'feed':
-      return {
-        title: { x: 50, y: 50, fontSize: 36 },
-        date: { x: 50, y: 150, fontSize: 20 },
-        time: { x: 50, y: 180, fontSize: 20 },
-        teacherName: { x: 50, y: 220, fontSize: 24 },
-        classTheme: { x: 50, y: 300, fontSize: 22 }
-      };
-    default:
-      return {
-        title: { x: 50, y: 50, fontSize: 24 },
-        date: { x: 50, y: 100, fontSize: 16 },
-        time: { x: 50, y: 130, fontSize: 16 },
-        teacherName: { x: 50, y: 160, fontSize: 20 },
-        classTheme: { x: 50, y: 200, fontSize: 18 }
-      };
-  }
 };
