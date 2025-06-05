@@ -149,15 +149,13 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
   }, []);
 
   // Show loading states if needed
-  const loadingComponent = (
-    <LayoutEditorLoadingStates 
-      elementsLoading={elementsLoading} 
-      error={error} 
-    />
-  );
-
-  if (loadingComponent) {
-    return loadingComponent;
+  if (elementsLoading || error) {
+    return (
+      <LayoutEditorLoadingStates 
+        elementsLoading={elementsLoading} 
+        error={error} 
+      />
+    );
   }
 
   return (

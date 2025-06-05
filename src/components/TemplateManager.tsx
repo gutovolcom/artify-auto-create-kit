@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
 import { LayoutEditor } from "@/components/LayoutEditor";
@@ -138,6 +137,9 @@ export const TemplateManager = () => {
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Criar Novo Template</DialogTitle>
+              <DialogDescription>
+                Crie um novo template fornecendo um nome e imagens para todos os formatos.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
@@ -265,6 +267,9 @@ export const TemplateManager = () => {
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Template: {editingTemplate?.templateName}</DialogTitle>
+            <DialogDescription>
+              Selecione os formatos que deseja atualizar com novas imagens.
+            </DialogDescription>
           </DialogHeader>
           {editingTemplate && (
             <div className="space-y-4">
@@ -325,6 +330,9 @@ export const TemplateManager = () => {
         <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editor de Layout</DialogTitle>
+            <DialogDescription>
+              Configure o layout dos elementos para este formato do template.
+            </DialogDescription>
           </DialogHeader>
           {editingLayout && (
             <LayoutEditor
