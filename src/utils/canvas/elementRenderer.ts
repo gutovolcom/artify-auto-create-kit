@@ -11,6 +11,16 @@ const lessonThemeStyleColors = {
   'Transparent': { boxColor: null, fontColor: null } // Special handling: fontColor will be eventData.textColor
 };
 
+const CLASS_THEME_BOX_HEIGHTS = {
+  youtube: 100,
+  feed: 64,
+  stories: 100,
+  bannerGCO: 40.4,
+  ledStudio: 54,
+  LP: 66,
+  default: 50 // Default height if format not specified
+};
+
 export const addElementToCanvas = (
   canvas: FabricCanvas,
   element: any,
@@ -64,29 +74,58 @@ export const addElementToCanvas = (
           evented: false
         });
         canvas.add(text);
-      } else { // 'Green', 'Red', 'White' styles
+      } else { // This is the block to modify for 'Green', 'Red', 'White'
         const text = new FabricText(textContent, {
+          // IMPORTANT: Set originX and originY to 'center' for easier positioning within the group later if needed,
+          // but for now, we'll calculate top/left based on default top-left origin.
+          // Consider text.set({ originX: 'center', originY: 'center' }); if direct centering is easier.
+          // However, the current plan is explicit top/left.
           fontSize: formatStyle.fontSize,
           fontFamily: formatStyle.fontFamily,
           fill: styleConfig.fontColor, // Use fontColor from styleConfig
-          textAlign: 'center'
+          textAlign: 'center' // Keep textAlign, useful if text.width is less than final box width.
         });
 
-        const padding = 20;
-        const backgroundColor = styleConfig.boxColor; // Use boxColor from styleConfig
+        // @ts-ignore
+        const fixedBoxHeight = CLASS_THEME_BOX_HEIGHTS[format] || CLASS_THEME_BOX_HEIGHTS.default;
+        const horizontalPadding = 20; // Keep this for now, can be made configurable later
         const borderRadius = 10;
 
+        const backgroundWidth = text.width + (horizontalPadding * 2);
+        const backgroundHeight = fixedBoxHeight;
+
         const background = new Rect({
-          width: text.width! + (padding * 2),
-          height: text.height! + (padding * 2),
-          fill: backgroundColor,
+          left: 0, // Relative to group
+          top: 0,  // Relative to group
+          width: backgroundWidth,
+          height: backgroundHeight,
+          fill: styleConfig.boxColor, // Use boxColor from styleConfig
           rx: borderRadius,
           ry: borderRadius
         });
 
+        // Adjust text position to be centered within the background rect in the group
+        text.set({
+          left: horizontalPadding, // Text starts after left padding
+          top: (fixedBoxHeight - text.height) / 2 // Vertically center text
+        });
+
+        console.log('🎨 classTheme Box Details:', {
+          format: format,
+          selectedStyle: selectedStyleName,
+          fixedBoxHeight: fixedBoxHeight,
+          textWidth: text.width,
+          textHeight: text.height,
+          rectWidth: background.width,
+          rectHeight: background.height,
+          rectFill: background.fill,
+          textLeftInGroup: text.left,
+          textTopInGroup: text.top
+        });
+
         const group = new Group([background, text], {
-          left: elementX,
-          top: elementY,
+          left: elementX, // Position of the group on the canvas
+          top: elementY,  // Position of the group on the canvas
           selectable: false,
           evented: false
         });
