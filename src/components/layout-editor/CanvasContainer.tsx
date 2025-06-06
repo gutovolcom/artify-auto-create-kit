@@ -2,6 +2,7 @@
 import React from 'react';
 import * as fabric from 'fabric';
 import { useCanvasSetup } from '@/hooks/useCanvasSetup';
+import './CanvasContainer.css'; // Import the new CSS file
 
 type FabricCanvas = fabric.Canvas;
 
@@ -38,7 +39,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   });
 
   return (
-    <div className="border rounded-lg p-4 bg-gray-50 mb-4">
+    <div className="border rounded-lg p-4 mb-4 canvas-background-grid"> {/* Added class, removed bg-gray-50 */}
       <canvas 
         ref={canvasRef} 
         className="border rounded shadow-sm" 

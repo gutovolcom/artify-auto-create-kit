@@ -11,6 +11,10 @@ export const addElementToCanvas = (
   scale: number,
   format?: string
 ): void => {
+  if (format === 'bannerGCO') {
+    console.log('[bannerGCO] addElementToCanvas: elementConfig', elementConfig);
+    console.log('[bannerGCO] addElementToCanvas: scale', scale);
+  }
   if (!canvas) {
     console.error('Canvas is not available');
     return;
@@ -52,6 +56,10 @@ export const addElementToCanvas = (
       width: elementWidth,
       height: elementHeight
     };
+
+    if (format === 'bannerGCO') {
+      console.log('[bannerGCO] Before constrainToCanvas: position', JSON.parse(JSON.stringify(config.position)), 'size', JSON.parse(JSON.stringify(elementSize)));
+    }
     
     const constrainedElement = constrainToCanvas(
       { position: config.position, size: elementSize },
@@ -59,6 +67,10 @@ export const addElementToCanvas = (
     );
     
     config.position = constrainedElement.position;
+
+    if (format === 'bannerGCO') {
+      console.log('[bannerGCO] After constrainToCanvas: position', JSON.parse(JSON.stringify(config.position)), 'size', JSON.parse(JSON.stringify(elementSize)));
+    }
     console.log(`🛡️ Position validated and constrained for format ${format}:`, {
       original: elementConfig.position,
       constrained: config.position,
@@ -77,6 +89,12 @@ export const addElementToCanvas = (
   const elementX = config.position.x * scale;
   const elementY = config.position.y * scale;
 
+  if (format === 'bannerGCO') {
+    const scaledWidth = elementWidth * scale;
+    const scaledHeight = elementHeight * scale;
+    console.log('[bannerGCO] Final scaled values: elementX', elementX, 'elementY', elementY, 'scaledWidth', scaledWidth, 'scaledHeight', scaledHeight, 'originalWidth', elementWidth, 'originalHeight', elementHeight);
+  }
+
   try {
     if (config.type === 'image') {
       const imageWidth = elementWidth * scale;
@@ -87,7 +105,7 @@ export const addElementToCanvas = (
         top: elementY,
         width: imageWidth,
         height: imageHeight,
-        fill: 'rgba(200,200,200,0.3)',
+        fill: 'rgba(180, 200, 220, 0.3)', // Changed fill color
         stroke: '#666',
         strokeWidth: 2,
         strokeDashArray: [5, 5],
@@ -117,6 +135,14 @@ export const addElementToCanvas = (
       const fontSize = (config.style.fontSize || 24) * scale;
       const fontFamily = config.style.fontFamily || 'Arial';
       const color = config.style.color || '#333333';
+
+      let fontWeight = 'normal';
+      let fontStyle = 'normal'; // fabric.Text uses fontStyle, initialize to normal
+      if (config.field.toLowerCase().includes('title') || config.field.toLowerCase().includes('headline')) {
+        fontWeight = 'bold';
+      } else if (config.field.toLowerCase().includes('caption') || config.field.toLowerCase().includes('subtitle')) {
+        fontStyle = 'italic';
+      }
       
       const text = new fabric.Text(`[${config.field.toUpperCase()}]`, {
         left: elementX,
@@ -125,7 +151,9 @@ export const addElementToCanvas = (
         fill: color,
         fontFamily: fontFamily,
         selectable: true,
-        evented: true
+        evented: true,
+        fontWeight: fontWeight, // Added fontWeight
+        fontStyle: fontStyle    // Added fontStyle
       });
 
       text.set({
