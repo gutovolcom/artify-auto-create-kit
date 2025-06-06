@@ -1,3 +1,4 @@
+
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
@@ -56,10 +57,17 @@ export const addElementToCanvas = (
   
   console.log(`✅ Applied format-specific style for ${format}.${field}:`, formatStyle);
 
-  if (type === 'text_box' && field === 'classTheme') {
+  // Always treat classTheme as text_box regardless of the element type in layout
+  if (field === 'classTheme') {
     const selectedStyleName = eventData.lessonThemeBoxStyle;
-    // @ts-ignore
     const styleConfig = selectedStyleName ? lessonThemeStyleColors[selectedStyleName] : null;
+
+    console.log('🎨 Processing classTheme with style:', {
+      selectedStyleName,
+      styleConfig,
+      userBoxColor: eventData.boxColor,
+      userBoxFontColor: eventData.boxFontColor
+    });
 
     if (styleConfig) {
       if (styleConfig.boxColor === null) { // 'Transparent' style
@@ -74,6 +82,7 @@ export const addElementToCanvas = (
           evented: false
         });
         canvas.add(text);
+        console.log('✅ Added transparent classTheme text with user textColor');
       } else { // 'Green', 'Red', 'White' styles
         const text = new FabricText(textContent, {
           fontSize: formatStyle.fontSize,
@@ -106,17 +115,16 @@ export const addElementToCanvas = (
           top: (fixedBoxHeight - text.height) / 2 // Vertically center text
         });
 
-        console.log('🎨 classTheme Box Details:', {
+        console.log('🎨 classTheme Styled Box Details:', {
           format: format,
           selectedStyle: selectedStyleName,
+          styleBoxColor: styleConfig.boxColor,
+          styleFontColor: styleConfig.fontColor,
           fixedBoxHeight: fixedBoxHeight,
           textWidth: text.width,
           textHeight: text.height,
           rectWidth: background.width,
-          rectHeight: background.height,
-          rectFill: background.fill,
-          textLeftInGroup: text.left,
-          textTopInGroup: text.top
+          rectHeight: background.height
         });
 
         const group = new Group([background, text], {
@@ -126,6 +134,7 @@ export const addElementToCanvas = (
           evented: false
         });
         canvas.add(group);
+        console.log('✅ Added styled classTheme box with predefined colors');
       }
     } else { // Fallback: use user's custom boxColor when no lessonThemeBoxStyle is set
       const text = new FabricText(textContent, {
@@ -140,11 +149,19 @@ export const addElementToCanvas = (
       const borderRadius = 10;
 
       const background = new Rect({
+        left: 0,
+        top: 0,
         width: text.width! + (padding * 2),
         height: text.height! + (padding * 2),
         fill: backgroundColor,
         rx: borderRadius,
         ry: borderRadius
+      });
+
+      // Center text within background
+      text.set({
+        left: padding,
+        top: padding
       });
 
       console.log('🎨 classTheme Fallback Box Details:', {
@@ -164,8 +181,10 @@ export const addElementToCanvas = (
         evented: false
       });
       canvas.add(group);
+      console.log('✅ Added fallback classTheme box with user colors');
     }
   } else {
+    // Handle all other text fields normally
     const text = new FabricText(textContent, {
       left: elementX,
       top: elementY,
@@ -177,6 +196,7 @@ export const addElementToCanvas = (
     });
 
     canvas.add(text);
+    console.log(`✅ Added regular text element: ${field}`);
   }
 };
 
