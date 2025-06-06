@@ -127,6 +127,16 @@ const Index = () => {
   }
 
   // Show user interface for regular users
+  const fieldChecks = [
+    { condition: !eventData.title, message: "Título do evento" },
+    { condition: !eventData.date, message: "Data" },
+    { condition: !eventData.kvImageId, message: "Template de imagem" },
+    { condition: !eventData.professorPhotos, message: "Foto do professor" },
+  ];
+  const actualMissingFields = fieldChecks
+    .filter(check => check.condition)
+    .map(check => check.message);
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
@@ -186,12 +196,7 @@ const Index = () => {
                 disabled={!isFormReady}
                 generationProgress={generationProgress}
                 currentGeneratingFormat={currentGeneratingFormat}
-                missingFields={[
-                  !eventData.title && "Título do evento",
-                  !eventData.date && "Data",
-                  !eventData.kvImageId && "Template de imagem",
-                  !eventData.professorPhotos && "Foto do professor"
-                ].filter(Boolean) as string[]}
+                missingFields={actualMissingFields}
               />
             </div>
           </TabsContent>
