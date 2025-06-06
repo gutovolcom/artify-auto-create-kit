@@ -49,6 +49,7 @@ const Index = () => {
     fontColor: "#000000",
     textColor: "#FFFFFF",
     backgroundColorType: "red",
+    lessonThemeBoxStyle: "Transparent",
     selectedTeacherId: "",
     teacherName: "",
     professorPhotos: "",

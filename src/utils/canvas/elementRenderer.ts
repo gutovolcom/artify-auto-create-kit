@@ -29,6 +29,7 @@ export const addElementToCanvas = (
   canvasHeight: number,
   format: string
 ) => {
+  console.log(`[addElementToCanvas ENTRY] Field: ${element?.field}, Type: ${element?.type}, lessonThemeBoxStyle: ${eventData?.lessonThemeBoxStyle}, boxColor: ${eventData?.boxColor}`);
   const { type, field, position, size } = element;
   
   // Handle both teacherImages and professorPhotos field names
@@ -57,6 +58,7 @@ export const addElementToCanvas = (
   console.log(`✅ Applied format-specific style for ${format}.${field}:`, formatStyle);
 
   if (type === 'text_box' && field === 'classTheme') {
+    console.log("🚀 Entered classTheme text_box rendering for field:", field);
     const selectedStyleName = eventData.lessonThemeBoxStyle;
     // @ts-ignore
     const styleConfig = selectedStyleName ? lessonThemeStyleColors[selectedStyleName] : null;
@@ -132,6 +134,7 @@ export const addElementToCanvas = (
         canvas.add(group);
       }
     } else { // Fallback to original logic if styleConfig is not found
+      console.log("⚠️ classTheme styleConfig not found or invalid. Using fallback. eventData.lessonThemeBoxStyle was:", eventData?.lessonThemeBoxStyle, "eventData.boxColor:", eventData?.boxColor);
       const text = new FabricText(textContent, {
         fontSize: formatStyle.fontSize,
         fontFamily: formatStyle.fontFamily,
