@@ -1,4 +1,3 @@
-
 import { EventData } from "@/pages/Index";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,17 +20,24 @@ import { useSupabaseTeachers } from "@/hooks/useSupabaseTeachers";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
 import { useEffect } from "react";
 
+// This map should ideally be shared from where lessonThemeStyleColors is defined in elementRenderer,
+// or defined in a shared constants file. For now, duplicating for clarity of what colors are used.
+const lessonThemeStyleDefinition = {
+  'Green': { boxColor: '#CAFF39', fontColor: '#DD303E' },
+  'Red':   { boxColor: '#DD303E', fontColor: '#CAFF39' },
+  'White': { boxColor: '#FFFFFF', fontColor: '#DD303E' },
+  'Transparent': { boxColor: null, fontColor: null } // fontColor for Transparent text uses eventData.textColor
+};
+
 interface EventFormProps {
   eventData: EventData;
   updateEventData: (data: Partial<EventData>) => void;
 }
 
 export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
-  // Get teachers from Supabase instead of localStorage
   const { teachers, loading } = useSupabaseTeachers();
   const { templates } = useSupabaseTemplates();
 
-  // Define formatDisplayNames before using it
   const formatDisplayNames = {
     youtube: "YouTube",
     feed: "Feed",
@@ -41,7 +47,6 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
     LP: "LP"
   };
 
-  // Update teacher images when teacher selection changes
   useEffect(() => {
     if (eventData.professorPhotos) {
       const selectedTeacher = teachers.find(t => t.id === eventData.professorPhotos);
@@ -54,7 +59,6 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
     }
   }, [eventData.professorPhotos, teachers, updateEventData]);
 
-  // Get available formats from selected template
   const availableFormats = eventData.kvImageId 
     ? templates.find(t => t.id === eventData.kvImageId)?.formats?.map(f => ({
         id: f.format_name,
@@ -62,11 +66,12 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
       })) || []
     : [];
 
-  const backgroundColorOptions = [
-    { id: "red", label: "Vermelho", color: "#dd303e", textColor: "#FFFFFF" },
-    { id: "white", label: "Branco", color: "#FFFFFF", textColor: "#dd303e" },
-    { id: "green", label: "Verde Gran", color: "#CAFF39", textColor: "#dd303e" },
-    { id: "transparent", label: "Sem fundo (transparente)", color: "transparent", textColor: eventData.textColor || "#000000" },
+  // Updated options to be used by the "Cor de fundo do texto" Select
+  const lessonThemeStyleOptions = [
+    { id: "Red",   label: "Vermelho",  displayBoxColor: "#DD303E" },
+    { id: "White", label: "Branco",    displayBoxColor: "#FFFFFF" },
+    { id: "Green", label: "Verde Gran",displayBoxColor: "#CAFF39" },
+    { id: "Transparent", label: "Sem fundo (transparente)", displayBoxColor: "transparent" },
   ];
 
   const textColorOptions = [
@@ -77,19 +82,36 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
     { id: "#F7C7BE", label: "Rosa Claro", color: "#F7C7BE" },
   ];
 
-  const handleBackgroundColorChange = (value: string) => {
-    const selectedOption = backgroundColorOptions.find(option => option.id === value);
-    if (selectedOption) {
-      updateEventData({ 
-        boxColor: selectedOption.color,
-        boxFontColor: selectedOption.textColor,
-        backgroundColorType: value
-      });
+  const handleLessonThemeStyleChange = (styleName: string) => { // styleName is "Red", "Green", etc.
+    const selectedStyle = lessonThemeStyleDefinition[styleName as keyof typeof lessonThemeStyleDefinition];
+
+    let newBoxColor = eventData.boxColor; // Default to current
+    let newBoxFontColor = eventData.boxFontColor; // Default to current
+
+    if (selectedStyle) {
+      newBoxColor = selectedStyle.boxColor === null ? 'transparent' : selectedStyle.boxColor;
+      // For 'Transparent' style, font color is main textColor. For others, it's from the definition.
+      newBoxFontColor = selectedStyle.fontColor === null ? (eventData.textColor || '#FFFFFF') : selectedStyle.fontColor;
+    } else if (styleName === 'Transparent') { // Explicit fallback for Transparent, though map should cover it
+      newBoxColor = 'transparent';
+      newBoxFontColor = eventData.textColor || '#FFFFFF';
     }
+
+    updateEventData({
+      lessonThemeBoxStyle: styleName, // This is the primary field for the new logic
+      // backgroundColorType: styleName, // Keep this to ensure Select shows correct selection
+      // The following are for general fallback or other elements, not directly used by classTheme if lessonThemeBoxStyle is set
+      boxColor: newBoxColor,
+      boxFontColor: newBoxFontColor
+    });
   };
 
   const handleTextColorChange = (value: string) => {
     updateEventData({ textColor: value });
+    // If transparent theme is active, also update boxFontColor as it's linked to textColor
+    if (eventData.lessonThemeBoxStyle === 'Transparent') {
+      updateEventData({ boxFontColor: value });
+    }
   };
 
   return (
@@ -125,20 +147,23 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>Cor de fundo do texto</Label>
-            <Select value={eventData.backgroundColorType || "red"} onValueChange={handleBackgroundColorChange}>
+            <Label>Cor de fundo do texto (Tema da Aula)</Label>
+            <Select
+              value={eventData.lessonThemeBoxStyle || "Transparent"}
+              onValueChange={handleLessonThemeStyleChange}
+            >
               <SelectTrigger>
-                <SelectValue placeholder="Selecione a cor de fundo" />
+                <SelectValue placeholder="Selecione o estilo" />
               </SelectTrigger>
               <SelectContent>
-                {backgroundColorOptions.map((option) => (
+                {lessonThemeStyleOptions.map((option) => (
                   <SelectItem key={option.id} value={option.id}>
                     <div className="flex items-center gap-2">
                       <div 
                         className="w-4 h-4 rounded border"
                         style={{ 
-                          backgroundColor: option.color === "transparent" ? "#f0f0f0" : option.color,
-                          border: option.color === "#FFFFFF" ? "1px solid #ccc" : "none"
+                          backgroundColor: option.displayBoxColor === "transparent" ? "#f0f0f0" : option.displayBoxColor,
+                          border: option.displayBoxColor === "#FFFFFF" ? "1px solid #ccc" : "none"
                         }}
                       />
                       {option.label}
@@ -150,7 +175,7 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label>Cor do texto</Label>
+            <Label>Cor do texto (Geral)</Label>
             <Select value={eventData.textColor || "#FFFFFF"} onValueChange={handleTextColorChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione a cor do texto" />
@@ -175,20 +200,22 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
           </div>
         </div>
 
+        {/* This specific input for fontColor might be redundant if textColor serves as the main color picker,
+            especially for the "Transparent" theme text. Keeping it for now if it serves other purposes. */}
         {eventData.backgroundColorType === "transparent" && (
           <div className="space-y-2">
-            <Label htmlFor="fontColor">Cor do texto</Label>
+            <Label htmlFor="fontColor">Cor do texto (para fundo transparente)</Label>
             <div className="flex items-center gap-2">
               <input
                 type="color"
                 id="fontColor"
-                value={eventData.fontColor || "#000000"}
-                onChange={(e) => updateEventData({ fontColor: e.target.value })}
+                value={eventData.textColor || "#000000"} // Should ideally be linked to eventData.textColor
+                onChange={(e) => handleTextColorChange(e.target.value)} // Use handleTextColorChange
                 className="w-10 h-10 rounded border cursor-pointer"
               />
               <Input
-                value={eventData.fontColor || "#000000"}
-                onChange={(e) => updateEventData({ fontColor: e.target.value })}
+                value={eventData.textColor || "#000000"} // Should ideally be linked to eventData.textColor
+                onChange={(e) => handleTextColorChange(e.target.value)} // Use handleTextColorChange
                 placeholder="#000000"
                 className="flex-1"
               />
@@ -290,3 +317,4 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
     </Card>
   );
 };
+EOF_EVENT_FORM
