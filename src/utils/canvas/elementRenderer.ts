@@ -4,6 +4,13 @@ import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fa
 import { getStyleForField, getUserColors } from '../formatStyleRules';
 import { getTextContent } from './textUtils';
 
+const lessonThemeStyleColors = {
+  'Green': { boxColor: '#CAFF39', fontColor: '#DD303E' },
+  'Red':   { boxColor: '#DD303E', fontColor: '#CAFF39' },
+  'White': { boxColor: '#FFFFFF', fontColor: '#DD303E' },
+  'Transparent': { boxColor: null, fontColor: null } // Special handling: fontColor will be eventData.textColor
+};
+
 export const addElementToCanvas = (
   canvas: FabricCanvas,
   element: any,
@@ -40,33 +47,79 @@ export const addElementToCanvas = (
   console.log(`✅ Applied format-specific style for ${format}.${field}:`, formatStyle);
 
   if (type === 'text_box' && field === 'classTheme') {
-    const text = new FabricText(textContent, {
-      fontSize: formatStyle.fontSize,
-      fontFamily: formatStyle.fontFamily,
-      fill: formatStyle.color,
-      textAlign: 'center'
-    });
+    const selectedStyleName = eventData.lessonThemeBoxStyle;
+    // @ts-ignore
+    const styleConfig = selectedStyleName ? lessonThemeStyleColors[selectedStyleName] : null;
 
-    const padding = 20;
-    const backgroundColor = eventData.boxColor || '#dd303e';
-    const borderRadius = 10;
+    if (styleConfig) {
+      if (styleConfig.boxColor === null) { // 'Transparent' style
+        const text = new FabricText(textContent, {
+          fontSize: formatStyle.fontSize,
+          fontFamily: formatStyle.fontFamily,
+          fill: userColors.textColor, // Use eventData.textColor
+          textAlign: 'center',
+          left: elementX,
+          top: elementY,
+          selectable: false,
+          evented: false
+        });
+        canvas.add(text);
+      } else { // 'Green', 'Red', 'White' styles
+        const text = new FabricText(textContent, {
+          fontSize: formatStyle.fontSize,
+          fontFamily: formatStyle.fontFamily,
+          fill: styleConfig.fontColor, // Use fontColor from styleConfig
+          textAlign: 'center'
+        });
 
-    const background = new Rect({
-      width: text.width! + (padding * 2),
-      height: text.height! + (padding * 2),
-      fill: backgroundColor,
-      rx: borderRadius,
-      ry: borderRadius
-    });
+        const padding = 20;
+        const backgroundColor = styleConfig.boxColor; // Use boxColor from styleConfig
+        const borderRadius = 10;
 
-    const group = new Group([background, text], {
-      left: elementX,
-      top: elementY,
-      selectable: false,
-      evented: false
-    });
+        const background = new Rect({
+          width: text.width! + (padding * 2),
+          height: text.height! + (padding * 2),
+          fill: backgroundColor,
+          rx: borderRadius,
+          ry: borderRadius
+        });
 
-    canvas.add(group);
+        const group = new Group([background, text], {
+          left: elementX,
+          top: elementY,
+          selectable: false,
+          evented: false
+        });
+        canvas.add(group);
+      }
+    } else { // Fallback to original logic if styleConfig is not found
+      const text = new FabricText(textContent, {
+        fontSize: formatStyle.fontSize,
+        fontFamily: formatStyle.fontFamily,
+        fill: formatStyle.color, // Original fill color
+        textAlign: 'center'
+      });
+
+      const padding = 20;
+      const backgroundColor = eventData.boxColor || '#dd303e'; // Original background color
+      const borderRadius = 10;
+
+      const background = new Rect({
+        width: text.width! + (padding * 2),
+        height: text.height! + (padding * 2),
+        fill: backgroundColor,
+        rx: borderRadius,
+        ry: borderRadius
+      });
+
+      const group = new Group([background, text], {
+        left: elementX,
+        top: elementY,
+        selectable: false,
+        evented: false
+      });
+      canvas.add(group);
+    }
   } else {
     const text = new FabricText(textContent, {
       left: elementX,
