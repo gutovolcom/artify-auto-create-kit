@@ -1,8 +1,10 @@
 
 import { EventData } from "@/pages/Index";
-import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
+import { Canvas as FabricCanvas } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
 import { getTextContent } from './textUtils';
+import { renderClassTheme } from './classThemeRenderer';
+import { renderRegularText } from './textRenderer';
 
 export const addElementToCanvas = (
   canvas: FabricCanvas,
@@ -12,6 +14,7 @@ export const addElementToCanvas = (
   canvasHeight: number,
   format: string
 ) => {
+  console.log(`[addElementToCanvas ENTRY] Field: ${element?.field}, Type: ${element?.type}, lessonThemeBoxStyle: ${eventData?.lessonThemeBoxStyle}, boxColor: ${eventData?.boxColor}`);
   const { type, field, position, size } = element;
   
   // Handle both teacherImages and professorPhotos field names
@@ -39,111 +42,14 @@ export const addElementToCanvas = (
   
   console.log(`✅ Applied format-specific style for ${format}.${field}:`, formatStyle);
 
-  if (type === 'text_box' && field === 'classTheme') {
-    const text = new FabricText(textContent, {
-      fontSize: formatStyle.fontSize,
-      fontFamily: formatStyle.fontFamily,
-      fill: formatStyle.color,
-      textAlign: 'center'
-    });
-
-    const padding = 20;
-    const backgroundColor = eventData.boxColor || '#dd303e';
-    const borderRadius = 10;
-
-    const background = new Rect({
-      width: text.width! + (padding * 2),
-      height: text.height! + (padding * 2),
-      fill: backgroundColor,
-      rx: borderRadius,
-      ry: borderRadius
-    });
-
-    const group = new Group([background, text], {
-      left: elementX,
-      top: elementY,
-      selectable: false,
-      evented: false
-    });
-
-    canvas.add(group);
+  // Always treat classTheme as text_box regardless of the element type in layout
+  if (field === 'classTheme') {
+    renderClassTheme(canvas, textContent, eventData, formatStyle, elementX, elementY, format);
   } else {
-    const text = new FabricText(textContent, {
-      left: elementX,
-      top: elementY,
-      fontSize: formatStyle.fontSize,
-      fontFamily: formatStyle.fontFamily,
-      fill: formatStyle.color,
-      selectable: false,
-      evented: false
-    });
-
-    canvas.add(text);
+    // Handle all other text fields normally
+    renderRegularText(canvas, textContent, field, formatStyle, elementX, elementY);
   }
 };
 
-export const addProfessorPhotoToCanvas = async (
-  canvas: FabricCanvas,
-  photoUrl: string,
-  photoElement: any | null,
-  canvasWidth: number,
-  canvasHeight: number
-): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    console.log('Adding professor photo:', photoUrl, 'with element config:', photoElement);
-    
-    FabricImage.fromURL(photoUrl, {
-      crossOrigin: 'anonymous'
-    }).then((img) => {
-      if (photoElement && photoElement.position && photoElement.size) {
-        // Use DIRECT layout coordinates (already unscaled)
-        const targetWidth = photoElement.size.width || 200;
-        const targetHeight = photoElement.size.height || 200;
-        const elementX = photoElement.position.x;
-        const elementY = photoElement.position.y;
-        
-        console.log('🖼️ Using DIRECT layout position for teacher photo:', {
-          x: elementX,
-          y: elementY,
-          width: targetWidth,
-          height: targetHeight,
-          canvasSize: { width: canvasWidth, height: canvasHeight }
-        });
-        
-        img.set({
-          left: elementX,
-          top: elementY,
-          scaleX: targetWidth / img.width!,
-          scaleY: targetHeight / img.height!,
-          selectable: false,
-          evented: false
-        });
-      } else {
-        // Use default positioning
-        const defaultSize = Math.min(canvasWidth, canvasHeight) * 0.2;
-        console.log('Using default positioning for teacher photo:', {
-          x: canvasWidth - defaultSize - 20,
-          y: canvasHeight - defaultSize - 20,
-          size: defaultSize
-        });
-        
-        img.set({
-          left: canvasWidth - defaultSize - 20,
-          top: canvasHeight - defaultSize - 20,
-          scaleX: defaultSize / img.width!,
-          scaleY: defaultSize / img.height!,
-          selectable: false,
-          evented: false
-        });
-      }
-      
-      canvas.add(img);
-      canvas.renderAll();
-      console.log('Professor photo added successfully');
-      resolve();
-    }).catch((error) => {
-      console.error('Error loading professor photo:', error);
-      reject(error);
-    });
-  });
-};
+// Re-export for backward compatibility
+export { addProfessorPhotoToCanvas } from './professorPhotoRenderer';

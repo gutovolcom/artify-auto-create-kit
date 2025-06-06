@@ -1,3 +1,39 @@
+@font-face {
+  font-family: 'Margem-Black';
+  src: url('/fonts/Margem-Black.woff2') format('woff2'),
+       url('/fonts/Margem-Black.woff') format('woff');
+  font-weight: 900; /* Black weight */
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Margem-Bold';
+  src: url('/fonts/Margem-Bold.woff2') format('woff2'),
+       url('/fonts/Margem-Bold.woff') format('woff');
+  font-weight: 700; /* Bold weight */
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Margem-Medium';
+  src: url('/fonts/Margem-Medium.woff2') format('woff2'),
+       url('/fonts/Margem-Medium.woff') format('woff');
+  font-weight: 500; /* Medium weight */
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Toroka Wide Regular';
+  src: url('/fonts/TorokaWide-Regular.woff2') format('woff2'),
+       url('/fonts/TorokaWide-Regular.woff') format('woff');
+  font-weight: 400; /* Regular weight */
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

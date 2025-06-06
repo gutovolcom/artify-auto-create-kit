@@ -8,5 +8,7 @@ Upload your Margem font files here with the following names:
 - Margem-Bold.woff
 - Margem-Black.woff2
 - Margem-Black.woff
+- TorokaWide-Regular.woff2
+- TorokaWide-Regular.woff
 
 These fonts will be automatically loaded by the application.

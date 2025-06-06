@@ -1,12 +1,9 @@
+
 import { useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Navbar } from "@/components/Navbar";
-import { EventForm } from "@/components/EventForm";
-import { ImageSelector } from "@/components/ImageSelector";
-import { GeneratedGallery } from "@/components/GeneratedGallery";
-import { ExportButton } from "@/components/ExportButton";
-import { GenerateButton } from "@/components/GenerateButton";
+import { UserHeader } from "@/components/UserHeader";
+import { EventDataTabs } from "@/components/EventDataTabs";
 import { useImageGenerator } from "@/hooks/useImageGenerator";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -29,6 +26,7 @@ export interface EventData {
   selectedTeacherId?: string;
   teacherName?: string;
   professorPhotos?: string;
+  lessonThemeBoxStyle?: string;
 }
 
 const Index = () => {
@@ -71,8 +69,16 @@ const Index = () => {
   const handleGenerate = async () => {
     console.log('Starting generation with event data:', eventData);
     
+    // TEMPORARY: Hardcode lessonThemeBoxStyle for testing
+    const testEventData = {
+      ...eventData,
+      lessonThemeBoxStyle: "Green"
+    };
+    
+    console.log('Testing with hardcoded lessonThemeBoxStyle:', testEventData);
+    
     try {
-      const images = await generateImages(eventData);
+      const images = await generateImages(testEventData);
       if (images.length > 0) {
         toast.success("Imagens geradas com sucesso!");
         setActiveTab("export");
@@ -99,6 +105,10 @@ const Index = () => {
 
   const handleSwitchToUser = () => {
     setUserType('user');
+  };
+
+  const handleToggleUserType = () => {
+    setUserType(userType === 'admin' ? 'user' : 'admin');
   };
 
   // Check if form is ready for generation
@@ -141,73 +151,32 @@ const Index = () => {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
       
-      <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-2 flex justify-between items-center">
-          <div className="text-sm text-gray-600">
-            Bem-vindo, {user.email}
-          </div>
-          <div className="flex gap-4">
-            {isAdmin && (
-              <button
-                onClick={() => setUserType(userType === 'admin' ? 'user' : 'admin')}
-                className="text-sm text-blue-600 hover:text-blue-800"
-              >
-                {userType === 'admin' ? 'Modo Usuário' : 'Painel Admin'}
-              </button>
-            )}
-            <button
-              onClick={handleLogout}
-              className="text-sm text-gray-600 hover:text-gray-800"
-            >
-              Sair
-            </button>
-          </div>
-        </div>
-      </div>
+      <UserHeader
+        userEmail={user.email}
+        isAdmin={isAdmin}
+        userType={userType}
+        onToggleUserType={handleToggleUserType}
+        onLogout={handleLogout}
+      />
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-center mb-8 text-blue-800">
           Gerador Automático de Artes para Redes Sociais
         </h1>
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="input">1. Dados do Evento</TabsTrigger>
-            <TabsTrigger value="export">2. Exportação</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="input" className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <EventForm eventData={eventData} updateEventData={updateEventData} />
-              </div>
-              <div>
-                <ImageSelector 
-                  selectedImageId={eventData.kvImageId} 
-                  onSelect={(id) => updateEventData({ kvImageId: id })}
-                />
-              </div>
-            </div>
-            
-            <div className="flex justify-center pt-8">
-              <GenerateButton
-                onGenerate={handleGenerate}
-                isGenerating={isGenerating}
-                disabled={!isFormReady}
-                generationProgress={generationProgress}
-                currentGeneratingFormat={currentGeneratingFormat}
-                missingFields={actualMissingFields}
-              />
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="export" className="space-y-8">
-            <GeneratedGallery images={generatedImages} eventData={eventData} />
-            <div className="flex justify-center">
-              <ExportButton onClick={handleExport} disabled={generatedImages.length === 0} />
-            </div>
-          </TabsContent>
-        </Tabs>
+       
+        <EventDataTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          eventData={eventData}
+          updateEventData={updateEventData}
+          onGenerate={handleGenerate}
+          onExport={handleExport}
+          isGenerating={isGenerating}
+          isFormReady={isFormReady}
+          generationProgress={generationProgress}
+          currentGeneratingFormat={currentGeneratingFormat}
+          generatedImages={generatedImages}
+        />
       </main>
       
       <footer className="bg-blue-800 text-white py-4 text-center">
