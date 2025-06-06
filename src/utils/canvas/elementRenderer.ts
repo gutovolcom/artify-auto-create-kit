@@ -74,17 +74,17 @@ export const addElementToCanvas = (
           evented: false
         });
         canvas.add(text);
-      } else { // This is the block to modify for 'Green', 'Red', 'White'
+      } else { // 'Green', 'Red', 'White' styles
         const text = new FabricText(textContent, {
           fontSize: formatStyle.fontSize,
           fontFamily: formatStyle.fontFamily,
           fill: styleConfig.fontColor, // Use fontColor from styleConfig
-          textAlign: 'center' // Keep textAlign, useful if text.width is less than final box width.
+          textAlign: 'center'
         });
 
         // @ts-ignore
         const fixedBoxHeight = CLASS_THEME_BOX_HEIGHTS[format] || CLASS_THEME_BOX_HEIGHTS.default;
-        const horizontalPadding = 20; // Keep this for now, can be made configurable later
+        const horizontalPadding = 20;
         const borderRadius = 10;
 
         const backgroundWidth = text.width + (horizontalPadding * 2);
@@ -127,16 +127,16 @@ export const addElementToCanvas = (
         });
         canvas.add(group);
       }
-    } else { // Fallback to original logic if styleConfig is not found
+    } else { // Fallback: use user's custom boxColor when no lessonThemeBoxStyle is set
       const text = new FabricText(textContent, {
         fontSize: formatStyle.fontSize,
         fontFamily: formatStyle.fontFamily,
-        fill: formatStyle.color, // Original fill color
+        fill: userColors.boxFontColor, // Use user's boxFontColor
         textAlign: 'center'
       });
 
       const padding = 20;
-      const backgroundColor = eventData.boxColor || '#dd303e'; // Original background color
+      const backgroundColor = eventData.boxColor || '#dd303e'; // Use user's boxColor
       const borderRadius = 10;
 
       const background = new Rect({
@@ -145,6 +145,16 @@ export const addElementToCanvas = (
         fill: backgroundColor,
         rx: borderRadius,
         ry: borderRadius
+      });
+
+      console.log('🎨 classTheme Fallback Box Details:', {
+        format: format,
+        userBoxColor: backgroundColor,
+        userBoxFontColor: userColors.boxFontColor,
+        textWidth: text.width,
+        textHeight: text.height,
+        rectWidth: background.width,
+        rectHeight: background.height
       });
 
       const group = new Group([background, text], {
