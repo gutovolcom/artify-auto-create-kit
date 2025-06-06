@@ -317,4 +317,3 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
     </Card>
   );
 };
-EOF_EVENT_FORM
