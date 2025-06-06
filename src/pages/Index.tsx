@@ -137,6 +137,16 @@ const Index = () => {
   }
 
   // Show user interface for regular users
+  const fieldChecks = [
+    { condition: !eventData.title, message: "Título do evento" },
+    { condition: !eventData.date, message: "Data" },
+    { condition: !eventData.kvImageId, message: "Template de imagem" },
+    { condition: !eventData.professorPhotos, message: "Foto do professor" },
+  ];
+  const actualMissingFields = fieldChecks
+    .filter(check => check.condition)
+    .map(check => check.message);
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
@@ -153,7 +163,7 @@ const Index = () => {
         <h1 className="text-3xl font-bold text-center mb-8 text-blue-800">
           Gerador Automático de Artes para Redes Sociais
         </h1>
-        
+       
         <EventDataTabs
           activeTab={activeTab}
           setActiveTab={setActiveTab}
