@@ -17,29 +17,29 @@ const styleMap = {
   youtube: {
     title: { fontFamily: 'Margem-Black', fontSize: 140 },
     classTheme: { fontFamily: 'Margem-Bold', fontSize: 68 },
-    date: { fontFamily: 'Roboto Condensed', fontSize: 66 },
-    time: { fontFamily: 'Roboto Condensed', fontSize: 66 },
+    date: { fontFamily: 'Toroka Wide Regular', fontSize: 66 },
+    time: { fontFamily: 'Toroka Wide Regular', fontSize: 66 },
     teacherName: { fontFamily: 'Margem-Medium', fontSize: 66 }
   },
   feed: {
     title: { fontFamily: 'Margem-Black', fontSize: 36 },
     classTheme: { fontFamily: 'Margem-Bold', fontSize: 22 },
-    date: { fontFamily: 'Margem-Regular', fontSize: 20 },
-    time: { fontFamily: 'Margem-Regular', fontSize: 20 },
-    teacherName: { fontFamily: 'Margem-Regular', fontSize: 24 }
+    date: { fontFamily: 'Toroka Wide Regular', fontSize: 20 },
+    time: { fontFamily: 'Toroka Wide Regular', fontSize: 20 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 24 }
   },
   stories: {
     title: { fontFamily: 'Margem-Black', fontSize: 48 },
     classTheme: { fontFamily: 'Margem-Bold', fontSize: 28 },
-    date: { fontFamily: 'Margem-Regular', fontSize: 24 },
-    time: { fontFamily: 'Margem-Regular', fontSize: 24 },
-    teacherName: { fontFamily: 'Margem-Regular', fontSize: 32 }
+    date: { fontFamily: 'Toroka Wide Regular', fontSize: 24 },
+    time: { fontFamily: 'Toroka Wide Regular', fontSize: 24 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 32 }
   },
   LP: {
     title: { fontFamily: 'Margem-Black', fontSize: 80 },
     classTheme: { fontFamily: 'Margem-Bold', fontSize: 40 },
-    date: { fontFamily: 'Roboto Condensed', fontSize: 36 },
-    time: { fontFamily: 'Roboto Condensed', fontSize: 36 },
+    date: { fontFamily: 'Toroka Wide Regular', fontSize: 36 },
+    time: { fontFamily: 'Toroka Wide Regular', fontSize: 36 },
     teacherName: { fontFamily: 'Margem-Medium', fontSize: 42 }
   }
 };
