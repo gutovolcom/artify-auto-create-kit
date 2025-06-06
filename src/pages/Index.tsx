@@ -73,8 +73,16 @@ const Index = () => {
   const handleGenerate = async () => {
     console.log('Starting generation with event data:', eventData);
     
+    // TEMPORARY: Hardcode lessonThemeBoxStyle for testing
+    const testEventData = {
+      ...eventData,
+      lessonThemeBoxStyle: "Green"
+    };
+    
+    console.log('Testing with hardcoded lessonThemeBoxStyle:', testEventData);
+    
     try {
-      const images = await generateImages(eventData);
+      const images = await generateImages(testEventData);
       if (images.length > 0) {
         toast.success("Imagens geradas com sucesso!");
         setActiveTab("export");
