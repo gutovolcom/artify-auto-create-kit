@@ -22,25 +22,30 @@ const styleMap = {
     teacherName: { fontFamily: 'Margem-Medium', fontSize: 66 }
   },
   feed: {
-    title: { fontFamily: 'Margem-Black', fontSize: 36 },
-    classTheme: { fontFamily: 'Margem-Bold', fontSize: 22 },
-    date: { fontFamily: 'Toroka Wide Regular', fontSize: 20 },
-    time: { fontFamily: 'Toroka Wide Regular', fontSize: 20 },
-    teacherName: { fontFamily: 'Margem-Medium', fontSize: 24 }
+    title: { fontFamily: 'Margem-Black', fontSize: 118 },
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 52 },
+    date: { fontFamily: 'Toroka Wide Regular', fontSize: 46 },
+    time: { fontFamily: 'Toroka Wide Regular', fontSize: 46 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 46 }
   },
   stories: {
-    title: { fontFamily: 'Margem-Black', fontSize: 48 },
-    classTheme: { fontFamily: 'Margem-Bold', fontSize: 28 },
-    date: { fontFamily: 'Toroka Wide Regular', fontSize: 24 },
-    time: { fontFamily: 'Toroka Wide Regular', fontSize: 24 },
-    teacherName: { fontFamily: 'Margem-Medium', fontSize: 32 }
+    title: { fontFamily: 'Margem-Black', fontSize: 132 },
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 62 },
+    date: { fontFamily: 'Toroka Wide Regular', fontSize: 62 },
+    time: { fontFamily: 'Toroka Wide Regular', fontSize: 62 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 62 }
+  },
+  bannerGCO: {
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 18 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 16 }
+  },
+  ledStudio: {
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 30 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 26 }
   },
   LP: {
-    title: { fontFamily: 'Margem-Black', fontSize: 80 },
-    classTheme: { fontFamily: 'Margem-Bold', fontSize: 40 },
-    date: { fontFamily: 'Toroka Wide Regular', fontSize: 36 },
-    time: { fontFamily: 'Toroka Wide Regular', fontSize: 36 },
-    teacherName: { fontFamily: 'Margem-Medium', fontSize: 42 }
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 42 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 28 }
   }
 };
 
