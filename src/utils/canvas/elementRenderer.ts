@@ -1,4 +1,3 @@
-
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
@@ -77,10 +76,6 @@ export const addElementToCanvas = (
         canvas.add(text);
       } else { // This is the block to modify for 'Green', 'Red', 'White'
         const text = new FabricText(textContent, {
-          // IMPORTANT: Set originX and originY to 'center' for easier positioning within the group later if needed,
-          // but for now, we'll calculate top/left based on default top-left origin.
-          // Consider text.set({ originX: 'center', originY: 'center' }); if direct centering is easier.
-          // However, the current plan is explicit top/left.
           fontSize: formatStyle.fontSize,
           fontFamily: formatStyle.fontFamily,
           fill: styleConfig.fontColor, // Use fontColor from styleConfig
