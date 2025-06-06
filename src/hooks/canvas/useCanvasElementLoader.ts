@@ -113,6 +113,13 @@ export const useCanvasElementLoader = ({
       return false;
     }
 
+    // Log raw layout data and scale for bannerGCO
+    if (formatName === 'bannerGCO') {
+      const rawLayoutData = await getLayout(templateId, formatName);
+      console.log('[bannerGCO] Raw layout data:', rawLayoutData);
+      console.log('[bannerGCO] Scale factor:', scale);
+    }
+
     console.log('📥 Loading layout elements for template:', templateId, 'format:', formatName);
     setIsLoadingLayout(true);
     setLoadingState('loading-elements');

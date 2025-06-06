@@ -16,6 +16,10 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
     console.log('Scale factor:', scale, 'Format:', format);
     
     const elements = canvas.getObjects().map((obj: any) => {
+      if (format === 'bannerGCO') {
+        console.log('[bannerGCO] Raw Object Props for field:', obj.fieldMapping, { left: obj.left, top: obj.top, width: obj.width, height: obj.height, scaleX: obj.scaleX, scaleY: obj.scaleY });
+        console.log('[bannerGCO] Scale Factor:', scale);
+      }
       // Calculate UNSCALED position (real canvas coordinates)
       const unscaledPosition = {
         x: Math.round((obj.left || 0) / scale),
@@ -30,6 +34,9 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
         width = obj.originalWidth || Math.round((obj.width || 200) * (obj.scaleX || 1));
         height = obj.originalHeight || Math.round((obj.height || 200) * (obj.scaleY || 1));
         
+        if (format === 'bannerGCO') {
+          console.log('[bannerGCO] Initial Unscaled for field:', obj.fieldMapping, 'Position', JSON.parse(JSON.stringify(unscaledPosition)), 'Size', { width, height });
+        }
         console.log(`🖼️ Image element ${obj.fieldMapping} dimensions:`, {
           originalWidth: obj.originalWidth,
           originalHeight: obj.originalHeight,
@@ -50,25 +57,52 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
       // Enhanced boundary validation and auto-correction
       if (format) {
         const validation = validateElementPosition(elementBounds, format);
+        if (format === 'bannerGCO') {
+          console.log('[bannerGCO] Validation Result for field:', obj.fieldMapping, JSON.parse(JSON.stringify(validation)));
+        }
         if (!validation.isValid) {
           console.warn(`⚠️ Element ${obj.fieldMapping} has boundary violations:`, validation.violations);
+
+          if (format === 'bannerGCO') {
+            console.log('[bannerGCO] Position Correction: ElementBounds for constrainToCanvas', JSON.parse(JSON.stringify(elementBounds)));
+          }
           // Auto-correct the position and size if needed
           const corrected = constrainToCanvas(elementBounds, format, 20); // 20px margin
+          if (format === 'bannerGCO') {
+            console.log('[bannerGCO] Position Correction: Corrected Position from constrainToCanvas', JSON.parse(JSON.stringify(corrected.position)));
+          }
           unscaledPosition.x = corrected.position.x;
           unscaledPosition.y = corrected.position.y;
           
           // Also constrain size if element is too large for format
           const formatDims = getFormatDimensions(format);
-          const maxWidth = formatDims.width - unscaledPosition.x - 20;
-          const maxHeight = formatDims.height - unscaledPosition.y - 20;
+          // Recalculate maxWidth/maxHeight based on *potentially corrected* unscaledPosition
+          const currentUnscaledX = unscaledPosition.x;
+          const currentUnscaledY = unscaledPosition.y;
+
+          const maxWidth = formatDims.width - currentUnscaledX - 20;
+          const maxHeight = formatDims.height - currentUnscaledY - 20;
+
+          if (format === 'bannerGCO') {
+            console.log('[bannerGCO] Size Correction: Calculated MaxWidth', maxWidth, 'MaxHeight', maxHeight, 'based on unscaledPosition', JSON.parse(JSON.stringify(unscaledPosition)));
+          }
           
+          const originalWidthForLog = width;
+          const originalHeightForLog = height;
+
           if (width > maxWidth) {
             width = Math.max(50, maxWidth);
-            console.log(`📏 Constrained width from ${elementBounds.size.width} to ${width}`);
+            if (format === 'bannerGCO') {
+              console.log('[bannerGCO] Size Correction: Width constrained for field:', obj.fieldMapping, 'from', originalWidthForLog, 'to', width);
+            }
+            console.log(`📏 Constrained width from ${originalWidthForLog} to ${width}`);
           }
           if (height > maxHeight) {
             height = Math.max(30, maxHeight);
-            console.log(`📏 Constrained height from ${elementBounds.size.height} to ${height}`);
+            if (format === 'bannerGCO') {
+              console.log('[bannerGCO] Size Correction: Height constrained for field:', obj.fieldMapping, 'from', originalHeightForLog, 'to', height);
+            }
+            console.log(`📏 Constrained height from ${originalHeightForLog} to ${height}`);
           }
           
           console.log(`✅ Auto-corrected ${obj.fieldMapping}:`, {
@@ -94,8 +128,12 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
         position: unscaledPosition
       };
 
+      if (format === 'bannerGCO') {
+        console.log('[bannerGCO] Final BaseElement for Serialization for field:', obj.fieldMapping, JSON.parse(JSON.stringify(baseElement)));
+      }
+
       if (obj.elementType === 'image') {
-        return {
+        const finalImageElement = {
           ...baseElement,
           type: 'image',
           size: {
@@ -103,8 +141,12 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
             height
           }
         };
+        if (format === 'bannerGCO') {
+            console.log('[bannerGCO] Final Serialized Element (Image) for field:', obj.fieldMapping, JSON.parse(JSON.stringify(finalImageElement)));
+        }
+        return finalImageElement;
       } else {
-        return {
+        const finalTextElement = {
           ...baseElement,
           type: 'text',
           size: {
@@ -112,6 +154,10 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
             height
           }
         };
+        if (format === 'bannerGCO') {
+            console.log('[bannerGCO] Final Serialized Element (Text) for field:', obj.fieldMapping, JSON.parse(JSON.stringify(finalTextElement)));
+        }
+        return finalTextElement;
       }
     });
 

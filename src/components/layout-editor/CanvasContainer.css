@@ -1,0 +1,14 @@
+.canvas-background-grid {
+  background-color: #f0f0f0; /* Fallback distinct background */
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  background-size: 10px 10px;
+}
+
+/* Optional: If we want to ensure the existing padding/border are not overridden
+   by the order of class application, we can be more specific or add them here.
+   However, Tailwind CSS usually handles this well.
+   If bg-gray-50 needs to be overridden by #f0f0f0, this should work.
+   If not, we might need !important or adjust Tailwind class removal.
+*/
