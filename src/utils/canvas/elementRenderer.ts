@@ -1,10 +1,25 @@
 
 import { EventData } from "@/pages/Index";
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
 import { getTextContent } from './textUtils';
-import { renderClassTheme } from './classThemeRenderer';
-import { renderRegularText } from './textRenderer';
+
+const lessonThemeStyleColors = {
+  'Green': { boxColor: '#CAFF39', fontColor: '#DD303E' },
+  'Red':   { boxColor: '#DD303E', fontColor: '#CAFF39' },
+  'White': { boxColor: '#FFFFFF', fontColor: '#DD303E' },
+  'Transparent': { boxColor: null, fontColor: null } // Special handling: fontColor will be eventData.textColor
+};
+
+const CLASS_THEME_BOX_HEIGHTS = {
+  youtube: 100,
+  feed: 64,
+  stories: 100,
+  bannerGCO: 40.4,
+  ledStudio: 54,
+  LP: 66,
+  default: 50 // Default height if format not specified
+};
 
 export const addElementToCanvas = (
   canvas: FabricCanvas,
@@ -42,7 +57,6 @@ export const addElementToCanvas = (
   
   console.log(`✅ Applied format-specific style for ${format}.${field}:`, formatStyle);
 
-fix/font-updates
   if (type === 'text_box' && field === 'classTheme') {
     console.log("🚀 Entered classTheme text_box rendering for field:", field);
     const selectedStyleName = eventData.lessonThemeBoxStyle;
@@ -148,12 +162,83 @@ fix/font-updates
       });
       canvas.add(group);
     }
-main
   } else {
-    // Handle all other text fields normally
-    renderRegularText(canvas, textContent, field, formatStyle, elementX, elementY);
+    const text = new FabricText(textContent, {
+      left: elementX,
+      top: elementY,
+      fontSize: formatStyle.fontSize,
+      fontFamily: formatStyle.fontFamily,
+      fill: formatStyle.color,
+      selectable: false,
+      evented: false
+    });
+
+    canvas.add(text);
   }
 };
 
-// Re-export for backward compatibility
-export { addProfessorPhotoToCanvas } from './professorPhotoRenderer';
+export const addProfessorPhotoToCanvas = async (
+  canvas: FabricCanvas,
+  photoUrl: string,
+  photoElement: any | null,
+  canvasWidth: number,
+  canvasHeight: number
+): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    console.log('Adding professor photo:', photoUrl, 'with element config:', photoElement);
+
+    FabricImage.fromURL(photoUrl, {
+      crossOrigin: 'anonymous'
+    }).then((img) => {
+      if (photoElement && photoElement.position && photoElement.size) {
+        // Use DIRECT layout coordinates (already unscaled)
+        const targetWidth = photoElement.size.width || 200;
+        const targetHeight = photoElement.size.height || 200;
+        const elementX = photoElement.position.x;
+        const elementY = photoElement.position.y;
+
+        console.log('🖼️ Using DIRECT layout position for teacher photo:', {
+          x: elementX,
+          y: elementY,
+          width: targetWidth,
+          height: targetHeight,
+          canvasSize: { width: canvasWidth, height: canvasHeight }
+        });
+
+        img.set({
+          left: elementX,
+          top: elementY,
+          scaleX: targetWidth / img.width!,
+          scaleY: targetHeight / img.height!,
+          selectable: false,
+          evented: false
+        });
+      } else {
+        // Use default positioning
+        const defaultSize = Math.min(canvasWidth, canvasHeight) * 0.2;
+        console.log('Using default positioning for teacher photo:', {
+          x: canvasWidth - defaultSize - 20,
+          y: canvasHeight - defaultSize - 20,
+          size: defaultSize
+        });
+
+        img.set({
+          left: canvasWidth - defaultSize - 20,
+          top: canvasHeight - defaultSize - 20,
+          scaleX: defaultSize / img.width!,
+          scaleY: defaultSize / img.height!,
+          selectable: false,
+          evented: false
+        });
+      }
+
+      canvas.add(img);
+      canvas.renderAll();
+      console.log('Professor photo added successfully');
+      resolve();
+    }).catch((error) => {
+      console.error('Error loading professor photo:', error);
+      reject(error);
+    });
+  });
+};
