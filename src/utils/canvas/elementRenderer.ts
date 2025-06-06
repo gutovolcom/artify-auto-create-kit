@@ -29,6 +29,7 @@ export const addElementToCanvas = (
   canvasHeight: number,
   format: string
 ) => {
+  console.log(`[addElementToCanvas ENTRY] Field: ${element?.field}, Type: ${element?.type}, lessonThemeBoxStyle: ${eventData?.lessonThemeBoxStyle}, boxColor: ${eventData?.boxColor}`);
   const { type, field, position, size } = element;
   
   // Handle both teacherImages and professorPhotos field names
