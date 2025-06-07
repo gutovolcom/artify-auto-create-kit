@@ -5,11 +5,17 @@ import { constrainToCanvas, getFormatDimensions } from '@/utils/positionValidati
 
 type FabricCanvas = fabric.Canvas;
 
+/**
+ * Add an element to the layout editing canvas. The optional margin defines a
+ * safe zone when clamping element positions inside the canvas. It defaults to
+ * 20px but can be reduced for compact formats.
+ */
 export const addElementToCanvas = (
   canvas: FabricCanvas,
   elementConfig: CanvasElementConfig,
   scale: number,
-  format?: string
+  format?: string,
+  margin: number = 20
 ): void => {
   if (!canvas) {
     console.error('Canvas is not available');
@@ -55,7 +61,8 @@ export const addElementToCanvas = (
     
     const constrainedElement = constrainToCanvas(
       { position: config.position, size: elementSize },
-      format
+      format,
+      margin
     );
     
     config.position = constrainedElement.position;
