@@ -1,9 +1,10 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { EventForm } from './EventForm';
-import { PlatformPreviews } from './PlatformPreviews';
+import { InputTabContent } from './InputTabContent';
+import { ExportTabContent } from './ExportTabContent';
 import { EventData } from '@/pages/Index';
+import { useImageGenerator } from '@/hooks/useImageGenerator';
 
 interface EventDataTabsProps {
   activeTab: string;
@@ -18,8 +19,32 @@ export const EventDataTabs: React.FC<EventDataTabsProps> = ({
   eventData,
   setEventData
 }) => {
+  const {
+    generatedImages,
+    isGenerating,
+    generationProgress,
+    currentGeneratingFormat,
+    generateImages,
+    downloadZip
+  } = useImageGenerator();
+
   const updateEventData = (data: Partial<EventData>) => {
     setEventData({ ...eventData, ...data });
+  };
+
+  const handleGenerate = async () => {
+    console.log('Starting image generation with data:', eventData);
+    const images = await generateImages(eventData);
+    
+    // Switch to preview tab after successful generation
+    if (images.length > 0) {
+      console.log('Generation successful, switching to preview tab');
+      setActiveTab('preview');
+    }
+  };
+
+  const handleDownloadZip = async () => {
+    await downloadZip();
   };
 
   return (
@@ -30,17 +55,23 @@ export const EventDataTabs: React.FC<EventDataTabsProps> = ({
       </TabsList>
       
       <TabsContent value="input" className="space-y-6">
-        <EventForm 
-          eventData={eventData} 
-          updateEventData={updateEventData} 
+        <InputTabContent
+          eventData={eventData}
+          updateEventData={updateEventData}
+          onGenerate={handleGenerate}
+          isGenerating={isGenerating}
+          generationProgress={generationProgress}
+          currentGeneratingFormat={currentGeneratingFormat}
         />
       </TabsContent>
       
       <TabsContent value="preview" className="space-y-6">
-        <PlatformPreviews 
+        <ExportTabContent
           eventData={eventData}
-          onGenerate={() => {}}
-          isGenerating={false}
+          onGenerate={handleGenerate}
+          isGenerating={isGenerating}
+          generatedImages={generatedImages}
+          onDownloadZip={handleDownloadZip}
         />
       </TabsContent>
     </Tabs>
