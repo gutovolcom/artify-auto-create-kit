@@ -4,6 +4,7 @@ import { CanvasArea } from './CanvasArea';
 import { ElementToolbar } from './ElementToolbar';
 import { PropertiesPanel } from './PropertiesPanel';
 import { DebugPanel } from './DebugPanel';
+import { LayerPanel } from './LayerPanel';
 
 interface LayoutEditorContentProps {
   templateId: string;
@@ -80,6 +81,8 @@ export const LayoutEditorContent: React.FC<LayoutEditorContentProps> = ({
           onUpdateObject={() => {}}
           onDeleteSelected={onDeleteSelected}
         />
+
+        <LayerPanel canvas={canvas} />
 
         <DebugPanel
           loadingState={loadingState}
