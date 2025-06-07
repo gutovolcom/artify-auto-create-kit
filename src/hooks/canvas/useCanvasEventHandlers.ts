@@ -18,7 +18,12 @@ export const useCanvasEventHandlers = ({
   const eventListenersAttachedRef = useRef(false);
 
   const updateLayoutDraft = useCallback((fabricCanvas: FabricCanvas, format?: string) => {
-    const elements = serializeCanvasLayout(fabricCanvas, scale, format);
+    const canvasWidth = fabricCanvas.getWidth();
+    const canvasHeight = fabricCanvas.getHeight();
+    let margin = Math.min(canvasWidth, canvasHeight) * 0.02;
+    if (format === 'bannerGCO') margin *= 0.5;
+
+    const elements = serializeCanvasLayout(fabricCanvas, scale, format, margin);
     setLayoutDraft(elements);
     console.log("📝 Layout updated immediately with boundary validation for format:", format, elements.length, "elements");
   }, [scale, setLayoutDraft]);
@@ -45,13 +50,16 @@ export const useCanvasEventHandlers = ({
       const objWidth = ((obj.width || 100) * (obj.scaleX || 1));
       const objHeight = ((obj.height || 50) * (obj.scaleY || 1));
 
+      let margin = Math.min(fabricCanvas.getWidth(), fabricCanvas.getHeight()) * 0.02;
+      if (format === 'bannerGCO') margin *= 0.5;
+
       const constrained = constrainToCanvas(
         {
           position: { x: unscaledX, y: unscaledY },
           size: { width: objWidth / scale, height: objHeight / scale }
         },
         format,
-        10
+        margin
       );
 
       if (constrained.position.x !== unscaledX || constrained.position.y !== unscaledY) {

@@ -26,6 +26,12 @@ export const useCanvasElementLoader = ({
   getLayout
 }: UseCanvasElementLoaderProps) => {
 
+  const computeMargin = useCallback((format?: string) => {
+    let base = Math.min(displayWidth, displayHeight) * 0.02;
+    if (format === 'bannerGCO') base *= 0.5;
+    return base;
+  }, [displayWidth, displayHeight]);
+
   const clearCanvasObjects = useCallback((fabricCanvas: FabricCanvas) => {
     console.log('🧹 Clearing canvas objects');
     const objects = fabricCanvas.getObjects();
@@ -88,8 +94,9 @@ export const useCanvasElementLoader = ({
       }
     ];
 
+    const margin = computeMargin(format);
     defaultElements.forEach(element => {
-      addElementToCanvas(fabricCanvas, element, scale, format);
+      addElementToCanvas(fabricCanvas, element, scale, format, margin);
     });
 
     if (setupEventListeners) {
@@ -98,7 +105,7 @@ export const useCanvasElementLoader = ({
     if (updateDraft) {
       updateDraft(fabricCanvas, format);
     }
-  }, [displayWidth, displayHeight, scale]);
+  }, [displayWidth, displayHeight, scale, computeMargin]);
 
   const loadLayoutElements = useCallback(async (
     fabricCanvas: FabricCanvas, 
@@ -133,6 +140,7 @@ export const useCanvasElementLoader = ({
         const elementsToLoad = Array.from(uniqueElements.values());
         console.log('🔍 After deduplication:', elementsToLoad.length, 'unique elements');
         
+        const margin = computeMargin(formatName);
         elementsToLoad.forEach((element: any) => {
           const elementConfig = {
             id: element.id,
@@ -150,7 +158,7 @@ export const useCanvasElementLoader = ({
             }
           };
           console.log('➕ Adding element from saved layout:', elementConfig.field, 'with preserved size:', elementConfig.size);
-          addElementToCanvas(fabricCanvas, elementConfig, scale, formatName);
+          addElementToCanvas(fabricCanvas, elementConfig, scale, formatName, margin);
         });
         
         if (setupEventListeners) {
@@ -181,7 +189,7 @@ export const useCanvasElementLoader = ({
     } finally {
       setIsLoadingLayout(false);
     }
-  }, [setIsLoadingLayout, setLoadingState, setLoadingError, clearCanvasObjects, getLayout, addDefaultLayoutElements, scale]);
+  }, [setIsLoadingLayout, setLoadingState, setLoadingError, clearCanvasObjects, getLayout, addDefaultLayoutElements, computeMargin, scale]);
 
   return {
     loadLayoutElements,
