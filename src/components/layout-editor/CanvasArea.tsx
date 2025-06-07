@@ -1,11 +1,11 @@
 
 import React from 'react';
-import * as fabric from 'fabric';
+import type { Canvas } from 'fabric';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CanvasContainer } from './CanvasContainer';
 import { CanvasControls } from './CanvasControls';
 
-type FabricCanvas = fabric.Canvas;
+type FabricCanvas = Canvas;
 
 interface CanvasAreaProps {
   formatName: string;

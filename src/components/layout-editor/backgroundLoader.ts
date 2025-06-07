@@ -1,7 +1,7 @@
 
-import * as fabric from 'fabric';
+import { Image, Canvas } from 'fabric';
 
-type FabricCanvas = fabric.Canvas;
+type FabricCanvas = Canvas;
 
 export const loadBackgroundImage = async (
   canvas: FabricCanvas,
@@ -17,7 +17,7 @@ export const loadBackgroundImage = async (
       return;
     }
     
-    fabric.Image.fromURL(backgroundImageUrl, {
+    Image.fromURL(backgroundImageUrl, {
       crossOrigin: 'anonymous'
     }).then((img) => {
       console.log('Background image loaded successfully');

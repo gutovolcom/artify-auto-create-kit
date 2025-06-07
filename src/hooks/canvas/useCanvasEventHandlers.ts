@@ -1,10 +1,10 @@
 
 import { useCallback, useRef } from 'react';
-import * as fabric from 'fabric';
+import type { Canvas, ModifiedEvent, IEvent } from 'fabric';
 import { serializeCanvasLayout } from '@/components/layout-editor/layoutSerializer';
 import { constrainToCanvas } from '@/utils/positionValidation';
 
-type FabricCanvas = fabric.Canvas;
+type FabricCanvas = Canvas;
 
 interface UseCanvasEventHandlersProps {
   scale: number;
@@ -39,7 +39,7 @@ export const useCanvasEventHandlers = ({
     fabricCanvas.off('object:scaling');
     fabricCanvas.off('mouse:dblclick');
 
-    const handleElementChange = (e: fabric.ModifiedEvent) => {
+    const handleElementChange = (e: ModifiedEvent) => {
       const obj = e.target;
       if (!obj || !format) {
         updateLayoutDraft(fabricCanvas, format);
@@ -79,7 +79,7 @@ export const useCanvasEventHandlers = ({
     fabricCanvas.on('object:moving', handleElementChange);
     fabricCanvas.on('object:scaling', handleElementChange);
 
-    const handleDoubleClick = (e: fabric.IEvent) => {
+    const handleDoubleClick = (e: IEvent) => {
       const obj = e.target as any;
       if (obj && obj.type === 'i-text' && typeof obj.enterEditing === 'function') {
         obj.enterEditing();

@@ -1,11 +1,11 @@
 
 import { useEffect } from 'react';
-import * as fabric from 'fabric';
+import type { Canvas } from 'fabric';
 import { useCanvasEventHandlers } from './canvas/useCanvasEventHandlers';
 import { useCanvasElementLoader } from './canvas/useCanvasElementLoader';
 import { useCanvasLayoutManager } from './canvas/useCanvasLayoutManager';
 
-type FabricCanvas = fabric.Canvas;
+type FabricCanvas = Canvas;
 
 interface UseCanvasManagerProps {
   canvas: FabricCanvas | null;

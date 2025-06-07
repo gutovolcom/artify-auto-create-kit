@@ -1,8 +1,8 @@
 
-import * as fabric from 'fabric';
+import type { Canvas } from 'fabric';
 import { validateElementPosition, constrainToCanvas, getFormatDimensions } from '@/utils/positionValidation';
 
-type FabricCanvas = fabric.Canvas;
+type FabricCanvas = Canvas;
 
 /**
  * Serialize the canvas objects applying optional margin constraints.

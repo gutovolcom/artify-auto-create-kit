@@ -1,9 +1,9 @@
 
-import * as fabric from 'fabric';
+import { Canvas, Rect, IText } from 'fabric';
 import { CanvasElementConfig } from './types';
 import { constrainToCanvas, getFormatDimensions } from '@/utils/positionValidation';
 
-type FabricCanvas = fabric.Canvas;
+type FabricCanvas = Canvas;
 
 /**
  * Add an element to the layout editing canvas. The optional margin defines a
@@ -89,7 +89,7 @@ export const addElementToCanvas = (
       const imageWidth = elementWidth * scale;
       const imageHeight = elementHeight * scale;
       
-      const rect = new fabric.Rect({
+      const rect = new Rect({
         left: elementX,
         top: elementY,
         width: imageWidth,
@@ -125,7 +125,7 @@ export const addElementToCanvas = (
       const fontFamily = config.style.fontFamily || 'Arial';
       const color = config.style.color || '#333333';
       
-      const text = new fabric.IText(`[${config.field.toUpperCase()}]`, {
+      const text = new IText(`[${config.field.toUpperCase()}]`, {
         left: elementX,
         top: elementY,
         fontSize: fontSize,

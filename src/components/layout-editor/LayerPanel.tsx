@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import * as fabric from 'fabric';
+import type { Canvas } from 'fabric';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 
 interface LayerPanelProps {
-  canvas: fabric.Canvas | null;
+  canvas: Canvas | null;
 }
 
 export const LayerPanel: React.FC<LayerPanelProps> = ({ canvas }) => {

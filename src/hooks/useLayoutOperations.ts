@@ -1,10 +1,10 @@
 
 import { toast } from 'sonner';
-import * as fabric from 'fabric';
+import type { Canvas } from 'fabric';
 import { addElementToCanvas } from '@/components/layout-editor/elementManager';
 import { serializeCanvasLayout } from '@/components/layout-editor/layoutSerializer';
 
-type FabricCanvas = fabric.Canvas;
+type FabricCanvas = Canvas;
 
 interface LayoutElement {
   id: string;
