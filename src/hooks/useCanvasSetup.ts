@@ -1,9 +1,9 @@
 
 import { useRef, useEffect } from 'react';
-import * as fabric from 'fabric';
+import { Canvas } from 'fabric';
 import { loadBackgroundImage } from '@/components/layout-editor/canvasOperations';
 
-type FabricCanvas = fabric.Canvas;
+type FabricCanvas = Canvas;
 
 interface UseCanvasSetupProps {
   displayWidth: number;
@@ -77,7 +77,7 @@ export const useCanvasSetup = ({
 
     console.log('Initializing Fabric.js canvas with dimensions:', displayWidth, 'x', displayHeight);
 
-    const fabricCanvas = new fabric.Canvas(canvasRef.current, {
+    const fabricCanvas = new Canvas(canvasRef.current!, {
       width: displayWidth,
       height: displayHeight,
       backgroundColor: '#f5f5f5'

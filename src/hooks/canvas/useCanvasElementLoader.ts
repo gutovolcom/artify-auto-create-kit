@@ -1,10 +1,10 @@
 
 import { useCallback } from 'react';
-import * as fabric from 'fabric';
+import type { Canvas } from 'fabric';
 import { toast } from 'sonner';
 import { addElementToCanvas } from '@/components/layout-editor/elementManager';
 
-type FabricCanvas = fabric.Canvas;
+type FabricCanvas = Canvas;
 
 interface UseCanvasElementLoaderProps {
   displayWidth: number;

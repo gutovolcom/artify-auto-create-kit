@@ -1,9 +1,9 @@
 
 import React from 'react';
-import * as fabric from 'fabric';
+import type { Canvas } from 'fabric';
 import { useCanvasSetup } from '@/hooks/useCanvasSetup';
 
-type FabricCanvas = fabric.Canvas;
+type FabricCanvas = Canvas;
 
 interface CanvasContainerProps {
   displayWidth: number;

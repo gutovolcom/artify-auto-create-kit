@@ -1,8 +1,8 @@
 
 import { useState, useRef, useCallback } from 'react';
-import * as fabric from 'fabric';
+import type { Canvas } from 'fabric';
 
-type FabricCanvas = fabric.Canvas;
+type FabricCanvas = Canvas;
 type LoadingState = 'idle' | 'initializing' | 'loading-background' | 'loading-elements' | 'ready' | 'error';
 
 export const useLayoutEditorState = () => {

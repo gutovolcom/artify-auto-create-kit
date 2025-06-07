@@ -1,9 +1,9 @@
 
 import { useCallback } from 'react';
-import * as fabric from 'fabric';
+import type { Canvas } from 'fabric';
 import { toast } from 'sonner';
 
-type FabricCanvas = fabric.Canvas;
+type FabricCanvas = Canvas;
 
 interface UseCanvasLayoutManagerProps {
   canvasRef: React.MutableRefObject<FabricCanvas | null>;
