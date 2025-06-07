@@ -1,19 +1,18 @@
-import { fabric } from 'fabric';
+
+import { Canvas } from 'fabric';
 import { useState, useCallback } from 'react';
 
 const MAX_HISTORY_LENGTH = 20;
 
-// Define properties to include in canvas.toJSON()
 const serializationProperties = [
   'elementId',
   'elementType',
   'fieldMapping',
   'originalWidth',
   'originalHeight',
-  'imageUrl', // For images
-  'text', // For text objects (actual text content if needed for history)
-  'isFallback' // For image fallbacks
-  // Add any other custom properties you've set on objects that need to be preserved
+  'imageUrl',
+  'text',
+  'isFallback'
 ];
 
 export interface CanvasHistory {
@@ -21,14 +20,14 @@ export interface CanvasHistory {
   redoStack: string[];
 }
 
-export const useCanvasStateHistory = (initialCanvas?: fabric.Canvas) => {
+export const useCanvasStateHistory = (initialCanvas?: Canvas) => {
   const [history, setHistory] = useState<CanvasHistory>({
     undoStack: [],
     redoStack: [],
   });
-  const [canvasInstance, setCanvasInstance] = useState<fabric.Canvas | null>(initialCanvas || null);
+  const [canvasInstance, setCanvasInstance] = useState<Canvas | null>(initialCanvas || null);
 
-  const updateCanvasInstance = useCallback((canvas: fabric.Canvas) => {
+  const updateCanvasInstance = useCallback((canvas: Canvas) => {
     setCanvasInstance(canvas);
   }, []);
 
@@ -40,11 +39,11 @@ export const useCanvasStateHistory = (initialCanvas?: fabric.Canvas) => {
     setHistory((prevHistory) => {
       const newUndoStack = [...prevHistory.undoStack, canvasJSON];
       if (newUndoStack.length > MAX_HISTORY_LENGTH) {
-        newUndoStack.shift(); // Remove the oldest state
+        newUndoStack.shift();
       }
       return {
         undoStack: newUndoStack,
-        redoStack: [], // Clear redo stack on new save
+        redoStack: [],
       };
     });
   }, [canvasInstance]);

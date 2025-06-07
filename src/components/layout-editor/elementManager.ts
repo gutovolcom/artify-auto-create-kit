@@ -1,14 +1,12 @@
-import { fabric } from 'fabric';
+
+import { Canvas, Text, Image, Rect } from 'fabric';
 import { CanvasElementConfig } from './types';
 import { constrainToCanvas } from '@/utils/positionValidation';
-
-type FabricCanvas = fabric.Canvas;
 
 const validateAndPositionElement = (
   elementConfig: CanvasElementConfig,
   format?: string
 ): { position: { x: number; y: number }; size: { width: number; height: number } } => {
-  // Enhanced size handling - check multiple sources for dimensions
   const elementWidth = elementConfig.style?.width ||
                       elementConfig.size?.width ||
                       (elementConfig.type === 'image' ? 200 : 100);
@@ -18,7 +16,6 @@ const validateAndPositionElement = (
 
   let position = elementConfig.position || { x: 50, y: 50 };
 
-  // Validate and constrain position if format is provided
   if (format) {
     const elementSize = {
       width: elementWidth,
@@ -49,10 +46,10 @@ const validateAndPositionElement = (
 };
 
 const addTextElement = (
-  canvas: FabricCanvas,
-  config: CanvasElementConfig, // Full config including id, type, field, style
+  canvas: Canvas,
+  config: CanvasElementConfig,
   initialPosition: { x: number; y: number },
-  initialSize: { width: number; height: number }, // Not directly used for text content itself, but good to have for consistency
+  initialSize: { width: number; height: number },
   scale: number
 ): void => {
   const elementX = initialPosition.x * scale;
@@ -70,7 +67,7 @@ const addTextElement = (
     fontStyle = 'italic';
   }
 
-  const text = new fabric.Text(`[${config.field.toUpperCase()}]`, {
+  const text = new Text(`[${config.field.toUpperCase()}]`, {
     left: elementX,
     top: elementY,
     fontSize: fontSize,
@@ -93,24 +90,24 @@ const addTextElement = (
 };
 
 const addImageElement = (
-  canvas: FabricCanvas,
-  config: CanvasElementConfig, // Full config including id, type, field, style, imageUrl
+  canvas: Canvas,
+  config: CanvasElementConfig,
   initialPosition: { x: number; y: number },
   initialSize: { width: number; height: number },
   scale: number
 ): void => {
   const elementX = initialPosition.x * scale;
   const elementY = initialPosition.y * scale;
-  const elementWidth = initialSize.width; // Use from validatedLayout.size
-  const elementHeight = initialSize.height; // Use from validatedLayout.size
+  const elementWidth = initialSize.width;
+  const elementHeight = initialSize.height;
 
   const imageUrl = config.imageUrl || '/placeholder.svg';
   console.log('🔄 Loading image from URL:', imageUrl);
 
-  fabric.Image.fromURL(imageUrl, (img) => {
+  Image.fromURL(imageUrl, (img) => {
     if (img.width == null || img.height == null) {
         console.error('Error loading image: Image width or height is null. Using fallback rectangle.');
-        const rect = new fabric.Rect({
+        const rect = new Rect({
             left: elementX,
             top: elementY,
             width: elementWidth * scale,
@@ -131,7 +128,7 @@ const addImageElement = (
         });
         canvas.add(rect);
         console.log('⚠️ Fallback rectangle added for image due to loading error (null dimensions).');
-        canvas.renderAll(); // Render here as it's an async path
+        canvas.renderAll();
         return;
     }
     img.set({
@@ -157,10 +154,9 @@ const addImageElement = (
       scaledSize: { width: img.getScaledWidth(), height: img.getScaledHeight() },
       id: config.id,
     });
-    // canvas.renderAll(); // Main renderAll is in addElementToCanvas
   }, (oImg, error) => {
     console.error('Error loading image:', error);
-    const rect = new fabric.Rect({
+    const rect = new Rect({
       left: elementX,
       top: elementY,
       width: elementWidth * scale,
@@ -181,13 +177,13 @@ const addImageElement = (
     });
     canvas.add(rect);
     console.log('⚠️ Fallback rectangle added for image due to loading error.');
-    canvas.renderAll(); // Render here as it's an async path
+    canvas.renderAll();
   });
 };
 
 export const addElementToCanvas = (
-  canvas: FabricCanvas,
-  elementConfig: CanvasElementConfig, // This is the raw config passed to the function
+  canvas: Canvas,
+  elementConfig: CanvasElementConfig,
   scale: number,
   format?: string
 ): void => {
@@ -200,7 +196,6 @@ export const addElementToCanvas = (
     return;
   }
 
-  // Check if element with this field already exists to prevent duplicates
   const existingObjects = canvas.getObjects();
   const existingElement = existingObjects.find((obj: any) => obj.fieldMapping === elementConfig.field);
   
@@ -209,7 +204,6 @@ export const addElementToCanvas = (
     canvas.remove(existingElement);
   }
 
-  // Prepare the full configuration object with defaults
   const fullConfig: CanvasElementConfig = {
     id: elementConfig?.id || `element_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     type: elementConfig?.type || 'text',
@@ -221,8 +215,8 @@ export const addElementToCanvas = (
       color: '#333333',
       ...elementConfig?.style
     },
-    imageUrl: elementConfig?.imageUrl, // Ensure imageUrl is passed through
-    size: elementConfig?.size // Ensure size is passed through
+    imageUrl: elementConfig?.imageUrl,
+    size: elementConfig?.size
   };
 
   const validatedLayout = validateAndPositionElement(fullConfig, format);
@@ -247,17 +241,10 @@ export const addElementToCanvas = (
       addTextElement(canvas, fullConfig, validatedLayout.position, validatedLayout.size, scale);
     }
     
-    // Ensure element is on top and visible
-    // Note: For async image loading, this might not grab the image itself immediately.
-    // Consider moving this to within addImageElement's success callback if issues arise.
     const objects = canvas.getObjects();
     if (objects.length > 0) {
       const addedElement = objects[objects.length - 1];
-      // For async image adding, the last object might not be the one just added.
-      // This might need a more robust way to get the added element, e.g., by returning it from addImageElement/addTextElement
-      // or by relying on the fact that fabric.Image.fromURL callback will execute later.
-      // For now, we assume this works for text and synchronous parts of image (like fallback).
-      if (addedElement) { // Check if addedElement is not undefined
+      if (addedElement) {
          canvas.moveObjectTo(addedElement, objects.length - 1);
       }
     }
