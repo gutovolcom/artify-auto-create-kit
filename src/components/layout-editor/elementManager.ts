@@ -125,7 +125,7 @@ export const addElementToCanvas = (
       const fontFamily = config.style.fontFamily || 'Arial';
       const color = config.style.color || '#333333';
       
-      const text = new fabric.Text(`[${config.field.toUpperCase()}]`, {
+      const text = new fabric.IText(`[${config.field.toUpperCase()}]`, {
         left: elementX,
         top: elementY,
         fontSize: fontSize,
