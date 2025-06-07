@@ -4,7 +4,18 @@ import { validateElementPosition, constrainToCanvas, getFormatDimensions } from 
 
 type FabricCanvas = fabric.Canvas;
 
-export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, format?: string): any => {
+/**
+ * Serialize the canvas objects applying optional margin constraints.
+ * The margin defines a "safe zone" that elements will be clamped to
+ * when validating positions. It defaults to 20px but can be tuned per
+ * format (e.g. a smaller value for compact formats like bannerGCO).
+ */
+export const serializeCanvasLayout = (
+  canvas: FabricCanvas,
+  scale: number,
+  format?: string,
+  margin: number = 20
+): any => {
   if (!canvas) {
     console.warn('Cannot serialize layout: canvas is not available');
     return [];
@@ -53,14 +64,14 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
         if (!validation.isValid) {
           console.warn(`⚠️ Element ${obj.fieldMapping} has boundary violations:`, validation.violations);
           // Auto-correct the position and size if needed
-          const corrected = constrainToCanvas(elementBounds, format, 20); // 20px margin
+          const corrected = constrainToCanvas(elementBounds, format, margin);
           unscaledPosition.x = corrected.position.x;
           unscaledPosition.y = corrected.position.y;
-          
+
           // Also constrain size if element is too large for format
           const formatDims = getFormatDimensions(format);
-          const maxWidth = formatDims.width - unscaledPosition.x - 20;
-          const maxHeight = formatDims.height - unscaledPosition.y - 20;
+          const maxWidth = formatDims.width - unscaledPosition.x - margin;
+          const maxHeight = formatDims.height - unscaledPosition.y - margin;
           
           if (width > maxWidth) {
             width = Math.max(50, maxWidth);
