@@ -1,36 +1,43 @@
-
 import React, { useEffect, useState } from 'react';
-import { Canvas } from 'fabric';
-import { Button } from '@/components/ui/button';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { fabric } from 'fabric';
+import { Button } from '@/components/ui/button'; // Assuming this is your button component path
+import { ChevronUp, ChevronDown } from 'lucide-react'; // Assuming icon usage
 
 interface LayerPanelProps {
-  canvas: Canvas | null;
+  canvas: fabric.Canvas | null;
+  // This prop is used to force a re-render when canvas objects change externally
+  // Increment it when objects are added, removed, or layers are reordered by other means.
   canvasVersion: number;
 }
 
 const LayerPanel: React.FC<LayerPanelProps> = ({ canvas, canvasVersion }) => {
-  const [elements, setElements] = useState<any[]>([]);
+  const [elements, setElements] = useState<fabric.Object[]>([]);
 
   useEffect(() => {
     if (canvas) {
+      // Fabric's getObjects() returns objects in bottom-to-top order.
+      // We want to display them top-to-bottom for typical layer UI.
       setElements(canvas.getObjects().slice().reverse());
     }
-  }, [canvas, canvasVersion]);
+  }, [canvas, canvasVersion]); // Re-run when canvas instance or its version changes
 
-  const bringForward = (obj: any) => {
+  const bringForward = (obj: fabric.Object) => {
     if (canvas) {
-      canvas.bringObjectForward(obj);
+      canvas.bringForward(obj);
       canvas.renderAll();
+      // Trigger a refresh of the panel by updating elements state based on new order
       setElements(canvas.getObjects().slice().reverse());
+      // Potentially, notify parent to update canvasVersion if other components depend on it.
     }
   };
 
-  const sendBackwards = (obj: any) => {
+  const sendBackwards = (obj: fabric.Object) => {
     if (canvas) {
-      canvas.sendObjectBackwards(obj);
+      canvas.sendBackwards(obj);
       canvas.renderAll();
+      // Trigger a refresh of the panel
       setElements(canvas.getObjects().slice().reverse());
+      // Potentially, notify parent to update canvasVersion.
     }
   };
 
@@ -47,6 +54,7 @@ const LayerPanel: React.FC<LayerPanelProps> = ({ canvas, canvasVersion }) => {
       <h3 className="text-lg font-semibold mb-2">Layers</h3>
       <ul className="space-y-1">
         {elements.map((element, index) => {
+          // Try to get a meaningful name, fallback to type/index
           const name = (element as any).fieldMapping ||
                        (element as any).elementType ||
                        element.type ||

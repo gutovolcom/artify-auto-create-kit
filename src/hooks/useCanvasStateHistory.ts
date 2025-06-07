@@ -1,18 +1,19 @@
-
-import { Canvas } from 'fabric';
+import { fabric } from 'fabric';
 import { useState, useCallback } from 'react';
 
 const MAX_HISTORY_LENGTH = 20;
 
+// Define properties to include in canvas.toJSON()
 const serializationProperties = [
   'elementId',
   'elementType',
   'fieldMapping',
   'originalWidth',
   'originalHeight',
-  'imageUrl',
-  'text',
-  'isFallback'
+  'imageUrl', // For images
+  'text', // For text objects (actual text content if needed for history)
+  'isFallback' // For image fallbacks
+  // Add any other custom properties you've set on objects that need to be preserved
 ];
 
 export interface CanvasHistory {
@@ -20,30 +21,30 @@ export interface CanvasHistory {
   redoStack: string[];
 }
 
-export const useCanvasStateHistory = (initialCanvas?: Canvas) => {
+export const useCanvasStateHistory = (initialCanvas?: fabric.Canvas) => {
   const [history, setHistory] = useState<CanvasHistory>({
     undoStack: [],
     redoStack: [],
   });
-  const [canvasInstance, setCanvasInstance] = useState<Canvas | null>(initialCanvas || null);
+  const [canvasInstance, setCanvasInstance] = useState<fabric.Canvas | null>(initialCanvas || null);
 
-  const updateCanvasInstance = useCallback((canvas: Canvas) => {
+  const updateCanvasInstance = useCallback((canvas: fabric.Canvas) => {
     setCanvasInstance(canvas);
   }, []);
 
   const saveCanvasState = useCallback((reason?: string) => {
     if (!canvasInstance) return;
     console.log(`Saving canvas state (Reason: ${reason || 'Unknown'})`);
-    const canvasJSON = JSON.stringify(canvasInstance.toJSON());
+    const canvasJSON = JSON.stringify(canvasInstance.toJSON(serializationProperties));
 
     setHistory((prevHistory) => {
       const newUndoStack = [...prevHistory.undoStack, canvasJSON];
       if (newUndoStack.length > MAX_HISTORY_LENGTH) {
-        newUndoStack.shift();
+        newUndoStack.shift(); // Remove the oldest state
       }
       return {
         undoStack: newUndoStack,
-        redoStack: [],
+        redoStack: [], // Clear redo stack on new save
       };
     });
   }, [canvasInstance]);
@@ -52,7 +53,7 @@ export const useCanvasStateHistory = (initialCanvas?: Canvas) => {
     if (!canvasInstance || history.undoStack.length === 0) return;
 
     const lastState = history.undoStack[history.undoStack.length - 1];
-    const currentCanvasJSON = JSON.stringify(canvasInstance.toJSON());
+    const currentCanvasJSON = JSON.stringify(canvasInstance.toJSON(serializationProperties));
 
     setHistory((prevHistory) => {
       const newUndoStack = prevHistory.undoStack.slice(0, -1);
@@ -72,7 +73,7 @@ export const useCanvasStateHistory = (initialCanvas?: Canvas) => {
     if (!canvasInstance || history.redoStack.length === 0) return;
 
     const nextState = history.redoStack[history.redoStack.length - 1];
-    const currentCanvasJSON = JSON.stringify(canvasInstance.toJSON());
+    const currentCanvasJSON = JSON.stringify(canvasInstance.toJSON(serializationProperties));
 
     setHistory((prevHistory) => {
       const newRedoStack = prevHistory.redoStack.slice(0, -1);
