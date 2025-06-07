@@ -57,7 +57,11 @@ export const addElementToCanvas = (
   
   console.log(`✅ Applied format-specific style for ${format}.${field}:`, formatStyle);
 
-  if (type === 'text_box' && field === 'classTheme') {
+  // Render classTheme with a styled background regardless of the element type
+  // (text or text_box). Previously this block executed only when the
+  // element type was "text_box", which caused layouts that defined the
+  // classTheme as a plain text element to miss the background rectangle.
+  if (field === 'classTheme') {
     console.log("🚀 Entered classTheme text_box rendering for field:", field);
     const selectedStyleName = eventData.lessonThemeBoxStyle;
     // @ts-ignore
