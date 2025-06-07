@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Trash, Save } from 'lucide-react';
+import { Trash, Save, Undo2, Redo2 } from 'lucide-react';
 
 interface CanvasControlsProps {
   selectedObject: any;
@@ -10,6 +10,10 @@ interface CanvasControlsProps {
   displayWidth: number;
   displayHeight: number;
   scale: number;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
 }
 
 export const CanvasControls: React.FC<CanvasControlsProps> = ({
@@ -18,11 +22,15 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
   onDeleteSelected,
   displayWidth,
   displayHeight,
-  scale
+  scale,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo
 }) => {
   return (
     <>
-      <div className="flex gap-2 items-center">
+      <div className="flex flex-wrap gap-2 items-center">
         <Button onClick={onSave} className="flex items-center gap-2">
           <Save className="h-4 w-4" />
           Salvar Layout
@@ -36,6 +44,30 @@ export const CanvasControls: React.FC<CanvasControlsProps> = ({
           >
             <Trash className="h-4 w-4" />
             Remover Elemento
+          </Button>
+        )}
+
+        {onUndo && (
+          <Button
+            onClick={onUndo}
+            disabled={!canUndo}
+            className="flex items-center gap-2"
+            variant="outline"
+          >
+            <Undo2 className="h-4 w-4" />
+            Desfazer
+          </Button>
+        )}
+
+        {onRedo && (
+          <Button
+            onClick={onRedo}
+            disabled={!canRedo}
+            className="flex items-center gap-2"
+            variant="outline"
+          >
+            <Redo2 className="h-4 w-4" />
+            Refazer
           </Button>
         )}
       </div>
