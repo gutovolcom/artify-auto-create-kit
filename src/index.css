@@ -1,17 +1,8 @@
-@font-face {Add commentMore actions
+  @font-face {
   font-family: 'Margem-Black';
   src: url('/fonts/Margem-Black.woff2') format('woff2'),
        url('/fonts/Margem-Black.woff') format('woff');
   font-weight: 900; /* Black weight */
-
-
-
-
-
-
-
-
-
   font-style: normal;
   font-display: swap;
 }
@@ -76,10 +67,6 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
-
-
-
-
 
     --radius: 0.5rem;
 

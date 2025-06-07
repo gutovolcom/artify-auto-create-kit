@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";Add commentMore actions
 import { Navbar } from "@/components/Navbar";
 import { EventForm } from "@/components/EventForm";
 import { ImageSelector } from "@/components/ImageSelector";
