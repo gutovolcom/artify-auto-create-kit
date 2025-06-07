@@ -18,6 +18,10 @@ export const EventDataTabs: React.FC<EventDataTabsProps> = ({
   eventData,
   setEventData
 }) => {
+  const updateEventData = (data: Partial<EventData>) => {
+    setEventData({ ...eventData, ...data });
+  };
+
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="grid w-full grid-cols-2">
@@ -28,13 +32,15 @@ export const EventDataTabs: React.FC<EventDataTabsProps> = ({
       <TabsContent value="input" className="space-y-6">
         <EventForm 
           eventData={eventData} 
-          setEventData={setEventData} 
+          updateEventData={updateEventData} 
         />
       </TabsContent>
       
       <TabsContent value="preview" className="space-y-6">
         <PlatformPreviews 
           eventData={eventData}
+          onGenerate={() => {}}
+          isGenerating={false}
         />
       </TabsContent>
     </Tabs>

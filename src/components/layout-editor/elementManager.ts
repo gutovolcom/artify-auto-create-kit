@@ -104,7 +104,9 @@ const addImageElement = (
   const imageUrl = config.imageUrl || '/placeholder.svg';
   console.log('🔄 Loading image from URL:', imageUrl);
 
-  Image.fromURL(imageUrl, (img) => {
+  Image.fromURL(imageUrl, {
+    crossOrigin: 'anonymous'
+  }).then((img) => {
     if (img.width == null || img.height == null) {
         console.error('Error loading image: Image width or height is null. Using fallback rectangle.');
         const rect = new Rect({
@@ -154,7 +156,7 @@ const addImageElement = (
       scaledSize: { width: img.getScaledWidth(), height: img.getScaledHeight() },
       id: config.id,
     });
-  }, (oImg, error) => {
+  }).catch((error) => {
     console.error('Error loading image:', error);
     const rect = new Rect({
       left: elementX,

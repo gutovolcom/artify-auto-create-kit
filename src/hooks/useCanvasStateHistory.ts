@@ -34,7 +34,7 @@ export const useCanvasStateHistory = (initialCanvas?: Canvas) => {
   const saveCanvasState = useCallback((reason?: string) => {
     if (!canvasInstance) return;
     console.log(`Saving canvas state (Reason: ${reason || 'Unknown'})`);
-    const canvasJSON = JSON.stringify(canvasInstance.toJSON(serializationProperties));
+    const canvasJSON = JSON.stringify(canvasInstance.toJSON());
 
     setHistory((prevHistory) => {
       const newUndoStack = [...prevHistory.undoStack, canvasJSON];
@@ -52,7 +52,7 @@ export const useCanvasStateHistory = (initialCanvas?: Canvas) => {
     if (!canvasInstance || history.undoStack.length === 0) return;
 
     const lastState = history.undoStack[history.undoStack.length - 1];
-    const currentCanvasJSON = JSON.stringify(canvasInstance.toJSON(serializationProperties));
+    const currentCanvasJSON = JSON.stringify(canvasInstance.toJSON());
 
     setHistory((prevHistory) => {
       const newUndoStack = prevHistory.undoStack.slice(0, -1);
@@ -72,7 +72,7 @@ export const useCanvasStateHistory = (initialCanvas?: Canvas) => {
     if (!canvasInstance || history.redoStack.length === 0) return;
 
     const nextState = history.redoStack[history.redoStack.length - 1];
-    const currentCanvasJSON = JSON.stringify(canvasInstance.toJSON(serializationProperties));
+    const currentCanvasJSON = JSON.stringify(canvasInstance.toJSON());
 
     setHistory((prevHistory) => {
       const newRedoStack = prevHistory.redoStack.slice(0, -1);

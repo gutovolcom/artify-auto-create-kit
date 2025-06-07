@@ -20,7 +20,7 @@ const LayerPanel: React.FC<LayerPanelProps> = ({ canvas, canvasVersion }) => {
 
   const bringForward = (obj: any) => {
     if (canvas) {
-      canvas.bringForward(obj);
+      canvas.bringObjectForward(obj);
       canvas.renderAll();
       setElements(canvas.getObjects().slice().reverse());
     }
@@ -28,7 +28,7 @@ const LayerPanel: React.FC<LayerPanelProps> = ({ canvas, canvasVersion }) => {
 
   const sendBackwards = (obj: any) => {
     if (canvas) {
-      canvas.sendBackwards(obj);
+      canvas.sendObjectBackwards(obj);
       canvas.renderAll();
       setElements(canvas.getObjects().slice().reverse());
     }
