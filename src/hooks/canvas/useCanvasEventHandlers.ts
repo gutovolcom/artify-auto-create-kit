@@ -37,6 +37,7 @@ export const useCanvasEventHandlers = ({
     fabricCanvas.off('object:modified');
     fabricCanvas.off('object:moving');
     fabricCanvas.off('object:scaling');
+    fabricCanvas.off('mouse:dblclick');
 
     const handleElementChange = (e: fabric.ModifiedEvent) => {
       const obj = e.target;
@@ -77,6 +78,21 @@ export const useCanvasEventHandlers = ({
     fabricCanvas.on('object:modified', handleElementChange);
     fabricCanvas.on('object:moving', handleElementChange);
     fabricCanvas.on('object:scaling', handleElementChange);
+
+    const handleDoubleClick = (e: fabric.IEvent) => {
+      const obj = e.target as any;
+      if (obj && obj.type === 'i-text' && typeof obj.enterEditing === 'function') {
+        obj.enterEditing();
+        obj.selectAll();
+        const exitHandler = () => {
+          obj.off('editing:exited', exitHandler);
+          updateLayoutDraft(fabricCanvas, format);
+        };
+        obj.on('editing:exited', exitHandler);
+      }
+    };
+
+    fabricCanvas.on('mouse:dblclick', handleDoubleClick);
 
     eventListenersAttachedRef.current = true;
     console.log('✅ Canvas event listeners setup with boundary validation and immediate persistence');
