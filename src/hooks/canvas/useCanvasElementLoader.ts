@@ -2,7 +2,11 @@
 import { useCallback } from 'react';
 import * as fabric from 'fabric';
 import { toast } from 'sonner';
-import { addElementToCanvas } from '@/components/layout-editor/elementManager';
+import {
+  addTextElement,
+  addImageElement,
+  validateAndPositionElement
+} from '@/components/layout-editor/elementManager';
 
 type FabricCanvas = fabric.Canvas;
 
@@ -96,7 +100,12 @@ export const useCanvasElementLoader = ({
 
     const margin = computeMargin(format);
     defaultElements.forEach(element => {
-      addElementToCanvas(fabricCanvas, element, scale, format, margin);
+      const { config, width, height } = validateAndPositionElement(element, format, margin);
+      if (config.type === 'image') {
+        addImageElement(config, fabricCanvas, scale, width, height);
+      } else {
+        addTextElement(config, fabricCanvas, scale);
+      }
     });
 
     if (setupEventListeners) {
@@ -158,7 +167,12 @@ export const useCanvasElementLoader = ({
             }
           };
           console.log('➕ Adding element from saved layout:', elementConfig.field, 'with preserved size:', elementConfig.size);
-          addElementToCanvas(fabricCanvas, elementConfig, scale, formatName, margin);
+          const { config, width, height } = validateAndPositionElement(elementConfig, formatName, margin);
+          if (config.type === 'image') {
+            addImageElement(config, fabricCanvas, scale, width, height);
+          } else {
+            addTextElement(config, fabricCanvas, scale);
+          }
         });
         
         if (setupEventListeners) {

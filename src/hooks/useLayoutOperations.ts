@@ -1,7 +1,11 @@
 
 import { toast } from 'sonner';
 import * as fabric from 'fabric';
-import { addElementToCanvas } from '@/components/layout-editor/elementManager';
+import {
+  addTextElement,
+  addImageElement,
+  validateAndPositionElement
+} from '@/components/layout-editor/elementManager';
 import { serializeCanvasLayout } from '@/components/layout-editor/layoutSerializer';
 
 type FabricCanvas = fabric.Canvas;
@@ -91,7 +95,12 @@ export const useLayoutOperations = ({
     };
 
     console.log('➕ Adding new element with format validation:', elementConfig);
-    addElementToCanvas(canvas, elementConfig, scale, formatName);
+    const { config, width, height } = validateAndPositionElement(elementConfig, formatName);
+    if (config.type === 'image') {
+      addImageElement(config, canvas, scale, width, height);
+    } else {
+      addTextElement(config, canvas, scale);
+    }
     updateLayoutDraft(canvas, formatName);
     toast.success('Elemento adicionado!');
   };
