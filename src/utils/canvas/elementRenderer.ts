@@ -3,13 +3,7 @@ import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
 import { getTextContent } from './textUtils';
-
-const lessonThemeStyleColors = {
-  'Green': { boxColor: '#CAFF39', fontColor: '#DD303E' },
-  'Red':   { boxColor: '#DD303E', fontColor: '#CAFF39' },
-  'White': { boxColor: '#FFFFFF', fontColor: '#DD303E' },
-  'Transparent': { boxColor: null, fontColor: null } // Special handling: fontColor will be eventData.textColor
-};
+import { lessonThemeStyles } from '../lessonThemeStyles';
 
 const CLASS_THEME_BOX_HEIGHTS = {
   youtube: 100,
@@ -61,7 +55,7 @@ export const addElementToCanvas = (
     console.log("🚀 Entered classTheme text_box rendering for field:", field);
     const selectedStyleName = eventData.lessonThemeBoxStyle;
     // @ts-ignore
-    const styleConfig = selectedStyleName ? lessonThemeStyleColors[selectedStyleName] : null;
+    const styleConfig = selectedStyleName ? lessonThemeStyles[selectedStyleName] : null;
 
     if (styleConfig) {
       if (styleConfig.boxColor === null) { // 'Transparent' style

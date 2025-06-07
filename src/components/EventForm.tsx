@@ -19,15 +19,11 @@ import {
 import { useSupabaseTeachers } from "@/hooks/useSupabaseTeachers";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
 import { useEffect } from "react";
+import {
+  lessonThemeStyles,
+  LessonThemeStyleName,
+} from "@/utils/lessonThemeStyles";
 
-// This map should ideally be shared from where lessonThemeStyleColors is defined in elementRenderer,
-// or defined in a shared constants file. For now, duplicating for clarity of what colors are used.
-const lessonThemeStyleDefinition = {
-  'Green': { boxColor: '#CAFF39', fontColor: '#DD303E' },
-  'Red':   { boxColor: '#DD303E', fontColor: '#CAFF39' },
-  'White': { boxColor: '#FFFFFF', fontColor: '#DD303E' },
-  'Transparent': { boxColor: null, fontColor: null } // fontColor for Transparent text uses eventData.textColor
-};
 
 interface EventFormProps {
   eventData: EventData;
@@ -83,7 +79,7 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
   ];
 
   const handleLessonThemeStyleChange = (styleName: string) => { // styleName is "Red", "Green", etc.
-    const selectedStyle = lessonThemeStyleDefinition[styleName as keyof typeof lessonThemeStyleDefinition];
+    const selectedStyle = lessonThemeStyles[styleName as LessonThemeStyleName];
 
     let newBoxColor = eventData.boxColor; // Default to current
     let newBoxFontColor = eventData.boxFontColor; // Default to current
