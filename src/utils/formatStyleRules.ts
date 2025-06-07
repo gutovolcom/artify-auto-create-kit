@@ -12,40 +12,40 @@ interface FieldStyle {
   fontSize: number;
 }
 
-// Format-specific style map with font fallbacks
+// Format-specific style map (JSON-like structure)
 const styleMap = {
   youtube: {
-    title: { fontFamily: 'Margem-Black, Arial Black, sans-serif', fontSize: 140 },
-    classTheme: { fontFamily: 'Margem-Bold, Arial Bold, sans-serif', fontSize: 68 },
-    date: { fontFamily: 'Toroka Wide Regular, Arial, sans-serif', fontSize: 66 },
-    time: { fontFamily: 'Toroka Wide Regular, Arial, sans-serif', fontSize: 66 },
-    teacherName: { fontFamily: 'Margem-Medium, Arial, sans-serif', fontSize: 66 }
+    title: { fontFamily: 'Margem-Black', fontSize: 140 },
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 68 },
+    date: { fontFamily: 'Toroka Wide Regular', fontSize: 66 },
+    time: { fontFamily: 'Toroka Wide Regular', fontSize: 66 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 66 }
   },
   feed: {
-    title: { fontFamily: 'Margem-Black, Arial Black, sans-serif', fontSize: 118 },
-    classTheme: { fontFamily: 'Margem-Bold, Arial Bold, sans-serif', fontSize: 52 },
-    date: { fontFamily: 'Toroka Wide Regular, Arial, sans-serif', fontSize: 46 },
-    time: { fontFamily: 'Toroka Wide Regular, Arial, sans-serif', fontSize: 46 },
-    teacherName: { fontFamily: 'Margem-Medium, Arial, sans-serif', fontSize: 46 }
+    title: { fontFamily: 'Margem-Black', fontSize: 118 },
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 52 },
+    date: { fontFamily: 'Toroka Wide Regular', fontSize: 46 },
+    time: { fontFamily: 'Toroka Wide Regular', fontSize: 46 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 46 }
   },
   stories: {
-    title: { fontFamily: 'Margem-Black, Arial Black, sans-serif', fontSize: 132 },
-    classTheme: { fontFamily: 'Margem-Bold, Arial Bold, sans-serif', fontSize: 62 },
-    date: { fontFamily: 'Toroka Wide Regular, Arial, sans-serif', fontSize: 62 },
-    time: { fontFamily: 'Toroka Wide Regular, Arial, sans-serif', fontSize: 62 },
-    teacherName: { fontFamily: 'Margem-Medium, Arial, sans-serif', fontSize: 62 }
+    title: { fontFamily: 'Margem-Black', fontSize: 132 },
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 62 },
+    date: { fontFamily: 'Toroka Wide Regular', fontSize: 62 },
+    time: { fontFamily: 'Toroka Wide Regular', fontSize: 62 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 62 }
   },
   bannerGCO: {
-    classTheme: { fontFamily: 'Margem-Bold, Arial Bold, sans-serif', fontSize: 18 },
-    teacherName: { fontFamily: 'Margem-Medium, Arial, sans-serif', fontSize: 16 }
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 18 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 16 }
   },
   ledStudio: {
-    classTheme: { fontFamily: 'Margem-Bold, Arial Bold, sans-serif', fontSize: 30 },
-    teacherName: { fontFamily: 'Margem-Medium, Arial, sans-serif', fontSize: 26 }
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 30 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 26 }
   },
   LP: {
-    classTheme: { fontFamily: 'Margem-Bold, Arial Bold, sans-serif', fontSize: 42 },
-    teacherName: { fontFamily: 'Margem-Medium, Arial, sans-serif', fontSize: 28 }
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 42 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 28 }
   }
 };
 
