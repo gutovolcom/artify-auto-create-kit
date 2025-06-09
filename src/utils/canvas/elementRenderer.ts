@@ -32,43 +32,6 @@ export const addElementToCanvas = (
   console.log(`[addElementToCanvas ENTRY] Field: ${element?.field}, Type: ${element?.type}, lessonThemeBoxStyle: ${eventData?.lessonThemeBoxStyle}, boxColor: ${eventData?.boxColor}`);
   const { type, field, position, size } = element;
 
-  if (type === 'text_box' && field === 'classTheme') {
-  const textContent = getTextContent(field, eventData);
-  const userColors = getUserColors(eventData);
-  const style = getStyleForField(format, field, userColors);
-
-  const paddingX = 20;
-  const boxHeight = 100; // ou altura dinâmica por formato
-  const borderRadius = 10;
-
-  const text = new fabricText(textContent, {
-    fontSize: style.fontSize,
-    fontFamily: style.fontFamily,
-    fill: style.color, // geralmente boxFontColor
-    textAlign: 'center',
-    originX: 'center',
-    originY: 'center'
-  });
-
-  const background = new fabric.Rect({
-    width: text.width! + 2 * paddingX,
-    height: boxHeight,
-    fill: eventData.boxColor, // ⚠️ cor de fundo vinda do usuário
-    rx: borderRadius,
-    ry: borderRadius,
-    originX: 'center',
-    originY: 'center'
-  });
-
-  const group = new fabric.Group([background, text], {
-    left: position?.x ?? 0,
-    top: position?.y ?? 0,
-    originX: 'left',
-    originY: 'top',
-    selectable: false,
-    evented: false
-  });
-
   canvas.add(group);
   return; // evita que caia na lógica de texto simples
 }
@@ -117,6 +80,8 @@ export const addElementToCanvas = (
           evented: false
         });
         canvas.add(text);
+        const backgroundWidth = text.width! + (horizontalPadding * 2);
+        
       } else { // This is the block to modify for 'Green', 'Red', 'White'
         const text = new FabricText(textContent, {
           // IMPORTANT: Set originX and originY to 'center' for easier positioning within the group later if needed,
