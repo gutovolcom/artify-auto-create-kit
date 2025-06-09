@@ -146,11 +146,10 @@ existingLayout.layout_config.elements.forEach((element: any) => {
         console.log('🔍 After deduplication:', elementsToLoad.length, 'unique elements');
         
         elementsToLoad.forEach((element: any) => {
-          // Correção forçada para garantir que classTheme use type 'text_box'
           if (element.field === 'classTheme' && element.type !== 'text_box') {
            console.warn('⚠️ Corrigindo type de classTheme de', element.type, 'para text_box');
            element.type = 'text_box';
-          }
+        }
           
           const elementConfig = {
             id: element.id,
