@@ -29,6 +29,7 @@ export const addElementToCanvas = (
   const elementY = position?.y || 0;
 
   if (type === "text_box" && field === "classTheme") {
+    console.log("✅ Criando box de fundo para classTheme");
     // Handle lesson theme style configuration using shared utility
     const selectedStyleName = eventData.lessonThemeBoxStyle;
     const themeStyle = getLessonThemeStyle(selectedStyleName, eventData, format);
