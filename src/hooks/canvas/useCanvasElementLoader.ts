@@ -133,9 +133,13 @@ export const useCanvasElementLoader = ({
         console.log('📂 Loading existing layout elements:', existingLayout.layout_config.elements.length, 'elements');
         
         const uniqueElements = new Map();
-        existingLayout.layout_config.elements.forEach((element: any) => {
-          uniqueElements.set(element.field, element);
-        });
+existingLayout.layout_config.elements.forEach((element: any) => {
+  const uniqueKey = `${element.field}-${element.type}`;
+  if (!uniqueElements.has(uniqueKey)) {
+    uniqueElements.set(uniqueKey, element);
+  }
+});
+
         
         const elementsToLoad = Array.from(uniqueElements.values());
         console.log('🔍 After deduplication:', elementsToLoad.length, 'unique elements');
