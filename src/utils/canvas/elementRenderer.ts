@@ -28,58 +28,75 @@ export const addElementToCanvas = (
   canvasHeight: number,
   format: string
 ) => {
-  console.log(`[addElementToCanvas ENTRY] Field: ${element?.field}, Type: ${element?.type}, lessonThemeBoxStyle: ${eventData?.lessonThemeBoxStyle}, boxColor: ${eventData?.boxColor}`);
   const { type, field, position, size } = element;
 
-  canvas.add(group);
-  return; // evita que caia na lógica de texto simples
-}
-  
-  // Handle both teacherImages and professorPhotos field names
-  if (type === 'image' && (field === 'teacherImages' || field === 'professorPhotos')) {
-    return; // Handled separately
+  if (type === "image" && (field === "teacherImages" || field === "professorPhotos")) {
+    return;
   }
 
   const textContent = getTextContent(field, eventData);
   if (!textContent) return;
 
-  // Apply DIRECT coordinates from layout (already unscaled)
-  const elementX = position?.x ?? 0;
-  const elementY = position?.y ?? 0;
-  
-  console.log(`🎯 Applying DIRECT coordinates for ${field}:`, {
-    x: elementX,
-    y: elementY,
-    canvasSize: { width: canvasWidth, height: canvasHeight },
-    format
-  });
-
-  // Get format-specific styling
   const userColors = getUserColors(eventData);
   const formatStyle = getStyleForField(format, field, userColors);
-  
-  console.log(`✅ Applied format-specific style for ${format}.${field}:`, formatStyle);
 
-  if (type === 'text_box' && field === 'classTheme') {
-    console.log("🚀 Entered classTheme text_box rendering for field:", field);
-    const selectedStyleName = eventData.lessonThemeBoxStyle;
-    // @ts-ignore
-    const styleConfig = selectedStyleName ? lessonThemeStyleColors[selectedStyleName] : null;
+  if (type === "text_box" && field === "classTheme") {
+    const boxHeight = fixedBoxHeights[format] || 60;
+    const paddingX = 20;
+    const borderRadius = 10;
 
-    if (styleConfig) {
-      if (styleConfig.boxColor === null) { // 'Transparent' style
-        const text = new FabricText(textContent, {
-          fontSize: formatStyle.fontSize,
-          fontFamily: formatStyle.fontFamily,
-          fill: userColors.textColor, // Use eventData.textColor
-          textAlign: 'center',
-          left: elementX,
-          top: elementY,
-          selectable: false,
-          evented: false
-        });
-        canvas.add(text);
-        const backgroundWidth = text.width! + (horizontalPadding * 2);
+    const text = new FabricText(textContent, {
+      fontSize: formatStyle.fontSize,
+      fontFamily: formatStyle.fontFamily,
+      fill: formatStyle.color,
+      textAlign: "center",
+      originX: "center",
+      originY: "center",
+      selectable: false,
+      evented: false
+    });
+
+    text.set({ top: boxHeight / 2 });
+
+    const textWidth = text.width || 100;
+    const boxWidth = textWidth + paddingX * 2;
+
+    const background = new Rect({
+      width: boxWidth,
+      height: boxHeight,
+      fill: eventData.boxColor || "#dd303e",
+      rx: borderRadius,
+      ry: borderRadius,
+      originX: "center",
+      originY: "center",
+      selectable: false,
+      evented: false
+    });
+
+    const group = new Group([background, text], {
+      left: position?.x || 0,
+      top: position?.y || 0,
+      originX: "left",
+      originY: "top",
+      selectable: false,
+      evented: false
+    });
+
+    canvas.add(group);
+  } else {
+    const text = new FabricText(textContent, {
+      left: position?.x || 0,
+      top: position?.y || 0,
+      fontSize: formatStyle.fontSize,
+      fontFamily: formatStyle.fontFamily,
+      fill: formatStyle.color,
+      selectable: false,
+      evented: false
+    });
+
+    canvas.add(text);
+  }
+};
         
       } else { // This is the block to modify for 'Green', 'Red', 'White'
         const text = new FabricText(textContent, {
