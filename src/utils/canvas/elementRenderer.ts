@@ -3,23 +3,8 @@ import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
 import { getTextContent } from './textUtils';
-
-const lessonThemeStyleColors = {
-  'Green': { boxColor: '#CAFF39', fontColor: '#DD303E' },
-  'Red':   { boxColor: '#DD303E', fontColor: '#CAFF39' },
-  'White': { boxColor: '#FFFFFF', fontColor: '#DD303E' },
-  'Transparent': { boxColor: null, fontColor: null } // Special handling: fontColor will be eventData.textColor
-};
-
-const CLASS_THEME_BOX_HEIGHTS = {
-  youtube: 100,
-  feed: 64,
-  stories: 100,
-  bannerGCO: 40.4,
-  ledStudio: 54,
-  LP: 66,
-  default: 50 // Default height if format not specified
-};
+import { getLessonThemeStyle, lessonThemeStyleColors, CLASS_THEME_BOX_HEIGHTS } from './lessonThemeUtils';
+import { constrainTextToCanvas } from './textConstraints';
 
 export const addElementToCanvas = (
   canvas: FabricCanvas,
@@ -44,23 +29,36 @@ export const addElementToCanvas = (
   const elementY = position?.y || 0;
 
   if (type === "text_box" && field === "classTheme") {
-    // Handle lesson theme style configuration
+    // Handle lesson theme style configuration using shared utility
     const selectedStyleName = eventData.lessonThemeBoxStyle;
-    const styleConfig = lessonThemeStyleColors[selectedStyleName as keyof typeof lessonThemeStyleColors];
+    const themeStyle = getLessonThemeStyle(selectedStyleName, eventData, format);
     
-    if (styleConfig) {
-      const text = new FabricText(textContent, {
-        fontSize: formatStyle.fontSize,
+    if (themeStyle) {
+      // Calculate optimal text size to prevent truncation
+      const maxTextWidth = (canvasWidth - elementX) * 0.8; // Leave some margin
+      const textConstraints = constrainTextToCanvas(
+        textContent,
+        elementX,
+        elementY,
+        formatStyle.fontSize,
+        formatStyle.fontFamily,
+        canvasWidth,
+        canvasHeight,
+        40 // Extra padding for the box
+      );
+
+      const text = new FabricText(textConstraints.text, {
+        fontSize: textConstraints.fontSize,
         fontFamily: formatStyle.fontFamily,
-        fill: styleConfig.fontColor === null ? eventData.textColor || '#FFFFFF' : styleConfig.fontColor,
+        fill: themeStyle.fontColor,
         textAlign: 'center'
       });
 
-      const fixedBoxHeight = CLASS_THEME_BOX_HEIGHTS[format as keyof typeof CLASS_THEME_BOX_HEIGHTS] || CLASS_THEME_BOX_HEIGHTS.default;
+      const fixedBoxHeight = themeStyle.fixedBoxHeight;
       const horizontalPadding = 20;
       const borderRadius = 10;
 
-      const backgroundWidth = text.width! + (horizontalPadding * 2);
+      const backgroundWidth = Math.min(text.width! + (horizontalPadding * 2), maxTextWidth);
       const backgroundHeight = fixedBoxHeight;
 
       const background = new Rect({
@@ -68,7 +66,7 @@ export const addElementToCanvas = (
         top: 0,
         width: backgroundWidth,
         height: backgroundHeight,
-        fill: styleConfig.boxColor || eventData.boxColor || '#dd303e',
+        fill: themeStyle.boxColor,
         rx: borderRadius,
         ry: borderRadius
       });
@@ -88,7 +86,10 @@ export const addElementToCanvas = (
         rectHeight: background.height,
         rectFill: background.fill,
         textLeftInGroup: text.left,
-        textTopInGroup: text.top
+        textTopInGroup: text.top,
+        constrainedFontSize: textConstraints.fontSize,
+        originalText: textContent,
+        finalText: textConstraints.text
       });
 
       const group = new Group([background, text], {
@@ -101,8 +102,21 @@ export const addElementToCanvas = (
     } else {
       // Fallback to original logic if styleConfig is not found
       console.log("⚠️ classTheme styleConfig not found or invalid. Using fallback. eventData.lessonThemeBoxStyle was:", eventData?.lessonThemeBoxStyle, "eventData.boxColor:", eventData?.boxColor);
-      const text = new FabricText(textContent, {
-        fontSize: formatStyle.fontSize,
+      
+      // Apply text constraints for fallback as well
+      const textConstraints = constrainTextToCanvas(
+        textContent,
+        elementX,
+        elementY,
+        formatStyle.fontSize,
+        formatStyle.fontFamily,
+        canvasWidth,
+        canvasHeight,
+        40
+      );
+
+      const text = new FabricText(textConstraints.text, {
+        fontSize: textConstraints.fontSize,
         fontFamily: formatStyle.fontFamily,
         fill: formatStyle.color,
         textAlign: 'center'
@@ -129,14 +143,35 @@ export const addElementToCanvas = (
       canvas.add(group);
     }
   } else {
-    const text = new FabricText(textContent, {
+    // Apply text constraints to prevent truncation for all other text elements
+    const textConstraints = constrainTextToCanvas(
+      textContent,
+      elementX,
+      elementY,
+      formatStyle.fontSize,
+      formatStyle.fontFamily,
+      canvasWidth,
+      canvasHeight
+    );
+
+    const text = new FabricText(textConstraints.text, {
       left: elementX,
       top: elementY,
-      fontSize: formatStyle.fontSize,
+      fontSize: textConstraints.fontSize,
       fontFamily: formatStyle.fontFamily,
       fill: formatStyle.color,
       selectable: false,
       evented: false
+    });
+
+    console.log('📝 Text element constrained:', {
+      field,
+      originalFontSize: formatStyle.fontSize,
+      constrainedFontSize: textConstraints.fontSize,
+      originalText: textContent,
+      finalText: textConstraints.text,
+      position: { x: elementX, y: elementY },
+      canvasSize: { width: canvasWidth, height: canvasHeight }
     });
 
     canvas.add(text);

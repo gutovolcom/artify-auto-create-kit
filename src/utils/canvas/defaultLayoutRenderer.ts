@@ -5,6 +5,8 @@ import { getStyleForField, getUserColors } from '../formatStyleRules';
 import { formatDate } from './textUtils';
 import { getDefaultPositions } from './positionUtils';
 import { addProfessorPhotoToCanvas } from './elementRenderer';
+import { getLessonThemeStyle } from './lessonThemeUtils';
+import { constrainTextToCanvas } from './textConstraints';
 
 export const addDefaultElements = async (
   canvas: FabricCanvas,
@@ -16,13 +18,23 @@ export const addDefaultElements = async (
   const defaultPositions = getDefaultPositions(format, width, height);
   const userColors = getUserColors(eventData);
   
-  // Add title with format-specific styling
+  // Add title with format-specific styling and text constraints
   if (eventData.title) {
     const titleStyle = getStyleForField(format, 'title', userColors);
-    const title = new FabricText(eventData.title, {
+    const textConstraints = constrainTextToCanvas(
+      eventData.title,
+      defaultPositions.title.x,
+      defaultPositions.title.y,
+      titleStyle.fontSize,
+      titleStyle.fontFamily,
+      width,
+      height
+    );
+    
+    const title = new FabricText(textConstraints.text, {
       left: defaultPositions.title.x,
       top: defaultPositions.title.y,
-      fontSize: titleStyle.fontSize,
+      fontSize: textConstraints.fontSize,
       fontFamily: titleStyle.fontFamily,
       fill: titleStyle.color,
       selectable: false,
@@ -31,13 +43,24 @@ export const addDefaultElements = async (
     canvas.add(title);
   }
 
-  // Add date with format-specific styling
+  // Add date with format-specific styling and text constraints
   if (eventData.date) {
     const dateStyle = getStyleForField(format, 'date', userColors);
-    const date = new FabricText(formatDate(eventData.date, eventData.time), {
+    const dateText = formatDate(eventData.date, eventData.time);
+    const textConstraints = constrainTextToCanvas(
+      dateText,
+      defaultPositions.date.x,
+      defaultPositions.date.y,
+      dateStyle.fontSize,
+      dateStyle.fontFamily,
+      width,
+      height
+    );
+    
+    const date = new FabricText(textConstraints.text, {
       left: defaultPositions.date.x,
       top: defaultPositions.date.y,
-      fontSize: dateStyle.fontSize,
+      fontSize: textConstraints.fontSize,
       fontFamily: dateStyle.fontFamily,
       fill: dateStyle.color,
       selectable: false,
@@ -46,13 +69,23 @@ export const addDefaultElements = async (
     canvas.add(date);
   }
 
-  // Add teacher name with format-specific styling
+  // Add teacher name with format-specific styling and text constraints
   if (eventData.teacherName) {
     const teacherStyle = getStyleForField(format, 'teacherName', userColors);
-    const teacherName = new FabricText(eventData.teacherName, {
+    const textConstraints = constrainTextToCanvas(
+      eventData.teacherName,
+      defaultPositions.teacherName.x,
+      defaultPositions.teacherName.y,
+      teacherStyle.fontSize,
+      teacherStyle.fontFamily,
+      width,
+      height
+    );
+    
+    const teacherName = new FabricText(textConstraints.text, {
       left: defaultPositions.teacherName.x,
       top: defaultPositions.teacherName.y,
-      fontSize: teacherStyle.fontSize,
+      fontSize: textConstraints.fontSize,
       fontFamily: teacherStyle.fontFamily,
       fill: teacherStyle.color,
       selectable: false,
@@ -61,33 +94,100 @@ export const addDefaultElements = async (
     canvas.add(teacherName);
   }
 
-  // Add class theme with format-specific styling
+  // Add class theme with unified lesson theme styling system
   if (eventData.classTheme) {
-    const themeStyle = getStyleForField(format, 'classTheme', userColors);
-    const text = new FabricText(eventData.classTheme, {
-      fontSize: themeStyle.fontSize,
-      fontFamily: themeStyle.fontFamily,
-      fill: themeStyle.color,
-      textAlign: 'center'
-    });
+    const selectedStyleName = eventData.lessonThemeBoxStyle;
+    const themeStyle = getLessonThemeStyle(selectedStyleName, eventData, format);
+    
+    if (themeStyle) {
+      // Use the unified lesson theme styling system
+      const formatStyle = getStyleForField(format, 'classTheme', userColors);
+      const textConstraints = constrainTextToCanvas(
+        eventData.classTheme,
+        defaultPositions.classTheme.x,
+        defaultPositions.classTheme.y,
+        formatStyle.fontSize,
+        formatStyle.fontFamily,
+        width,
+        height,
+        40 // Extra padding for the box
+      );
 
-    const padding = 20;
-    const background = new Rect({
-      width: text.width! + (padding * 2),
-      height: text.height! + (padding * 2),
-      fill: eventData.boxColor || '#dd303e',
-      rx: 10,
-      ry: 10
-    });
+      const text = new FabricText(textConstraints.text, {
+        fontSize: textConstraints.fontSize,
+        fontFamily: formatStyle.fontFamily,
+        fill: themeStyle.fontColor,
+        textAlign: 'center'
+      });
 
-    const group = new Group([background, text], {
-      left: defaultPositions.classTheme.x,
-      top: defaultPositions.classTheme.y,
-      selectable: false,
-      evented: false
-    });
+      const padding = 20;
+      const background = new Rect({
+        width: text.width! + (padding * 2),
+        height: themeStyle.fixedBoxHeight,
+        fill: themeStyle.boxColor,
+        rx: 10,
+        ry: 10
+      });
 
-    canvas.add(group);
+      text.set({
+        left: padding,
+        top: (themeStyle.fixedBoxHeight - text.height!) / 2
+      });
+
+      const group = new Group([background, text], {
+        left: defaultPositions.classTheme.x,
+        top: defaultPositions.classTheme.y,
+        selectable: false,
+        evented: false
+      });
+
+      canvas.add(group);
+      
+      console.log('🎨 Default classTheme with unified styling:', {
+        selectedStyle: selectedStyleName,
+        boxColor: themeStyle.boxColor,
+        fontColor: themeStyle.fontColor,
+        fixedHeight: themeStyle.fixedBoxHeight
+      });
+    } else {
+      // Fallback to original logic
+      const themeStyle = getStyleForField(format, 'classTheme', userColors);
+      const textConstraints = constrainTextToCanvas(
+        eventData.classTheme,
+        defaultPositions.classTheme.x,
+        defaultPositions.classTheme.y,
+        themeStyle.fontSize,
+        themeStyle.fontFamily,
+        width,
+        height,
+        40
+      );
+
+      const text = new FabricText(textConstraints.text, {
+        fontSize: textConstraints.fontSize,
+        fontFamily: themeStyle.fontFamily,
+        fill: themeStyle.color,
+        textAlign: 'center'
+      });
+
+      const padding = 20;
+      const background = new Rect({
+        width: text.width! + (padding * 2),
+        height: text.height! + (padding * 2),
+        fill: eventData.boxColor || '#dd303e',
+        rx: 10,
+        ry: 10
+      });
+
+      const group = new Group([background, text], {
+        left: defaultPositions.classTheme.x,
+        top: defaultPositions.classTheme.y,
+        selectable: false,
+        evented: false
+      });
+
+      canvas.add(group);
+    }
   }
 
   // Add professor photo with default positioning
