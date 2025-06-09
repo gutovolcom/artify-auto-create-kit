@@ -53,7 +53,7 @@ export const useCanvasElementLoader = ({
       },
       {
         id: 'classTheme',
-        type: 'text',
+        type: 'text_box',
         field: 'classTheme',
         position: { x: 50, y: 150 },
         style: { fontSize: 20, fontFamily: 'Arial', color: '#333333' }
