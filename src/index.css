@@ -1,4 +1,4 @@
-  @font-face {
+@font-face {
   font-family: 'Margem-Black';
   src: url('/fonts/Margem-Black.woff2') format('woff2'),
        url('/fonts/Margem-Black.woff') format('woff');
@@ -133,6 +133,5 @@
 
   body {
     @apply bg-background text-foreground;
-
   }
 }

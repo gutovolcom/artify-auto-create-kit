@@ -1,6 +1,6 @@
 import { EventData } from "@/pages/Index";
 
-// User color configuration for dynamic color applicationMore actions
+// User color configuration for dynamic color application
 interface UserColors {
   textColor: string;
   boxFontColor: string;
@@ -56,30 +56,30 @@ export const getStyleForField = (
   userColors: UserColors
 ): { fontSize: number; fontFamily: string; color: string } => {
   console.log(`Getting style for format: ${format}, field: ${field}`);
-
+  
   // Get format styles or fallback to default
   const formatStyles = styleMap[format as keyof typeof styleMap];
   if (!formatStyles) {
     console.warn(`Format '${format}' not found in styleMap, using fallback`);
     return getDefaultStyle(field, userColors);
   }
-
+  
   // Get field style or fallback to default
   const fieldStyle = formatStyles[field as keyof typeof formatStyles];
   if (!fieldStyle) {
     console.warn(`Field '${field}' not found for format '${format}', using fallback`);
     return getDefaultStyle(field, userColors);
   }
-
+  
   // Apply dynamic color based on field type
   const color = getColorForField(field, userColors);
-
+  
   console.log(`Applied style for ${format}.${field}:`, {
     fontSize: fieldStyle.fontSize,
     fontFamily: fieldStyle.fontFamily,
     color
   });
-
+  
   return {
     fontSize: fieldStyle.fontSize,
     fontFamily: fieldStyle.fontFamily,
@@ -104,7 +104,7 @@ const getColorForField = (field: string, userColors: UserColors): string => {
 // Fallback styling when format or field is not found
 const getDefaultStyle = (field: string, userColors: UserColors): { fontSize: number; fontFamily: string; color: string } => {
   console.warn(`Using fallback style for field: ${field}`);
-
+  
   const defaultStyles = {
     title: { fontSize: 48, fontFamily: 'Margem-Black' },
     classTheme: { fontSize: 28, fontFamily: 'Margem-Bold' },
@@ -112,12 +112,12 @@ const getDefaultStyle = (field: string, userColors: UserColors): { fontSize: num
     date: { fontSize: 24, fontFamily: 'Margem-Regular' },
     time: { fontSize: 24, fontFamily: 'Margem-Regular' }
   };
-
+  
   const defaultStyle = defaultStyles[field as keyof typeof defaultStyles] || {
     fontSize: 24,
     fontFamily: 'Margem-Regular'
   };
-
+  
   return {
     ...defaultStyle,
     color: getColorForField(field, userColors)

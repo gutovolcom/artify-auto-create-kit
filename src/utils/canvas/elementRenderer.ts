@@ -1,4 +1,5 @@
-import { EventData } from "@/pages/Index";Add commentMore actions
+
+import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
 import { getTextContent } from './textUtils';
@@ -30,7 +31,7 @@ export const addElementToCanvas = (
 ) => {
   console.log(`[addElementToCanvas ENTRY] Field: ${element?.field}, Type: ${element?.type}, lessonThemeBoxStyle: ${eventData?.lessonThemeBoxStyle}, boxColor: ${eventData?.boxColor}`);
   const { type, field, position, size } = element;
-
+  
   // Handle both teacherImages and professorPhotos field names
   if (type === 'image' && (field === 'teacherImages' || field === 'professorPhotos')) {
     return; // Handled separately
@@ -42,7 +43,7 @@ export const addElementToCanvas = (
   // Apply DIRECT coordinates from layout (already unscaled)
   const elementX = position?.x ?? 0;
   const elementY = position?.y ?? 0;
-
+  
   console.log(`🎯 Applying DIRECT coordinates for ${field}:`, {
     x: elementX,
     y: elementY,
@@ -53,12 +54,11 @@ export const addElementToCanvas = (
   // Get format-specific styling
   const userColors = getUserColors(eventData);
   const formatStyle = getStyleForField(format, field, userColors);
-
+  
   console.log(`✅ Applied format-specific style for ${format}.${field}:`, formatStyle);
 
   if (type === 'text_box' && field === 'classTheme') {
     console.log("🚀 Entered classTheme text_box rendering for field:", field);
-
     const selectedStyleName = eventData.lessonThemeBoxStyle;
     // @ts-ignore
     const styleConfig = selectedStyleName ? lessonThemeStyleColors[selectedStyleName] : null;
@@ -121,7 +121,6 @@ export const addElementToCanvas = (
           rectWidth: background.width,
           rectHeight: background.height,
           rectFill: background.fill,
-
           textLeftInGroup: text.left,
           textTopInGroup: text.top
         });
@@ -164,7 +163,6 @@ export const addElementToCanvas = (
       canvas.add(group);
     }
   } else {
-
     const text = new FabricText(textContent, {
       left: elementX,
       top: elementY,
@@ -237,7 +235,7 @@ export const addProfessorPhotoToCanvas = async (
       canvas.add(img);
       canvas.renderAll();
       console.log('Professor photo added successfully');
-      resolve();More actions
+      resolve();
     }).catch((error) => {
       console.error('Error loading professor photo:', error);
       reject(error);

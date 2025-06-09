@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";Add commentMore actions
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Navbar } from "@/components/Navbar";
 import { EventForm } from "@/components/EventForm";
 import { ImageSelector } from "@/components/ImageSelector";
@@ -11,8 +11,6 @@ import { useImageGenerator } from "@/hooks/useImageGenerator";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
-
-
 
 export interface EventData {
   title: string;
@@ -31,13 +29,12 @@ export interface EventData {
   selectedTeacherId?: string;
   teacherName?: string;
   professorPhotos?: string;
-
 }
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
   const [userType, setUserType] = useState<'user' | 'admin'>('user');
-
+  
   const [eventData, setEventData] = useState<EventData>({
     title: "",
     subtitle: "",
@@ -57,7 +54,7 @@ const Index = () => {
     teacherName: "",
     professorPhotos: "",
   });
-
+  
   const [activeTab, setActiveTab] = useState("input");
   const { 
     generatedImages, 
@@ -158,7 +155,7 @@ const Index = () => {
           </div>
         </div>
       </div>
-
+      
       <main className="flex-1 container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-center mb-8 text-blue-800">
           Gerador Automático de Artes para Redes Sociais
@@ -208,7 +205,7 @@ const Index = () => {
           </TabsContent>
         </Tabs>
       </main>
-
+      
       <footer className="bg-blue-800 text-white py-4 text-center">
         <p>© 2025 Gerador Automático de Artes</p>
       </footer>
