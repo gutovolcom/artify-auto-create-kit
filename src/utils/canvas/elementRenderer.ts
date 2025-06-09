@@ -15,7 +15,7 @@ export const addElementToCanvas = (
   format: string
 ) => {
   let type = element.type;
-  const { field, position, size } = element;
+  const {field, position, size } = element;
   console.log(`📌 Processing element: field=${field}, type=${type}`);
 
    // FORÇA TIPO text_box PARA classTheme
