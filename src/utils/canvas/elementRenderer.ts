@@ -11,7 +11,7 @@ const lessonThemeStyleColors = {
   'Transparent': { boxColor: null, fontColor: null } // Special handling: fontColor will be eventData.textColor
 };
 
-const boxHeight = CLASS_THEME_BOX_HEIGHTS[format] || CLASS_THEME_BOX_HEIGHTS.default;
+const CLASS_THEME_BOX_HEIGHTS = {
   youtube: 100,
   feed: 64,
   stories: 100,
@@ -33,7 +33,6 @@ export const addElementToCanvas = (
   const { type, field, position, size } = element;
 
   if (type === 'text_box' && field === 'classTheme') {
-  console.log('✅ Entrou no bloco do classTheme text_box');
   const textContent = getTextContent(field, eventData);
   const userColors = getUserColors(eventData);
   const style = getStyleForField(format, field, userColors);
@@ -173,7 +172,6 @@ export const addElementToCanvas = (
           selectable: false,
           evented: false
         });
-        console.log('📦 Adicionando group ao canvas:', group);
         canvas.add(group);
       }
     } else { // Fallback to original logic if styleConfig is not found
