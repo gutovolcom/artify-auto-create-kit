@@ -48,12 +48,15 @@ export const addElementToCanvas = (
         40 // Extra padding for the box
       );
 
-      const text = new FabricText(textConstraints.text, {
+        const text = new FabricText(textConstraints.text, {
         fontSize: textConstraints.fontSize,
         fontFamily: formatStyle.fontFamily,
         fill: themeStyle.fontColor,
-        textAlign: 'center'
+        textAlign: 'center',
+        originX: 'left',
+        originY: 'top'
       });
+
 
       const fixedBoxHeight = themeStyle.fixedBoxHeight;
       const horizontalPadding = 20;
@@ -69,13 +72,17 @@ export const addElementToCanvas = (
         height: backgroundHeight,
         fill: themeStyle.boxColor,
         rx: borderRadius,
-        ry: borderRadius
+        ry: borderRadius,
+        originX: 'left',
+        originY: 'top'
       });
 
-      text.set({
+
+        text.set({
         left: horizontalPadding,
         top: (fixedBoxHeight - text.height!) / 2
       });
+
 
       console.log('🎨 classTheme Box Details:', {
         format: format,
@@ -103,7 +110,12 @@ export const addElementToCanvas = (
     } else {
       // Fallback to original logic if styleConfig is not found
       console.log("⚠️ classTheme styleConfig not found or invalid. Using fallback. eventData.lessonThemeBoxStyle was:", eventData?.lessonThemeBoxStyle, "eventData.boxColor:", eventData?.boxColor);
-      
+      console.log("🧱 Adicionando group com box + texto:", {
+       text: text.text,
+       position: { x: elementX, y: elementY },
+       rectWidth: background.width,
+       rectHeight: background.height
+     });
       // Apply text constraints for fallback as well
       const textConstraints = constrainTextToCanvas(
         textContent,
