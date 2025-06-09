@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,6 +30,7 @@ export interface EventData {
   selectedTeacherId?: string;
   teacherName?: string;
   professorPhotos?: string;
+  lessonThemeBoxStyle?: string;
 }
 
 const Index = () => {
