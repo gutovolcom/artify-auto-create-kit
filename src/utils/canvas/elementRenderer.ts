@@ -1,4 +1,3 @@
-
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
@@ -181,7 +180,6 @@ export const addElementToCanvas = (
 
     canvas.add(text);
   }
-};
 
 export const addProfessorPhotoToCanvas = async (
   canvas: FabricCanvas,
