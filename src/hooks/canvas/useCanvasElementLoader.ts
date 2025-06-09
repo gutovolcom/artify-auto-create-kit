@@ -140,6 +140,7 @@ existingLayout.layout_config.elements.forEach((element: any) => {
   }
 });
 
+     console.log('✅ Final elements to load:', Array.from(uniqueElements.values()));
         
         const elementsToLoad = Array.from(uniqueElements.values());
         console.log('🔍 After deduplication:', elementsToLoad.length, 'unique elements');
