@@ -19,7 +19,7 @@ export const calculateOptimalTextSize = (
   
   // If text fits within bounds, return as is
   if (tempText.width! <= maxWidth && tempText.height! <= maxHeight) {
-    return { fontSize, wrappedText: text };
+    return { fontSize, text: wrappedText };
   }
   
   // Try to fit text by reducing font size
