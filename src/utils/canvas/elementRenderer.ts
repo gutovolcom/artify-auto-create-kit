@@ -15,6 +15,7 @@ export const addElementToCanvas = (
   format: string
 ) => {
   const { type, field, position, size } = element;
+  console.log(`📌 Processing element: field=${field}, type=${type}`);
 
   if (type === "image" && (field === "teacherImages" || field === "professorPhotos")) {
     return;
