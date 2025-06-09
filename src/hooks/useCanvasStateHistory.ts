@@ -4,17 +4,15 @@ import { useState, useCallback } from 'react';
 
 const MAX_HISTORY_LENGTH = 20;
 
-// Define properties to include in canvas.toJSON()
 const serializationProperties = [
   'elementId',
   'elementType',
   'fieldMapping',
   'originalWidth',
   'originalHeight',
-  'imageUrl', // For images
-  'text', // For text objects (actual text content if needed for history)
-  'isFallback' // For image fallbacks
-  // Add any other custom properties you've set on objects that need to be preserved
+  'imageUrl',
+  'text',
+  'isFallback'
 ];
 
 export interface CanvasHistory {
@@ -36,16 +34,16 @@ export const useCanvasStateHistory = (initialCanvas?: Canvas) => {
   const saveCanvasState = useCallback((reason?: string) => {
     if (!canvasInstance) return;
     console.log(`Saving canvas state (Reason: ${reason || 'Unknown'})`);
-    const canvasJSON = JSON.stringify(canvasInstance.toJSON(serializationProperties));
+    const canvasJSON = JSON.stringify(canvasInstance.toJSON());
 
     setHistory((prevHistory) => {
       const newUndoStack = [...prevHistory.undoStack, canvasJSON];
       if (newUndoStack.length > MAX_HISTORY_LENGTH) {
-        newUndoStack.shift(); // Remove the oldest state
+        newUndoStack.shift();
       }
       return {
         undoStack: newUndoStack,
-        redoStack: [], // Clear redo stack on new save
+        redoStack: [],
       };
     });
   }, [canvasInstance]);
@@ -54,7 +52,7 @@ export const useCanvasStateHistory = (initialCanvas?: Canvas) => {
     if (!canvasInstance || history.undoStack.length === 0) return;
 
     const lastState = history.undoStack[history.undoStack.length - 1];
-    const currentCanvasJSON = JSON.stringify(canvasInstance.toJSON(serializationProperties));
+    const currentCanvasJSON = JSON.stringify(canvasInstance.toJSON());
 
     setHistory((prevHistory) => {
       const newUndoStack = prevHistory.undoStack.slice(0, -1);
@@ -74,7 +72,7 @@ export const useCanvasStateHistory = (initialCanvas?: Canvas) => {
     if (!canvasInstance || history.redoStack.length === 0) return;
 
     const nextState = history.redoStack[history.redoStack.length - 1];
-    const currentCanvasJSON = JSON.stringify(canvasInstance.toJSON(serializationProperties));
+    const currentCanvasJSON = JSON.stringify(canvasInstance.toJSON());
 
     setHistory((prevHistory) => {
       const newRedoStack = prevHistory.redoStack.slice(0, -1);
