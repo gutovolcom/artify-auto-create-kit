@@ -14,15 +14,15 @@ export const addElementToCanvas = (
   canvasHeight: number,
   format: string
 ) => {
+  let type = element.type;
   const { type, field, position, size } = element;
   console.log(`📌 Processing element: field=${field}, type=${type}`);
 
-  // FORÇA TIPO text_box PARA classTheme
+   // FORÇA TIPO text_box PARA classTheme
   if (field === 'classTheme' && type !== 'text_box') {
     console.warn('🚨 Forçando type text_box para classTheme dentro do renderer');
     type = 'text_box';
   }
-
   
   if (type === "image" && (field === "teacherImages" || field === "professorPhotos")) {
     return;
