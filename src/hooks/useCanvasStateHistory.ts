@@ -1,4 +1,5 @@
-import { fabric } from 'fabric';
+
+import { Canvas } from 'fabric';
 import { useState, useCallback } from 'react';
 
 const MAX_HISTORY_LENGTH = 20;
@@ -21,14 +22,14 @@ export interface CanvasHistory {
   redoStack: string[];
 }
 
-export const useCanvasStateHistory = (initialCanvas?: fabric.Canvas) => {
+export const useCanvasStateHistory = (initialCanvas?: Canvas) => {
   const [history, setHistory] = useState<CanvasHistory>({
     undoStack: [],
     redoStack: [],
   });
-  const [canvasInstance, setCanvasInstance] = useState<fabric.Canvas | null>(initialCanvas || null);
+  const [canvasInstance, setCanvasInstance] = useState<Canvas | null>(initialCanvas || null);
 
-  const updateCanvasInstance = useCallback((canvas: fabric.Canvas) => {
+  const updateCanvasInstance = useCallback((canvas: Canvas) => {
     setCanvasInstance(canvas);
   }, []);
 
@@ -63,7 +64,7 @@ export const useCanvasStateHistory = (initialCanvas?: fabric.Canvas) => {
       };
     });
 
-    canvasInstance.loadFromJSON(JSON.parse(lastState), () => {
+    canvasInstance.loadFromJSON(JSON.parse(lastState)).then(() => {
       canvasInstance.renderAll();
       console.log('Undo complete, canvas reloaded.');
     });
@@ -83,7 +84,7 @@ export const useCanvasStateHistory = (initialCanvas?: fabric.Canvas) => {
       };
     });
 
-    canvasInstance.loadFromJSON(JSON.parse(nextState), () => {
+    canvasInstance.loadFromJSON(JSON.parse(nextState)).then(() => {
       canvasInstance.renderAll();
       console.log('Redo complete, canvas reloaded.');
     });

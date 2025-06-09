@@ -1,17 +1,18 @@
+
 import React, { useEffect, useState } from 'react';
-import { fabric } from 'fabric';
+import { Canvas } from 'fabric';
 import { Button } from '@/components/ui/button'; // Assuming this is your button component path
 import { ChevronUp, ChevronDown } from 'lucide-react'; // Assuming icon usage
 
 interface LayerPanelProps {
-  canvas: fabric.Canvas | null;
+  canvas: Canvas | null;
   // This prop is used to force a re-render when canvas objects change externally
   // Increment it when objects are added, removed, or layers are reordered by other means.
   canvasVersion: number;
 }
 
 const LayerPanel: React.FC<LayerPanelProps> = ({ canvas, canvasVersion }) => {
-  const [elements, setElements] = useState<fabric.Object[]>([]);
+  const [elements, setElements] = useState<any[]>([]);
 
   useEffect(() => {
     if (canvas) {
@@ -21,7 +22,7 @@ const LayerPanel: React.FC<LayerPanelProps> = ({ canvas, canvasVersion }) => {
     }
   }, [canvas, canvasVersion]); // Re-run when canvas instance or its version changes
 
-  const bringForward = (obj: fabric.Object) => {
+  const bringForward = (obj: any) => {
     if (canvas) {
       canvas.bringForward(obj);
       canvas.renderAll();
@@ -31,7 +32,7 @@ const LayerPanel: React.FC<LayerPanelProps> = ({ canvas, canvasVersion }) => {
     }
   };
 
-  const sendBackwards = (obj: fabric.Object) => {
+  const sendBackwards = (obj: any) => {
     if (canvas) {
       canvas.sendBackwards(obj);
       canvas.renderAll();

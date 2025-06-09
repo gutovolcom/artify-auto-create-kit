@@ -1,8 +1,9 @@
-import { fabric } from 'fabric';
+
+import { Canvas, Text, Image, Rect } from 'fabric';
 import { CanvasElementConfig } from './types';
 import { constrainToCanvas } from '@/utils/positionValidation';
 
-type FabricCanvas = fabric.Canvas;
+type FabricCanvas = Canvas;
 
 const validateAndPositionElement = (
   elementConfig: CanvasElementConfig,
@@ -70,7 +71,7 @@ const addTextElement = (
     fontStyle = 'italic';
   }
 
-  const text = new fabric.Text(`[${config.field.toUpperCase()}]`, {
+  const text = new Text(`[${config.field.toUpperCase()}]`, {
     left: elementX,
     top: elementY,
     fontSize: fontSize,
@@ -107,10 +108,12 @@ const addImageElement = (
   const imageUrl = config.imageUrl || '/placeholder.svg';
   console.log('🔄 Loading image from URL:', imageUrl);
 
-  fabric.Image.fromURL(imageUrl, (img) => {
+  Image.fromURL(imageUrl, {
+    crossOrigin: 'anonymous'
+  }).then((img) => {
     if (img.width == null || img.height == null) {
         console.error('Error loading image: Image width or height is null. Using fallback rectangle.');
-        const rect = new fabric.Rect({
+        const rect = new Rect({
             left: elementX,
             top: elementY,
             width: elementWidth * scale,
@@ -158,9 +161,9 @@ const addImageElement = (
       id: config.id,
     });
     // canvas.renderAll(); // Main renderAll is in addElementToCanvas
-  }, (oImg, error) => {
+  }).catch((error) => {
     console.error('Error loading image:', error);
-    const rect = new fabric.Rect({
+    const rect = new Rect({
       left: elementX,
       top: elementY,
       width: elementWidth * scale,
@@ -255,7 +258,7 @@ export const addElementToCanvas = (
       const addedElement = objects[objects.length - 1];
       // For async image adding, the last object might not be the one just added.
       // This might need a more robust way to get the added element, e.g., by returning it from addImageElement/addTextElement
-      // or by relying on the fact that fabric.Image.fromURL callback will execute later.
+      // or by relying on the fact that Image.fromURL callback will execute later.
       // For now, we assume this works for text and synchronous parts of image (like fallback).
       if (addedElement) { // Check if addedElement is not undefined
          canvas.moveObjectTo(addedElement, objects.length - 1);
