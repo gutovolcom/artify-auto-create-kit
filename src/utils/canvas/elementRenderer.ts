@@ -106,16 +106,18 @@ export const addElementToCanvas = (
         selectable: false,
         evented: false
       });
+      console.log("🧱 Adicionando group com box + texto:", {
+  text: text.text,
+  position: { x: elementX, y: elementY },
+  rectWidth: background.width,
+  rectHeight: background.height
+      });
+      
       canvas.add(group);
     } else {
       // Fallback to original logic if styleConfig is not found
       console.log("⚠️ classTheme styleConfig not found or invalid. Using fallback. eventData.lessonThemeBoxStyle was:", eventData?.lessonThemeBoxStyle, "eventData.boxColor:", eventData?.boxColor);
-      console.log("🧱 Adicionando group com box + texto:", {
-       text: text.text,
-       position: { x: elementX, y: elementY },
-       rectWidth: background.width,
-       rectHeight: background.height
-     });
+      
       // Apply text constraints for fallback as well
       const textConstraints = constrainTextToCanvas(
         textContent,
