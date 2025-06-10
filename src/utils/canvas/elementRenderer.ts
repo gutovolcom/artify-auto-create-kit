@@ -20,14 +20,6 @@ export const addElementToCanvas = (
   const {field, position, size } = element;
   console.log(`📌 Processing element: field=${field}, type=${type}`);
 
-  await addTeacherPhotosToCanvas(
-  canvas,
-  eventData.teacherImages || [],
-  format,
-  canvasWidth,
-  canvasHeight
-);
-  
   // FORÇA TIPO text_box PARA classTheme
   if (field === 'classTheme' && type !== 'text_box') {
     console.warn('🚨 Forçando type text_box para classTheme dentro do renderer');
@@ -38,6 +30,15 @@ export const addElementToCanvas = (
     return;
   }
 
+  await addTeacherPhotosToCanvas(
+  canvas,
+  eventData.teacherImages || [],
+  format,
+  canvasWidth,
+  canvasHeight
+);
+
+  
   const textContent = getTextContent(field, eventData);
   if (!textContent) return;
 
