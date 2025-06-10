@@ -33,10 +33,9 @@ export const renderCanvasWithTemplate = async (
       const tempCanvas = setupCanvasContainer(width, height);
       const fabricCanvas = createFabricCanvas(tempCanvas, width, height);
 
-      loadBackgroundImageToCanvas(fabricCanvas, backgroundImageUrl, width, height).then(() => {
+      loadBackgroundImageToCanvas(fabricCanvas, backgroundImageUrl, width, height).then(async () => {
         if (layoutConfig?.elements && layoutConfig.elements.length > 0) {
           console.log('🎯 Using layout configuration - applying DIRECT coordinates (no additional scaling)');
-          const promises: Promise<void>[] = [];
           
           layoutConfig.elements.forEach((element: any) => {
             console.log('📍 Processing element with coordinates:', {
@@ -61,26 +60,22 @@ export const renderCanvasWithTemplate = async (
               }
             }
             
-            // Handle both teacherImages and professorPhotos field names for backward compatibility
-              if (element.type === 'image' && (element.field === 'teacherImages' || element.field === 'professorPhotos')) {
-                console.log('🖼️ Adding teacher photos using new system with format rules');
-                const promise = addTeacherPhotosToCanvas(fabricCanvas, eventData.teacherImages || [], format, width, height);
-                promises.push(promise);
-                return; // já tratou imagem, evita cair no addElement abaixo
+            // Skip teacher image elements - they're handled separately by placement rules
+            if (element.type === 'image' && (element.field === 'teacherImages' || element.field === 'professorPhotos')) {
+              console.log('🖼️ Skipping teacher image element - handled by placement rules');
+              return;
             }
+            
             console.log('📝 Adding text element with layout position:', element.position);
             addElementToCanvas(fabricCanvas, element, eventData, width, height, format);
-            }
-          );
-
-          Promise.all(promises).then(() => {
-            fabricCanvas.renderAll();
-            exportCanvasToDataURL(fabricCanvas, tempCanvas).then(resolve).catch(reject);
-          }).catch((error) => {
-            console.error('Error loading professor photos:', error);
-            fabricCanvas.renderAll();
-            exportCanvasToDataURL(fabricCanvas, tempCanvas).then(resolve).catch(reject);
           });
+
+          // Always add teacher photos using placement rules after processing layout elements
+          console.log('🖼️ Adding teacher photos using placement rules for format:', format);
+          await addTeacherPhotosToCanvas(fabricCanvas, eventData.teacherImages || [], format, width, height);
+          
+          fabricCanvas.renderAll();
+          exportCanvasToDataURL(fabricCanvas, tempCanvas).then(resolve).catch(reject);
         } else {
           console.log('Using default layout for format:', format);
           addDefaultElements(fabricCanvas, eventData, format, width, height).then(() => {
