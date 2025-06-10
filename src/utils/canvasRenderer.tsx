@@ -67,9 +67,8 @@ export const renderCanvasWithTemplate = async (
              const promise = addTeacherPhotosToCanvas(fabricCanvas, eventData.teacherImages || [], format, width, height);
              promises.push(promise);
 
-             }else {
-               
-                console.warn('No teacher image URL found in eventData.teacherImages');
+            } else {
+               console.warn('No teacher image URL found in eventData.teacherImages');
               }
             } else {
               console.log('📝 Adding text element with layout position:', element.position);
