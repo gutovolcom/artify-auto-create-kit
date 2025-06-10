@@ -62,17 +62,14 @@ export const renderCanvasWithTemplate = async (
             }
             
             // Handle both teacherImages and professorPhotos field names for backward compatibility
-             if (element.type === 'image' && (element.field === 'teacherImages' || element.field === 'professorPhotos')) {
-             console.log('🖼️ Adding teacher photos using new system with format rules');
-             const promise = addTeacherPhotosToCanvas(fabricCanvas, eventData.teacherImages || [], format, width, height);
-             promises.push(promise);
-
-            } else {
-               console.warn('No teacher image URL found in eventData.teacherImages');
-              }
-            } else {
-              console.log('📝 Adding text element with layout position:', element.position);
-              addElementToCanvas(fabricCanvas, element, eventData, width, height, format);
+              if (element.type === 'image' && (element.field === 'teacherImages' || element.field === 'professorPhotos')) {
+                console.log('🖼️ Adding teacher photos using new system with format rules');
+                const promise = addTeacherPhotosToCanvas(fabricCanvas, eventData.teacherImages || [], format, width, height);
+                promises.push(promise);
+                return; // já tratou imagem, evita cair no addElement abaixo
+            }
+            console.log('📝 Adding text element with layout position:', element.position);
+            addElementToCanvas(fabricCanvas, element, eventData, width, height, format);
             }
           });
 
