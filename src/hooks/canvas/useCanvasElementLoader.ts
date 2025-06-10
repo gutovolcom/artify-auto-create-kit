@@ -114,6 +114,14 @@ export const useCanvasElementLoader = ({
       return false;
     }
 
+    await addTeacherPhotosToCanvas(
+  fabricCanvas,
+  existingLayout.eventData.teacherImages || [],
+  formatName,
+  displayWidth,
+  displayHeight
+);
+    
     // Log raw layout data and scale for bannerGCO
     if (formatName === 'bannerGCO') {
       const rawLayoutData = await getLayout(templateId, formatName);
@@ -145,8 +153,6 @@ existingLayout.layout_config.elements.forEach((element: any) => {
         
         const elementsToLoad = Array.from(uniqueElements.values());
         console.log('🔍 After deduplication:', elementsToLoad.length, 'unique elements');
-
-        await addTeacherPhotosToCanvas(canvas, eventData.teacherImages || [], formatName, displayWidth, displayHeight);
         
         elementsToLoad.forEach((element: any) => {
           if (element.field === 'classTheme' && element.type !== 'text_box') {
