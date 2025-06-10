@@ -1,6 +1,8 @@
-import { Image as FabricImage } from 'fabric';
+
+import { Image as FabricImage, Canvas } from 'fabric';
 import { teacherImageRules } from './photoPlacementRules';
-//import type { FabricCanvas } from './types';
+
+type FabricCanvas = Canvas;
 
 export async function addTeacherPhotosToCanvas(
   canvas: FabricCanvas,
@@ -18,8 +20,14 @@ export async function addTeacherPhotosToCanvas(
 
   const promises = imageUrls.map((url, index) => {
     return new Promise<void>((resolve) => {
-      FabricImage.fromURL(photoUrl, (img) => {
-       if (!img) return;
+      FabricImage.fromURL(url, {
+        crossOrigin: 'anonymous'
+      }).then((img) => {
+        if (!img) {
+          resolve();
+          return;
+        }
+        
         const scale = rule.height / img.height!;
         img.scale(scale);
 
@@ -31,9 +39,12 @@ export async function addTeacherPhotosToCanvas(
           top: y,
           selectable: false,
           evented: false,
-        }, { crossOrigin: 'anonymous' });
+        });
 
         canvas.add(img);
+        resolve();
+      }).catch((error) => {
+        console.error('Error loading teacher photo:', error);
         resolve();
       });
     });
