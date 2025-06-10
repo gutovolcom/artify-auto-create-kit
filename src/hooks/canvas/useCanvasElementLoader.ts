@@ -3,7 +3,6 @@ import { useCallback } from 'react';
 import * as fabric from 'fabric';
 import { toast } from 'sonner';
 import { addElementToCanvas } from '@/components/layout-editor/elementManager';
-import { addTeacherPhotosToCanvas } from '../../utils/canvas/addTeacherPhotosToCanvas';
 
 type FabricCanvas = fabric.Canvas;
 
@@ -79,14 +78,8 @@ export const useCanvasElementLoader = ({
         field: 'time',
         position: { x: 200, y: 320 },
         style: { fontSize: 16, fontFamily: 'Arial', color: '#333333' }
-      },
-      {
-        id: 'teacherImages',
-        type: 'image',
-        field: 'teacherImages',
-        position: { x: Math.max(50, displayWidth - 250), y: Math.max(50, displayHeight - 250) },
-        style: { width: 200, height: 200 }
       }
+      // Removed teacherImages element - now handled by photoPlacementRules.ts
     ];
 
     defaultElements.forEach(element => {
@@ -130,26 +123,24 @@ export const useCanvasElementLoader = ({
       clearCanvasObjects(fabricCanvas);
       
       const existingLayout = await getLayout(templateId, formatName);
-      await addTeacherPhotosToCanvas(
-    fabricCanvas,
-    existingLayout.eventData.teacherImages || [],
-    formatName,
-    displayWidth,
-    displayHeight
-  );
 
       if (existingLayout?.layout_config?.elements && existingLayout.layout_config.elements.length > 0) {
         console.log('📂 Loading existing layout elements:', existingLayout.layout_config.elements.length, 'elements');
         
+        // Filter out teacher image elements - they're now handled by photoPlacementRules.ts
+        const filteredElements = existingLayout.layout_config.elements.filter((element: any) => {
+          return !(element.type === 'image' && (element.field === 'teacherImages' || element.field === 'professorPhotos'));
+        });
+        
         const uniqueElements = new Map();
-existingLayout.layout_config.elements.forEach((element: any) => {
-  const uniqueKey = `${element.field}-${element.type}`;
-  if (!uniqueElements.has(uniqueKey)) {
-    uniqueElements.set(uniqueKey, element);
-  }
-});
+        filteredElements.forEach((element: any) => {
+          const uniqueKey = `${element.field}-${element.type}`;
+          if (!uniqueElements.has(uniqueKey)) {
+            uniqueElements.set(uniqueKey, element);
+          }
+        });
 
-     console.log('✅ Final elements to load:', Array.from(uniqueElements.values()));
+        console.log('✅ Final elements to load (after filtering teacher images):', Array.from(uniqueElements.values()));
         
         const elementsToLoad = Array.from(uniqueElements.values());
         console.log('🔍 After deduplication:', elementsToLoad.length, 'unique elements');

@@ -95,15 +95,21 @@ const addTextElement = (
 
 const addImageElement = (
   canvas: FabricCanvas,
-  config: CanvasElementConfig, // Full config including id, type, field, style, imageUrl
+  config: CanvasElementConfig,
   initialPosition: { x: number; y: number },
   initialSize: { width: number; height: number },
   scale: number
 ): void => {
+  // Skip teacher photo elements in layout editor - they're handled by photoPlacementRules.ts
+  if (config.field === 'teacherImages' || config.field === 'professorPhotos') {
+    console.log('🚫 Skipping teacher photo element in layout editor:', config.field);
+    return;
+  }
+
   const elementX = initialPosition.x * scale;
   const elementY = initialPosition.y * scale;
-  const elementWidth = initialSize.width; // Use from validatedLayout.size
-  const elementHeight = initialSize.height; // Use from validatedLayout.size
+  const elementWidth = initialSize.width;
+  const elementHeight = initialSize.height;
 
   const imageUrl = config.imageUrl || '/placeholder.svg';
   console.log('🔄 Loading image from URL:', imageUrl);
@@ -134,7 +140,7 @@ const addImageElement = (
         });
         canvas.add(rect);
         console.log('⚠️ Fallback rectangle added for image due to loading error (null dimensions).');
-        canvas.renderAll(); // Render here as it's an async path
+        canvas.renderAll();
         return;
     }
     img.set({
@@ -160,7 +166,6 @@ const addImageElement = (
       scaledSize: { width: img.getScaledWidth(), height: img.getScaledHeight() },
       id: config.id,
     });
-    // canvas.renderAll(); // Main renderAll is in addElementToCanvas
   }).catch((error) => {
     console.error('Error loading image:', error);
     const rect = new Rect({
@@ -184,16 +189,22 @@ const addImageElement = (
     });
     canvas.add(rect);
     console.log('⚠️ Fallback rectangle added for image due to loading error.');
-    canvas.renderAll(); // Render here as it's an async path
+    canvas.renderAll();
   });
 };
 
 export const addElementToCanvas = (
   canvas: FabricCanvas,
-  elementConfig: CanvasElementConfig, // This is the raw config passed to the function
+  elementConfig: CanvasElementConfig,
   scale: number,
   format?: string
 ): void => {
+  // Skip teacher photo elements in layout editor - they're handled by photoPlacementRules.ts
+  if (elementConfig.field === 'teacherImages' || elementConfig.field === 'professorPhotos') {
+    console.log('🚫 Skipping teacher photo element in layout editor:', elementConfig.field);
+    return;
+  }
+
   if (format === 'bannerGCO') {
     console.log('[bannerGCO] addElementToCanvas: elementConfig', elementConfig);
     console.log('[bannerGCO] addElementToCanvas: scale', scale);
@@ -224,8 +235,8 @@ export const addElementToCanvas = (
       color: '#333333',
       ...elementConfig?.style
     },
-    imageUrl: elementConfig?.imageUrl, // Ensure imageUrl is passed through
-    size: elementConfig?.size // Ensure size is passed through
+    imageUrl: elementConfig?.imageUrl,
+    size: elementConfig?.size
   };
 
   const validatedLayout = validateAndPositionElement(fullConfig, format);
@@ -251,16 +262,10 @@ export const addElementToCanvas = (
     }
     
     // Ensure element is on top and visible
-    // Note: For async image loading, this might not grab the image itself immediately.
-    // Consider moving this to within addImageElement's success callback if issues arise.
     const objects = canvas.getObjects();
     if (objects.length > 0) {
       const addedElement = objects[objects.length - 1];
-      // For async image adding, the last object might not be the one just added.
-      // This might need a more robust way to get the added element, e.g., by returning it from addImageElement/addTextElement
-      // or by relying on the fact that Image.fromURL callback will execute later.
-      // For now, we assume this works for text and synchronous parts of image (like fallback).
-      if (addedElement) { // Check if addedElement is not undefined
+      if (addedElement) {
          canvas.moveObjectTo(addedElement, objects.length - 1);
       }
     }

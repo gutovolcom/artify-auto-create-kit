@@ -54,6 +54,12 @@ export const useLayoutOperations = ({
       return;
     }
     
+    // Skip teacher photo elements - they're handled by photoPlacementRules.ts
+    if (elementType === 'teacherImages' || elementType === 'professorPhotos') {
+      toast.info('Fotos de professores são posicionadas automaticamente pelas regras do formato');
+      return;
+    }
+    
     const element = layoutElements.find(el => el.field_mapping === elementType);
     if (!element) {
       toast.error('Elemento não encontrado');

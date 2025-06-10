@@ -15,7 +15,16 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
     console.log('Canvas objects to serialize:', canvas.getObjects().length);
     console.log('Scale factor:', scale, 'Format:', format);
     
-    const elements = canvas.getObjects().map((obj: any) => {
+    const elements = canvas.getObjects()
+      // Filter out teacher photo elements - they're handled by photoPlacementRules.ts
+      .filter((obj: any) => {
+        const isTeacherPhoto = obj.elementType === 'image' && (obj.fieldMapping === 'teacherImages' || obj.fieldMapping === 'professorPhotos');
+        if (isTeacherPhoto) {
+          console.log('🚫 Filtering out teacher photo element from serialization:', obj.fieldMapping);
+        }
+        return !isTeacherPhoto;
+      })
+      .map((obj: any) => {
       if (format === 'bannerGCO') {
         console.log('[bannerGCO] Raw Object Props for field:', obj.fieldMapping, { left: obj.left, top: obj.top, width: obj.width, height: obj.height, scaleX: obj.scaleX, scaleY: obj.scaleY });
         console.log('[bannerGCO] Scale Factor:', scale);
@@ -161,7 +170,7 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
       }
     });
 
-    console.log('✅ Layout serialized with enhanced boundary validation:', elements);
+    console.log('✅ Layout serialized with enhanced boundary validation (teacher photos filtered out):', elements);
     
     if (format) {
       const formatDims = getFormatDimensions(format);
