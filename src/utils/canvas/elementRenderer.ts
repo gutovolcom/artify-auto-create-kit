@@ -17,15 +17,6 @@ export const addElementToCanvas = (
   format: string
 ) => {
   let type = element.type;
-  
-    await addTeacherPhotosToCanvas(
-  canvas,
-  eventData.teacherImages || [],
-  format,
-  canvasWidth,
-  canvasHeight
-);
-  
   const {field, position, size } = element;
   console.log(`📌 Processing element: field=${field}, type=${type}`);
 
