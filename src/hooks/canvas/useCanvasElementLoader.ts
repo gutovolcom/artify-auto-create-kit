@@ -113,14 +113,6 @@ export const useCanvasElementLoader = ({
       console.warn('⚠️ Cannot load layout: canvas not available or already loading');
       return false;
     }
-
-    await addTeacherPhotosToCanvas(
-  fabricCanvas,
-  existingLayout.eventData.teacherImages || [],
-  formatName,
-  displayWidth,
-  displayHeight
-);
     
     // Log raw layout data and scale for bannerGCO
     if (formatName === 'bannerGCO') {
@@ -138,6 +130,14 @@ export const useCanvasElementLoader = ({
       clearCanvasObjects(fabricCanvas);
       
       const existingLayout = await getLayout(templateId, formatName);
+      await addTeacherPhotosToCanvas(
+    fabricCanvas,
+    existingLayout.eventData.teacherImages || [],
+    formatName,
+    displayWidth,
+    displayHeight
+  );
+
       if (existingLayout?.layout_config?.elements && existingLayout.layout_config.elements.length > 0) {
         console.log('📂 Loading existing layout elements:', existingLayout.layout_config.elements.length, 'elements');
         
