@@ -71,7 +71,7 @@ export const renderCanvasWithTemplate = async (
             console.log('📝 Adding text element with layout position:', element.position);
             addElementToCanvas(fabricCanvas, element, eventData, width, height, format);
             }
-          });
+          );
 
           Promise.all(promises).then(() => {
             fabricCanvas.renderAll();
