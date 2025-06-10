@@ -4,7 +4,7 @@ import { Canvas as FabricCanvas, FabricText, Rect, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
 import { formatDate } from './textUtils';
 import { getDefaultPositions } from './positionUtils';
-import { addProfessorPhotoToCanvas } from './elementRenderer';
+import { addTeacherPhotosToCanvas } from './addTeacherPhotosToCanvas';
 import { getLessonThemeStyle } from './lessonThemeUtils';
 import { constrainTextToCanvas } from './textConstraints';
 
@@ -190,15 +190,14 @@ export const addDefaultElements = async (
     }
   }
 
-  // Add professor photo with default positioning
-  const teacherImageUrl = eventData.teacherImages?.[0];
-  if (teacherImageUrl) {
-    try {
-      await addProfessorPhotoToCanvas(canvas, teacherImageUrl, null, width, height);
-    } catch (error) {
-      console.error('Error adding professor photo with default positioning:', error);
-    }
+  // Add all professor photos with proper rules
+if (eventData.teacherImages && eventData.teacherImages.length > 0) {
+  try {
+    await addTeacherPhotosToCanvas(canvas, eventData.teacherImages, format, width, height);
+  } catch (error) {
+    console.error('Error adding professor photos with rules:', error);
   }
+}
 
   canvas.renderAll();
 };
