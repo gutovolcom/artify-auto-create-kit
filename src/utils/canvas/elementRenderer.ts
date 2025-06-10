@@ -5,7 +5,6 @@ import { getStyleForField, getUserColors } from '../formatStyleRules';
 import { getTextContent } from './textUtils';
 import { getLessonThemeStyle, lessonThemeStyleColors, CLASS_THEME_BOX_HEIGHTS } from './lessonThemeUtils';
 import { constrainTextToCanvas } from './textConstraints';
-import { addTeacherPhotosToCanvas } from './addTeacherPhotoToCanvas';
 
 
 export const addElementToCanvas = (

@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import * as fabric from 'fabric';
 import { toast } from 'sonner';
 import { addElementToCanvas } from '@/components/layout-editor/elementManager';
+import { addTeacherPhotosToCanvas } from './addTeacherPhotoToCanvas';
 
 type FabricCanvas = fabric.Canvas;
 
