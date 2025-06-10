@@ -17,6 +17,15 @@ export const addElementToCanvas = (
   format: string
 ) => {
   let type = element.type;
+  
+    await addTeacherPhotosToCanvas(
+  canvas,
+  eventData.teacherImages || [],
+  format,
+  canvasWidth,
+  canvasHeight
+);
+  
   const {field, position, size } = element;
   console.log(`📌 Processing element: field=${field}, type=${type}`);
 
@@ -29,15 +38,6 @@ export const addElementToCanvas = (
   if (type === "image" && (field === "teacherImages" || field === "professorPhotos")) {
     return;
   }
-
-  await addTeacherPhotosToCanvas(
-  canvas,
-  eventData.teacherImages || [],
-  format,
-  canvasWidth,
-  canvasHeight
-);
-
   
   const textContent = getTextContent(field, eventData);
   if (!textContent) return;
