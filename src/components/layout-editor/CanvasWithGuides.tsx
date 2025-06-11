@@ -47,9 +47,9 @@ export const CanvasWithGuides: React.FC<CanvasWithGuidesProps> = ({ canvas, scal
     canvas.add(hLine, vLine);
     guidesRef.current = [hLine, vLine];
     
-    // Send guides to back
-    canvas.sendToBack(hLine);
-    canvas.sendToBack(vLine);
+    // Send guides to back using correct Fabric.js v6 API
+    canvas.sendObjectToBack(hLine);
+    canvas.sendObjectToBack(vLine);
     canvas.renderAll();
   };
 
@@ -95,7 +95,7 @@ export const CanvasWithGuides: React.FC<CanvasWithGuidesProps> = ({ canvas, scal
 
     if (guides.length > 0) {
       canvas.add(...guides);
-      guides.forEach(guide => canvas.sendToBack(guide));
+      guides.forEach(guide => canvas.sendObjectToBack(guide));
       canvas.renderAll();
     }
   };
