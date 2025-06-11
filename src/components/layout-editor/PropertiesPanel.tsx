@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Trash, Info, Move, Maximize2 } from 'lucide-react';
+import { AlignmentControls } from './AlignmentControls';
 import { 
   getSelectedElementField, 
   elementNeedsOnlyPositionAndSize
@@ -40,23 +41,23 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 }) => {
   if (!selectedObject) {
     return (
-      <Card className="mt-4 shadow-lg">
+      <Card className="mt-4 shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <Info className="w-5 h-5" />
+            <Info className="w-5 h-5 text-primary" />
             Propriedades
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
               <Move className="w-8 h-8 text-gray-400" />
             </div>
             <p className="text-gray-500 text-sm font-medium mb-2">
               Nenhum elemento selecionado
             </p>
-            <p className="text-gray-400 text-xs">
-              Clique em um elemento no canvas para editar suas propriedades
+            <p className="text-gray-400 text-xs leading-relaxed">
+              Clique em um elemento no canvas para editar suas propriedades e usar ferramentas de alinhamento
             </p>
           </div>
         </CardContent>
@@ -72,42 +73,42 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   const height = Math.round(((selectedObject.height || 0) * (selectedObject.scaleY || 1)) / scale);
 
   return (
-    <Card className="mt-4 shadow-lg">
-      <CardHeader className="pb-4">
+    <Card className="mt-4 shadow-lg border-0 bg-gradient-to-br from-white to-gray-50">
+      <CardHeader className="pb-4 border-b border-gray-100">
         <CardTitle className="text-lg font-semibold flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Info className="w-5 h-5" />
+            <Info className="w-5 h-5 text-primary" />
             Propriedades
           </div>
           <Button 
             variant="destructive" 
             size="sm"
             onClick={onDeleteSelected}
-            className="flex items-center gap-1 hover:shadow-md transition-shadow"
+            className="flex items-center gap-1 hover:shadow-md transition-all hover:scale-105"
           >
             <Trash className="h-3 w-3" />
             Excluir
           </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 p-6">
         
         {/* Element Information */}
-        <div className="bg-gradient-to-r from-primary/5 to-transparent p-4 rounded-lg border border-primary/20">
+        <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 rounded-xl border border-primary/20">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-2 h-2 rounded-full bg-primary"></div>
+            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-primary to-primary/70"></div>
             <span className="font-semibold text-primary">Elemento Selecionado</span>
           </div>
           
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Tipo:</span>
-              <span className="font-medium">{elementInfo.type}</span>
+              <span className="font-medium bg-white px-2 py-1 rounded-md text-sm border">{elementInfo.type}</span>
             </div>
             
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Campo:</span>
-              <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+              <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded border">
                 {field || 'Não identificado'}
               </span>
             </div>
@@ -115,13 +116,25 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Fonte:</span>
               <span 
-                className="text-sm font-medium"
+                className="text-sm font-medium bg-white px-2 py-1 rounded-md border"
                 style={{ fontFamily: `'${elementInfo.font}', Arial, sans-serif` }}
               >
                 {elementInfo.font}
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Quick Alignment Controls */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-200">
+          <AlignmentControls
+            canvas={selectedObject.canvas}
+            selectedObject={selectedObject}
+            onUpdate={() => {
+              // Force re-render to update position display
+              selectedObject.canvas?.renderAll();
+            }}
+          />
         </div>
 
         {/* Position and Size */}
@@ -132,69 +145,58 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           </div>
           
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gray-50 p-3 rounded-lg border">
-              <div className="text-xs text-gray-600 mb-1">Posição X</div>
-              <div className="font-mono text-lg font-semibold text-gray-800">{x}px</div>
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
+              <div className="text-xs text-gray-600 mb-1 font-medium">Posição X</div>
+              <div className="font-mono text-lg font-bold text-gray-800">{x}<span className="text-xs text-gray-500">px</span></div>
             </div>
             
-            <div className="bg-gray-50 p-3 rounded-lg border">
-              <div className="text-xs text-gray-600 mb-1">Posição Y</div>
-              <div className="font-mono text-lg font-semibold text-gray-800">{y}px</div>
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
+              <div className="text-xs text-gray-600 mb-1 font-medium">Posição Y</div>
+              <div className="font-mono text-lg font-bold text-gray-800">{y}<span className="text-xs text-gray-500">px</span></div>
             </div>
           </div>
           
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gray-50 p-3 rounded-lg border">
-              <div className="text-xs text-gray-600 mb-1 flex items-center gap-1">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
+              <div className="text-xs text-gray-600 mb-1 flex items-center gap-1 font-medium">
                 <Maximize2 className="w-3 h-3" />
                 Largura
               </div>
-              <div className="font-mono text-lg font-semibold text-gray-800">{width}px</div>
+              <div className="font-mono text-lg font-bold text-gray-800">{width}<span className="text-xs text-gray-500">px</span></div>
             </div>
             
-            <div className="bg-gray-50 p-3 rounded-lg border">
-              <div className="text-xs text-gray-600 mb-1 flex items-center gap-1">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-3 rounded-lg border border-gray-200">
+              <div className="text-xs text-gray-600 mb-1 flex items-center gap-1 font-medium">
                 <Maximize2 className="w-3 h-3" />
                 Altura
               </div>
-              <div className="font-mono text-lg font-semibold text-gray-800">{height}px</div>
+              <div className="font-mono text-lg font-bold text-gray-800">{height}<span className="text-xs text-gray-500">px</span></div>
             </div>
           </div>
         </div>
 
         {/* Instructions */}
         <div className="space-y-3">
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-              <span className="text-sm font-medium text-blue-800">Como Editar</span>
+              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+              <span className="text-sm font-medium text-blue-800">Controles de Edição</span>
             </div>
             <p className="text-xs text-blue-700 leading-relaxed">
-              Use o mouse para arrastar e reposicionar o elemento. 
-              Arraste pelas bordas para redimensionar.
+              Use os botões de alinhamento acima para posicionamento rápido. 
+              Arraste elementos para reposicionar ou redimensione pelas bordas.
+              Linhas guias aparecem automaticamente para ajudar no alinhamento.
             </p>
           </div>
 
-          <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+          <div className="p-4 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
-              <span className="text-sm font-medium text-amber-800">Hierarquia das Fontes</span>
-            </div>
-            <ul className="text-xs text-amber-700 space-y-1 leading-relaxed">
-              <li>• <strong>Título:</strong> Margem-Black (mais pesada)</li>
-              <li>• <strong>Tema da Aula:</strong> Margem-Bold</li>
-              <li>• <strong>Professor/Data/Hora:</strong> Margem-Regular</li>
-            </ul>
-          </div>
-
-          <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-              <span className="text-sm font-medium text-green-800">Editor de Posicionamento</span>
+              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              <span className="text-sm font-medium text-green-800">Editor de Layout</span>
             </div>
             <p className="text-xs text-green-700 leading-relaxed">
               Este editor define apenas as posições dos elementos. 
-              Cores e estilos são aplicados automaticamente na geração final.
+              Cores e estilos finais são aplicados automaticamente durante a geração.
             </p>
           </div>
         </div>
