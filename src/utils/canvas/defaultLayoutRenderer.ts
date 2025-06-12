@@ -47,7 +47,7 @@ export const addDefaultElements = async (
   // Add date with format-specific styling and text constraints
   if (eventData.date) {
     const dateStyle = getStyleForField(format, 'date', userColors);
-    const dateText = formatDate(eventData.date, eventData.time);
+    const dateText = formatDateTime(eventData.date, eventData.time);
     const textConstraints = constrainTextToCanvas(
       dateText,
       defaultPositions.date.x,

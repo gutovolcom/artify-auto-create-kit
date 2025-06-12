@@ -10,7 +10,7 @@ export const getTextContent = (field: string, eventData: EventData): string => {
     case 'teacherName':
       return eventData.teacherName || '';
     case 'date':
-      return formatDate(eventData.date, eventData.time);
+      return formatDateTime(eventData.date, eventData.time);
     case 'time':
       return "";
     default:
