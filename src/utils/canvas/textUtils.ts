@@ -1,5 +1,6 @@
 
 import { EventData } from "@/pages/Index";
+import { formatDateTime } from "./textUtils";
 
 export const getTextContent = (field: string, eventData: EventData): string => {
   switch (field) {
@@ -12,29 +13,27 @@ export const getTextContent = (field: string, eventData: EventData): string => {
     case 'date':
       return formatDate(eventData.date, eventData.time);
     case 'time':
-      return eventData.time || '';
+      return "";
     default:
       return '';
   }
 };
 
-export const formatDate = (dateString: string, timeString?: string): string => {
+export function formatDateTime(dateString: string, timeString?: string): string {
   if (!dateString) return "";
-  
-  const date = new Date(dateString);
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  
-  let formattedDateTime = `${day}/${month}`;
-  
+
+  const [year, month, day] = dateString.split("-"); // espera “YYYY-MM-DD”
+  const dd = day.padStart(2, "0");
+  const mm = month.padStart(2, "0");
+
+  let result = `${dd}/${mm}`;
+
   if (timeString) {
-    const [hours, minutes] = timeString.split(':');
-    if (minutes === '00') {
-      formattedDateTime += `, às ${hours}h`;
-    } else {
-      formattedDateTime += `, às ${hours}h${minutes}`;
-    }
+    const [hour, minute] = timeString.split(":");
+    const h = hour.padStart(2, "0");
+    const min = minute.padStart(2, "0");
+    result += ` às ${h}h${min}`;
   }
-  
-  return formattedDateTime;
-};
+
+  return result;
+}

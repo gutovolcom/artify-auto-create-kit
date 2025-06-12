@@ -8,6 +8,7 @@ import { addTeacherPhotosToCanvas } from './addTeacherPhotosToCanvas';
 import { getLessonThemeStyle } from './lessonThemeUtils';
 import { constrainTextToCanvas } from './textConstraints';
 
+
 export const addDefaultElements = async (
   canvas: FabricCanvas,
   eventData: EventData,

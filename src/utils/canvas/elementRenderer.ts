@@ -178,6 +178,10 @@ export const addElementToCanvas = (
       canvasHeight
     );
 
+    const isDate = field === "date";
+    const fontFamily = isDate ? "TorokaWide" : formatStyle.fontFamily;
+    const content = getTextContent(field, eventData);
+    
     const text = new FabricText(textConstraints.text, {
       left: elementX,
       top: elementY,
