@@ -7,6 +7,7 @@ import { getLessonThemeStyle, lessonThemeStyleColors, CLASS_THEME_BOX_HEIGHTS } 
 import { constrainTextToCanvas } from './textConstraints';
 
 
+
 export const addElementToCanvas = (
   canvas: FabricCanvas,
   element: any,

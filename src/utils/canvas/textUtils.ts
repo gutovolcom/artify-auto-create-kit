@@ -1,6 +1,5 @@
 
 import { EventData } from "@/pages/Index";
-import { formatDateTime } from "./textUtils";
 
 export const getTextContent = (field: string, eventData: EventData): string => {
   switch (field) {
