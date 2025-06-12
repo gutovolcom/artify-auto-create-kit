@@ -160,13 +160,13 @@ const Index = () => {
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-center mb-8 text-blue-800">
-          Gerador Automático de Artes para Redes Sociais
+          Project GA
         </h1>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="input">1. Dados do Evento</TabsTrigger>
-            <TabsTrigger value="export">2. Exportação</TabsTrigger>
+            <TabsTrigger value="input">1. Informações do evento</TabsTrigger>
+            <TabsTrigger value="export">2. Artes criadas</TabsTrigger>
           </TabsList>
 
           <TabsContent value="input" className="space-y-8">
@@ -214,5 +214,3 @@ const Index = () => {
     </div>
   );
 };
-
-export default Index;
