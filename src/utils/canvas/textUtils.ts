@@ -1,23 +1,6 @@
 
 import { EventData } from "@/pages/Index";
 
-export const getTextContent = (field: string, eventData: EventData): string => {
-  switch (field) {
-    case 'title':
-      return eventData.title;
-    case 'classTheme':
-      return eventData.classTheme || '';
-    case 'teacherName':
-      return eventData.teacherName || '';
-    case 'date':
-      return formatDateTime(eventData.date, eventData.time);
-    case 'time':
-      return "";
-    default:
-      return '';
-  }
-};
-
 export function formatDateTime(dateString: string, timeString?: string): string {
   if (!dateString) return "";
 
@@ -36,3 +19,20 @@ export function formatDateTime(dateString: string, timeString?: string): string 
 
   return result;
 }
+
+export const getTextContent = (field: string, eventData: EventData): string => {
+  switch (field) {
+    case 'title':
+      return eventData.title;
+    case 'classTheme':
+      return eventData.classTheme || '';
+    case 'teacherName':
+      return eventData.teacherName || '';
+    case 'date':
+      return formatDateTime(eventData.date, eventData.time);
+    case 'time':
+      return "";
+    default:
+      return '';
+  }
+};
