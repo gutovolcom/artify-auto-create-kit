@@ -2,7 +2,7 @@
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
-import { formatDate } from './textUtils';
+import { formatDateTime } from './textUtils';
 import { getDefaultPositions } from './positionUtils';
 import { addTeacherPhotosToCanvas } from './addTeacherPhotosToCanvas';
 import { getLessonThemeStyle } from './lessonThemeUtils';
