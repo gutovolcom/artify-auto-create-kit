@@ -1,6 +1,8 @@
 
 import { FabricText } from 'fabric';
+import { constrainSmartTextToCanvas } from './enhancedTextConstraints';
 
+// Legacy function for backward compatibility
 export const calculateOptimalTextSize = (
   text: string,
   maxWidth: number,
@@ -72,6 +74,7 @@ export const calculateOptimalTextSize = (
   return { fontSize, text: wrappedText };
 };
 
+// Enhanced function that uses smart text sizing
 export const constrainTextToCanvas = (
   text: string,
   x: number,
@@ -80,7 +83,9 @@ export const constrainTextToCanvas = (
   fontFamily: string,
   canvasWidth: number,
   canvasHeight: number,
-  padding: number = 20
+  padding: number = 20,
+  field: string = 'default',
+  format: string = 'default'
 ): { fontSize: number; text: string } => {
   const maxWidth = canvasWidth - x - padding;
   const maxHeight = canvasHeight - y - padding;
@@ -89,6 +94,27 @@ export const constrainTextToCanvas = (
     console.warn('Text position is outside canvas bounds, using fallback');
     return { fontSize: Math.max(12, initialFontSize * 0.5), text };
   }
+
+  // Use smart text sizing if field and format are provided
+  if (field !== 'default' && format !== 'default') {
+    const smartResult = constrainSmartTextToCanvas(
+      text,
+      x,
+      y,
+      initialFontSize,
+      fontFamily,
+      canvasWidth,
+      canvasHeight,
+      field,
+      format
+    );
+    
+    return {
+      fontSize: smartResult.fontSize,
+      text: smartResult.text
+    };
+  }
   
+  // Fallback to legacy method
   return calculateOptimalTextSize(text, maxWidth, maxHeight, initialFontSize, fontFamily);
 };
