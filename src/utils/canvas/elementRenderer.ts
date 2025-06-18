@@ -4,7 +4,9 @@ import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fa
 import { getStyleForField, getUserColors } from '../formatStyleRules';
 import { getTextContent } from './textUtils';
 import { getLessonThemeStyle, lessonThemeStyleColors, CLASS_THEME_BOX_HEIGHTS } from './lessonThemeUtils';
-import { constrainSmartTextToCanvas } from './enhancedTextConstraints';
+import { constrainTextToCanvas } from './textConstraints';
+
+
 
 export const addElementToCanvas = (
   canvas: FabricCanvas,
@@ -36,19 +38,16 @@ export const addElementToCanvas = (
   const elementX = position?.x || 0;
   const elementY = position?.y || 0;
 
-  // Get occupied areas for collision detection
-  const occupiedAreas = getOccupiedAreas(canvas, field);
-
   if (type === "text_box" && field === "classTheme") {
-    console.log("✅ Criando box de fundo para classTheme com smart text");
-    
+    console.log("✅ Criando box de fundo para classTheme");
     // Handle lesson theme style configuration using shared utility
     const selectedStyleName = eventData.lessonThemeBoxStyle;
     const themeStyle = getLessonThemeStyle(selectedStyleName, eventData, format);
     
     if (themeStyle) {
-      // Use smart text sizing for the theme
-      const smartTextResult = constrainSmartTextToCanvas(
+      // Calculate optimal text size to prevent truncation
+      const maxTextWidth = (canvasWidth - elementX) * 0.8; // Leave some margin
+      const textConstraints = constrainTextToCanvas(
         textContent,
         elementX,
         elementY,
@@ -56,13 +55,11 @@ export const addElementToCanvas = (
         formatStyle.fontFamily,
         canvasWidth,
         canvasHeight,
-        field,
-        format,
-        occupiedAreas
+        40 // Extra padding for the box
       );
 
-      const text = new FabricText(smartTextResult.text, {
-        fontSize: smartTextResult.fontSize,
+        const text = new FabricText(textConstraints.text, {
+        fontSize: textConstraints.fontSize,
         fontFamily: formatStyle.fontFamily,
         fill: themeStyle.fontColor,
         textAlign: 'center',
@@ -70,12 +67,12 @@ export const addElementToCanvas = (
         originY: 'top'
       });
 
+
       const fixedBoxHeight = themeStyle.fixedBoxHeight;
       const horizontalPadding = 20;
       const borderRadius = 10;
 
-      // Use smart text width for box sizing
-      const backgroundWidth = Math.max(smartTextResult.actualWidth + (horizontalPadding * 2), 100);
+      const backgroundWidth = Math.min(text.width! + (horizontalPadding * 2), maxTextWidth);
       const backgroundHeight = fixedBoxHeight;
 
       const background = new Rect({
@@ -90,33 +87,49 @@ export const addElementToCanvas = (
         originY: 'top'
       });
 
-      // Center text in the box
-      text.set({
+
+        text.set({
         left: horizontalPadding,
-        top: (fixedBoxHeight - smartTextResult.actualHeight) / 2
+        top: (fixedBoxHeight - text.height!) / 2
       });
 
-      console.log('🎨 Smart classTheme Box Details:', {
+
+      console.log('🎨 classTheme Box Details:', {
         format: format,
         selectedStyle: selectedStyleName,
-        smartFontSize: smartTextResult.fontSize,
+        fixedBoxHeight: fixedBoxHeight,
+        textWidth: text.width,
+        textHeight: text.height,
+        rectWidth: background.width,
+        rectHeight: background.height,
+        rectFill: background.fill,
+        textLeftInGroup: text.left,
+        textTopInGroup: text.top,
+        constrainedFontSize: textConstraints.fontSize,
         originalText: textContent,
-        finalText: smartTextResult.text,
-        boxWidth: backgroundWidth,
-        boxHeight: backgroundHeight
+        finalText: textConstraints.text
       });
 
       const group = new Group([background, text], {
-        left: smartTextResult.position.x,
-        top: smartTextResult.position.y,
+        left: elementX,
+        top: elementY,
         selectable: false,
         evented: false
+      });
+      console.log("🧱 Adicionando group com box + texto:", {
+  text: text.text,
+  position: { x: elementX, y: elementY },
+  rectWidth: background.width,
+  rectHeight: background.height
       });
       
       canvas.add(group);
     } else {
-      // Fallback with smart text sizing
-      const smartTextResult = constrainSmartTextToCanvas(
+      // Fallback to original logic if styleConfig is not found
+      console.log("⚠️ classTheme styleConfig not found or invalid. Using fallback. eventData.lessonThemeBoxStyle was:", eventData?.lessonThemeBoxStyle, "eventData.boxColor:", eventData?.boxColor);
+      
+      // Apply text constraints for fallback as well
+      const textConstraints = constrainTextToCanvas(
         textContent,
         elementX,
         elementY,
@@ -124,13 +137,11 @@ export const addElementToCanvas = (
         formatStyle.fontFamily,
         canvasWidth,
         canvasHeight,
-        field,
-        format,
-        occupiedAreas
+        40
       );
 
-      const text = new FabricText(smartTextResult.text, {
-        fontSize: smartTextResult.fontSize,
+      const text = new FabricText(textConstraints.text, {
+        fontSize: textConstraints.fontSize,
         fontFamily: formatStyle.fontFamily,
         fill: formatStyle.color,
         textAlign: 'center'
@@ -141,77 +152,57 @@ export const addElementToCanvas = (
       const borderRadius = 10;
 
       const background = new Rect({
-        width: smartTextResult.actualWidth + (padding * 2),
-        height: smartTextResult.actualHeight + (padding * 2),
+        width: text.width! + (padding * 2),
+        height: text.height! + (padding * 2),
         fill: backgroundColor,
         rx: borderRadius,
         ry: borderRadius
       });
 
       const group = new Group([background, text], {
-        left: smartTextResult.position.x,
-        top: smartTextResult.position.y,
+        left: elementX,
+        top: elementY,
         selectable: false,
         evented: false
       });
       canvas.add(group);
     }
   } else {
-    // Apply smart text sizing to all other text elements
-    const smartTextResult = constrainSmartTextToCanvas(
+    // Apply text constraints to prevent truncation for all other text elements
+    const textConstraints = constrainTextToCanvas(
       textContent,
       elementX,
       elementY,
       formatStyle.fontSize,
       formatStyle.fontFamily,
       canvasWidth,
-      canvasHeight,
-      field,
-      format,
-      occupiedAreas
+      canvasHeight
     );
 
-    const text = new FabricText(smartTextResult.text, {
-      left: smartTextResult.position.x,
-      top: smartTextResult.position.y,
-      fontSize: smartTextResult.fontSize,
+    const isDate = field === "date";
+    const fontFamily = isDate ? "TorokaWide" : formatStyle.fontFamily;
+    const content = getTextContent(field, eventData);
+    
+    const text = new FabricText(textConstraints.text, {
+      left: elementX,
+      top: elementY,
+      fontSize: textConstraints.fontSize,
       fontFamily: formatStyle.fontFamily,
       fill: formatStyle.color,
       selectable: false,
       evented: false
     });
 
-    console.log('📝 Smart text element created:', {
+    console.log('📝 Text element constrained:', {
       field,
       originalFontSize: formatStyle.fontSize,
-      smartFontSize: smartTextResult.fontSize,
+      constrainedFontSize: textConstraints.fontSize,
       originalText: textContent,
-      finalText: smartTextResult.text,
-      originalPosition: { x: elementX, y: elementY },
-      finalPosition: smartTextResult.position,
-      dimensions: { width: smartTextResult.actualWidth, height: smartTextResult.actualHeight }
+      finalText: textConstraints.text,
+      position: { x: elementX, y: elementY },
+      canvasSize: { width: canvasWidth, height: canvasHeight }
     });
 
     canvas.add(text);
   }
-};
-
-// Helper function to get occupied areas for collision detection
-const getOccupiedAreas = (canvas: FabricCanvas, currentField: string) => {
-  const occupiedAreas: any[] = [];
-  
-  canvas.getObjects().forEach(obj => {
-    // Skip the current field to avoid self-collision
-    if ((obj as any).fieldMapping === currentField) return;
-    
-    // Add existing objects as occupied areas
-    occupiedAreas.push({
-      x: obj.left || 0,
-      y: obj.top || 0,
-      width: obj.width || 0,
-      height: obj.height || 0
-    });
-  });
-  
-  return occupiedAreas;
 };
