@@ -34,7 +34,7 @@ export const MultiSelectTeacher: React.FC<MultiSelectTeacherProps> = ({
     
     onSelectionChange(
       newSelectedIds,
-      newTeachers.map(t => t.photo_url).filter(Boolean),
+      newTeachers.map(t => t.image_url).filter(Boolean),
       newTeachers.map(t => t.name)
     );
     setOpen(false);
@@ -46,7 +46,7 @@ export const MultiSelectTeacher: React.FC<MultiSelectTeacherProps> = ({
     
     onSelectionChange(
       newSelectedIds,
-      newTeachers.map(t => t.photo_url).filter(Boolean),
+      newTeachers.map(t => t.image_url).filter(Boolean),
       newTeachers.map(t => t.name)
     );
   };
@@ -69,9 +69,9 @@ export const MultiSelectTeacher: React.FC<MultiSelectTeacherProps> = ({
             variant="secondary"
             className="flex items-center gap-2 px-3 py-1"
           >
-            {teacher.photo_url && (
+            {teacher.image_url && (
               <img
-                src={teacher.photo_url}
+                src={teacher.image_url}
                 alt={teacher.name}
                 className="w-6 h-6 rounded-full object-cover"
               />
@@ -114,9 +114,9 @@ export const MultiSelectTeacher: React.FC<MultiSelectTeacherProps> = ({
                       onSelect={() => handleSelectTeacher(teacher.id)}
                       className="flex items-center gap-2"
                     >
-                      {teacher.photo_url && (
+                      {teacher.image_url && (
                         <img
-                          src={teacher.photo_url}
+                          src={teacher.image_url}
                           alt={teacher.name}
                           className="w-8 h-8 rounded-full object-cover"
                         />
