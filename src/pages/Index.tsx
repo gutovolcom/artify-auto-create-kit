@@ -1,8 +1,7 @@
 
 import { useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Navbar } from "@/components/Navbar";
+import { MainLayout } from "@/components/MainLayout";
 import { EventForm } from "@/components/EventForm";
 import { ImageSelector } from "@/components/ImageSelector";
 import { GeneratedGallery } from "@/components/GeneratedGallery";
@@ -12,6 +11,7 @@ import { useImageGenerator } from "@/hooks/useImageGenerator";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 export interface EventData {
   title: string;
@@ -111,7 +111,13 @@ const Index = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Carregando...</div>
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-lg"
+        >
+          Carregando...
+        </motion.div>
       </div>
     );
   }
@@ -129,60 +135,50 @@ const Index = () => {
     return <AdminPanel onLogout={handleLogout} onSwitchToUser={handleSwitchToUser} />;
   }
 
-  // Show user interface for regular users
-  return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
-      
-      <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-2 flex justify-between items-center">
-          <div className="text-sm text-gray-600">
-            Bem-vindo, {user.email}
-          </div>
-          <div className="flex gap-4">
-            {isAdmin && (
-              <button
-                onClick={() => setUserType(userType === 'admin' ? 'user' : 'admin')}
-                className="text-sm text-blue-600 hover:text-blue-800"
-              >
-                {userType === 'admin' ? 'Modo Usuário' : 'Painel Admin'}
-              </button>
-            )}
-            <button
-              onClick={handleLogout}
-              className="text-sm text-gray-600 hover:text-gray-800"
+  const renderContent = () => {
+    switch (activeTab) {
+      case "input":
+        return (
+          <div className="space-y-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
             >
-              Sair
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-center mb-8 text-blue-800">
-          Project GA
-        </h1>
+              <h1 className="text-3xl font-bold mb-2">Create New Artwork</h1>
+              <p className="text-muted-foreground mb-8">
+                Fill in the event details and select a template to generate your artwork
+              </p>
+            </motion.div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="input">1. Informações do evento</TabsTrigger>
-            <TabsTrigger value="export">2. Artes criadas</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="input" className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2 }}
+                className="space-y-6"
+              >
                 <EventForm eventData={eventData} updateEventData={updateEventData} />
-              </div>
-              <div>
+              </motion.div>
+              
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+              >
                 <ImageSelector
                   selectedImageId={eventData.kvImageId}
                   onSelect={(id) => updateEventData({ kvImageId: id })}
                 />
-              </div>
+              </motion.div>
             </div>
 
-            <div className="flex justify-center pt-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex justify-center pt-8"
+            >
               <GenerateButton
                 onGenerate={handleGenerate}
                 isGenerating={isGenerating}
@@ -196,22 +192,58 @@ const Index = () => {
                   !eventData.professorPhotos && "Foto do professor"
                 ].filter(Boolean) as string[]}
               />
-            </div>
-          </TabsContent>
+            </motion.div>
+          </div>
+        );
 
-          <TabsContent value="export" className="space-y-8">
-            <GeneratedGallery images={generatedImages} eventData={eventData} />
-            <div className="flex justify-center">
+      case "export":
+        return (
+          <div className="space-y-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <h1 className="text-3xl font-bold mb-2">Generated Artwork</h1>
+              <p className="text-muted-foreground mb-8">
+                Your artwork has been generated. Preview and download your images.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <GeneratedGallery images={generatedImages} eventData={eventData} />
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex justify-center"
+            >
               <ExportButton onClick={handleExport} disabled={generatedImages.length === 0} />
-            </div>
-          </TabsContent>
-        </Tabs>
-      </main>
-      
-      <footer className="bg-blue-800 text-white py-4 text-center">
-        <p>© 2025 Gerador Automático de Artes</p>
-      </footer>
-    </div>
+            </motion.div>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-semibold mb-4">Section Coming Soon</h2>
+            <p className="text-muted-foreground">This section is under development.</p>
+          </div>
+        );
+    }
+  };
+
+  // Show user interface with new layout
+  return (
+    <MainLayout activeTab={activeTab} onTabChange={setActiveTab}>
+      {renderContent()}
+    </MainLayout>
   );
 };
 
