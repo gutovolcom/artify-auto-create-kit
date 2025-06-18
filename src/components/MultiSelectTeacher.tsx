@@ -123,10 +123,6 @@ export const MultiSelectTeacher: React.FC<MultiSelectTeacherProps> = ({
                       )}
                       <div className="flex flex-col">
                         <span className="font-medium">{teacher.name}</span>
-                        {teacher.bio && (
-                          <span className="text-xs text-gray-500 truncate">
-                            {teacher.bio.substring(0, 50)}...
-                          </span>
                         )}
                       </div>
                     </CommandItem>
