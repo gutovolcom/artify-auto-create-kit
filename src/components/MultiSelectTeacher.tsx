@@ -122,8 +122,7 @@ export const MultiSelectTeacher: React.FC<MultiSelectTeacherProps> = ({
                         />
                       )}
                       <div className="flex flex-col">
-                        <span className="font-medium">{teacher.name}</span>
-                        )}
+                        <span className="font-medium">{teacher.name}</span>                      
                       </div>
                     </CommandItem>
                   ))}
