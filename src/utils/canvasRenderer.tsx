@@ -46,6 +46,12 @@ export const renderCanvasWithTemplate = async (
               canvasDimensions: { width, height }
             });
             
+            // Skip teacher image elements - they're handled by placement rules
+            if (element.type === 'image' && (element.field === 'teacherImages' || element.field === 'professorPhotos')) {
+              console.log('🖼️ Skipping teacher image element - handled by placement rules');
+              return;
+            }
+            
             // Validate element is within canvas bounds
             if (element.position && element.size) {
               const elementRight = element.position.x + element.size.width;
@@ -60,19 +66,13 @@ export const renderCanvasWithTemplate = async (
               }
             }
             
-            // Skip teacher image elements - they're handled separately by placement rules
-            if (element.type === 'image' && (element.field === 'teacherImages' || element.field === 'professorPhotos')) {
-              console.log('🖼️ Skipping teacher image element - handled by placement rules');
-              return;
-            }
-            
             console.log('📝 Adding text element with layout position:', element.position);
             addElementToCanvas(fabricCanvas, element, eventData, width, height, format);
           });
 
           // Always add teacher photos using placement rules after processing layout elements
-          console.log('🖼️ Adding teacher photos using placement rules for format:', format);
-          await addTeacherPhotosToCanvas(fabricCanvas, eventData.teacherImages || [], format, width, height);
+          console.log('🖼️ Adding teacher photos using smart placement rules for format:', format);
+          await addTeacherPhotosToCanvas(fabricCanvas, eventData.teacherImages || [], format, width, height, eventData);
           
           fabricCanvas.renderAll();
           exportCanvasToDataURL(fabricCanvas, tempCanvas).then(resolve).catch(reject);

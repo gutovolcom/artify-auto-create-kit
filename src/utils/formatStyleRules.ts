@@ -125,10 +125,22 @@ const getDefaultStyle = (field: string, userColors: UserColors): { fontSize: num
 };
 
 // Helper function to extract user colors from EventData
-export const getUserColors = (eventData: EventData): UserColors => {
+export const getUserColors = (eventData: any) => {
+  // Get main colors
+  const boxColor = eventData.boxColor || '#dd303e';
+  const boxFontColor = eventData.boxFontColor || '#FFFFFF';
+  const textColor = eventData.textColor || '#FFFFFF';
+  
+  // Define teacher-specific colors based on main theme
+  const teacherBoxColor = eventData.teacherBoxColor || boxColor;
+  const teacherFontColor = eventData.teacherFontColor || boxFontColor;
+  
   return {
-    textColor: eventData.textColor || '#FFFFFF',
-    boxFontColor: eventData.boxFontColor || '#FFFFFF'
+    boxColor,
+    boxFontColor,
+    textColor,
+    teacherBoxColor,
+    teacherFontColor
   };
 };
 

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,6 +19,7 @@ export interface EventData {
   time: string;
   kvImageId: string | null;
   teacherImages: string[];
+  teacherNames?: string[];
   platforms: string[];
   classTheme?: string;
   boxColor?: string;
@@ -27,7 +27,7 @@ export interface EventData {
   fontColor?: string;
   textColor?: string;
   backgroundColorType?: string;
-  selectedTeacherId?: string;
+  selectedTeacherIds?: string[];
   teacherName?: string;
   professorPhotos?: string;
   lessonThemeBoxStyle?: string;
@@ -44,6 +44,7 @@ const Index = () => {
     time: "",
     kvImageId: null,
     teacherImages: [],
+    teacherNames: [],
     platforms: [],
     classTheme: "",
     boxColor: "#dd303e",
@@ -52,7 +53,7 @@ const Index = () => {
     textColor: "#FFFFFF",
     backgroundColorType: "red",
     lessonThemeBoxStyle: "Transparent",
-    selectedTeacherId: "",
+    selectedTeacherIds: [],
     teacherName: "",
     professorPhotos: "",
   });
@@ -104,8 +105,9 @@ const Index = () => {
     setUserType('user');
   };
 
-  // Check if form is ready for generation
-  const isFormReady = eventData.title && eventData.date && eventData.kvImageId && eventData.professorPhotos;
+  // Check if form is ready for generation - updated to use selectedTeacherIds
+  const isFormReady = eventData.title && eventData.date && eventData.kvImageId && 
+    (eventData.selectedTeacherIds?.length || eventData.professorPhotos);
 
   // Show loading while checking auth
   if (loading) {
@@ -193,7 +195,7 @@ const Index = () => {
                   !eventData.title && "Título do evento",
                   !eventData.date && "Data",
                   !eventData.kvImageId && "Template de imagem",
-                  !eventData.professorPhotos && "Foto do professor"
+                  !(eventData.selectedTeacherIds?.length || eventData.professorPhotos) && "Professor selecionado"
                 ].filter(Boolean) as string[]}
               />
             </div>
