@@ -28,6 +28,21 @@ const getTextAlignmentForFormat = (format: string): 'left' | 'center' => {
   return 'center';
 };
 
+// Helper function to get format-specific max width for text breaking
+const getMaxTextWidthForFormat = (format: string, canvasWidth: number, elementX: number): number => {
+  // More restrictive width limits based on format to match the red line boundaries
+  const formatLimits = {
+    'youtube': Math.min(canvasWidth - elementX - 60, 320), // More restrictive for YouTube
+    'feed': Math.min(canvasWidth - elementX - 60, 300),    // More restrictive for Feed  
+    'stories': Math.min(canvasWidth - elementX - 60, 280), // More restrictive for Stories
+    'ledStudio': Math.min(canvasWidth - elementX - 60, 350),
+    'bannerGCO': Math.min(canvasWidth - elementX - 40, 400),
+    'LP': Math.min(canvasWidth - elementX - 40, 400)
+  };
+  
+  return formatLimits[format as keyof typeof formatLimits] || Math.min(canvasWidth - elementX - 40, 400);
+};
+
 export const addElementToCanvas = (
   canvas: FabricCanvas,
   element: any,
@@ -71,9 +86,9 @@ export const addElementToCanvas = (
     const textAlignment = getTextAlignmentForFormat(format);
     
     if (themeStyle) {
-      // Calculate available width for text (box width minus padding)
+      // Calculate available width for text using format-specific limits
       const horizontalPadding = 20;
-      const maxTextWidth = Math.min(canvasWidth - elementX - horizontalPadding * 2, 400); // Max reasonable width
+      const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX);
       
       // Break text intelligently while keeping original font settings
       const textBreakResult = breakTextToFitWidth(
@@ -156,7 +171,8 @@ export const addElementToCanvas = (
         textWidth: text.width,
         textHeight: text.height,
         finalText: finalText,
-        textAlignment: textAlignment
+        textAlignment: textAlignment,
+        maxTextWidth: maxTextWidth
       });
 
       const group = new Group([background, text], {
@@ -169,7 +185,7 @@ export const addElementToCanvas = (
       canvas.add(group);
     } else {
       // Fallback logic with text breaking and format-specific alignment
-      const maxTextWidth = Math.min(canvasWidth - elementX - 40, 400);
+      const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX);
       const textBreakResult = breakTextToFitWidth(
         textContent,
         maxTextWidth,

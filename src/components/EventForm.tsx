@@ -138,10 +138,10 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
             value={eventData.classTheme || ""}
             onChange={(e) => updateEventData({ classTheme: e.target.value })}
             rows={2}
-            maxLength={22}
+            maxLength={44}
           />
           <div className="text-xs text-gray-500 text-right">
-            {(eventData.classTheme || "").length}/22
+            {(eventData.classTheme || "").length}/44
           </div>
         </div>
 
