@@ -13,6 +13,21 @@ export const resetPositionAdjustments = () => {
   globalPositionAdjustments.clear();
 };
 
+// Helper function to get text alignment based on format
+const getTextAlignmentForFormat = (format: string): 'left' | 'center' => {
+  const leftAlignedFormats = ['youtube', 'feed', 'stories', 'ledStudio'];
+  const centerAlignedFormats = ['bannerGCO', 'LP'];
+  
+  if (leftAlignedFormats.includes(format)) {
+    return 'left';
+  } else if (centerAlignedFormats.includes(format)) {
+    return 'center';
+  }
+  
+  // Default fallback
+  return 'center';
+};
+
 export const addElementToCanvas = (
   canvas: FabricCanvas,
   element: any,
@@ -52,6 +67,9 @@ export const addElementToCanvas = (
     const selectedStyleName = eventData.lessonThemeBoxStyle;
     const themeStyle = getLessonThemeStyle(selectedStyleName, eventData, format);
     
+    // Get format-specific text alignment
+    const textAlignment = getTextAlignmentForFormat(format);
+    
     if (themeStyle) {
       // Calculate available width for text (box width minus padding)
       const horizontalPadding = 20;
@@ -65,13 +83,13 @@ export const addElementToCanvas = (
         formatStyle.fontFamily
       );
 
-      // Create the text with broken lines
+      // Create the text with broken lines and format-specific alignment
       const finalText = textBreakResult.lines.join('\n');
       const text = new FabricText(finalText, {
         fontSize: formatStyle.fontSize, // Keep original font size
         fontFamily: formatStyle.fontFamily, // Keep original font family
         fill: themeStyle.fontColor,
-        textAlign: 'center',
+        textAlign: textAlignment, // Apply format-specific alignment
         originX: 'left',
         originY: 'top'
       });
@@ -96,11 +114,19 @@ export const addElementToCanvas = (
         originY: 'top'
       });
 
-      // Center text within the box
-      text.set({
-        left: horizontalPadding,
-        top: (backgroundHeight - text.height!) / 2
-      });
+      // Position text within the box based on alignment
+      if (textAlignment === 'center') {
+        text.set({
+          left: (backgroundWidth - text.width!) / 2,
+          top: (backgroundHeight - text.height!) / 2
+        });
+      } else {
+        // Left alignment
+        text.set({
+          left: horizontalPadding,
+          top: (backgroundHeight - text.height!) / 2
+        });
+      }
 
       // Calculate position adjustments if text broke into multiple lines
       if (textBreakResult.needsLineBreak && allElements) {
@@ -129,7 +155,8 @@ export const addElementToCanvas = (
         finalHeight: backgroundHeight,
         textWidth: text.width,
         textHeight: text.height,
-        finalText: finalText
+        finalText: finalText,
+        textAlignment: textAlignment
       });
 
       const group = new Group([background, text], {
@@ -141,7 +168,7 @@ export const addElementToCanvas = (
       
       canvas.add(group);
     } else {
-      // Fallback logic with text breaking
+      // Fallback logic with text breaking and format-specific alignment
       const maxTextWidth = Math.min(canvasWidth - elementX - 40, 400);
       const textBreakResult = breakTextToFitWidth(
         textContent,
@@ -155,7 +182,7 @@ export const addElementToCanvas = (
         fontSize: formatStyle.fontSize,
         fontFamily: formatStyle.fontFamily,
         fill: formatStyle.color,
-        textAlign: 'center'
+        textAlign: textAlignment // Apply format-specific alignment
       });
 
       const padding = 20;
