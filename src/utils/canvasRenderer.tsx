@@ -2,7 +2,7 @@
 import { EventData } from "@/pages/Index";
 import { createFabricCanvas, loadBackgroundImageToCanvas, setupCanvasContainer, cleanupCanvas } from './canvas/fabricCanvasSetup';
 import { exportCanvasToDataURL } from './canvas/canvasExporter';
-import { addElementToCanvas } from './canvas/elementRenderer';
+import { addElementToCanvas, resetPositionAdjustments } from './canvas/elementRenderer';
 import { addTeacherPhotosToCanvas } from './canvas/addTeacherPhotosToCanvas';
 import { addDefaultElements } from './canvas/defaultLayoutRenderer';
 
@@ -30,20 +30,22 @@ export const renderCanvasWithTemplate = async (
         eventData
       });
 
+      // Reset position adjustments for this rendering session
+      resetPositionAdjustments();
+
       const tempCanvas = setupCanvasContainer(width, height);
       const fabricCanvas = createFabricCanvas(tempCanvas, width, height);
 
       loadBackgroundImageToCanvas(fabricCanvas, backgroundImageUrl, width, height).then(async () => {
         if (layoutConfig?.elements && layoutConfig.elements.length > 0) {
-          console.log('🎯 Using layout configuration - applying DIRECT coordinates (no additional scaling)');
+          console.log('🎯 Using layout configuration with smart text breaking');
           
           layoutConfig.elements.forEach((element: any) => {
-            console.log('📍 Processing element with coordinates:', {
+            console.log('📍 Processing element with smart formatting:', {
               field: element.field,
               type: element.type,
               position: element.position,
-              size: element.size,
-              canvasDimensions: { width, height }
+              size: element.size
             });
             
             // Skip teacher image elements - they're handled by placement rules
@@ -52,22 +54,8 @@ export const renderCanvasWithTemplate = async (
               return;
             }
             
-            // Validate element is within canvas bounds
-            if (element.position && element.size) {
-              const elementRight = element.position.x + element.size.width;
-              const elementBottom = element.position.y + element.size.height;
-              
-              if (elementRight > width || elementBottom > height || element.position.x < 0 || element.position.y < 0) {
-                console.warn(`⚠️ Element ${element.field} may be out of bounds:`, {
-                  elementBounds: { right: elementRight, bottom: elementBottom },
-                  canvasBounds: { width, height },
-                  position: element.position
-                });
-              }
-            }
-            
-            console.log('📝 Adding text element with layout position:', element.position);
-            addElementToCanvas(fabricCanvas, element, eventData, width, height, format);
+            console.log('📝 Adding element with smart text handling');
+            addElementToCanvas(fabricCanvas, element, eventData, width, height, format, layoutConfig.elements);
           });
 
           // Always add teacher photos using placement rules after processing layout elements

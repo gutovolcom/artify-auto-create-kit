@@ -1,12 +1,17 @@
-
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
 import { getTextContent } from './textUtils';
 import { getLessonThemeStyle, lessonThemeStyleColors, CLASS_THEME_BOX_HEIGHTS } from './lessonThemeUtils';
-import { constrainTextToCanvas } from './textConstraints';
+import { breakTextToFitWidth } from './smartTextBreaker';
+import { calculatePositionAdjustments } from './positionAdjuster';
 
+// Store position adjustments globally for this rendering session
+let globalPositionAdjustments: Map<string, number> = new Map();
 
+export const resetPositionAdjustments = () => {
+  globalPositionAdjustments.clear();
+};
 
 export const addElementToCanvas = (
   canvas: FabricCanvas,
@@ -14,7 +19,8 @@ export const addElementToCanvas = (
   eventData: EventData,
   canvasWidth: number,
   canvasHeight: number,
-  format: string
+  format: string,
+  allElements?: any[]
 ) => {
   let type = element.type;
   const {field, position, size } = element;
@@ -35,45 +41,48 @@ export const addElementToCanvas = (
 
   const userColors = getUserColors(eventData);
   const formatStyle = getStyleForField(format, field, userColors);
-  const elementX = position?.x || 0;
-  const elementY = position?.y || 0;
+  
+  // Apply any global position adjustments
+  let elementX = position?.x || 0;
+  let elementY = (position?.y || 0) + (globalPositionAdjustments.get(field) || 0);
 
   if (type === "text_box" && field === "classTheme") {
-    console.log("✅ Criando box de fundo para classTheme");
-    // Handle lesson theme style configuration using shared utility
+    console.log("✅ Criando box de fundo para classTheme com quebra de linha inteligente");
+    
     const selectedStyleName = eventData.lessonThemeBoxStyle;
     const themeStyle = getLessonThemeStyle(selectedStyleName, eventData, format);
     
     if (themeStyle) {
-      // Calculate optimal text size to prevent truncation
-      const maxTextWidth = (canvasWidth - elementX) * 0.8; // Leave some margin
-      const textConstraints = constrainTextToCanvas(
+      // Calculate available width for text (box width minus padding)
+      const horizontalPadding = 20;
+      const maxTextWidth = Math.min(canvasWidth - elementX - horizontalPadding * 2, 400); // Max reasonable width
+      
+      // Break text intelligently while keeping original font settings
+      const textBreakResult = breakTextToFitWidth(
         textContent,
-        elementX,
-        elementY,
+        maxTextWidth,
         formatStyle.fontSize,
-        formatStyle.fontFamily,
-        canvasWidth,
-        canvasHeight,
-        40 // Extra padding for the box
+        formatStyle.fontFamily
       );
 
-        const text = new FabricText(textConstraints.text, {
-        fontSize: textConstraints.fontSize,
-        fontFamily: formatStyle.fontFamily,
+      // Create the text with broken lines
+      const finalText = textBreakResult.lines.join('\n');
+      const text = new FabricText(finalText, {
+        fontSize: formatStyle.fontSize, // Keep original font size
+        fontFamily: formatStyle.fontFamily, // Keep original font family
         fill: themeStyle.fontColor,
         textAlign: 'center',
         originX: 'left',
         originY: 'top'
       });
 
-
-      const fixedBoxHeight = themeStyle.fixedBoxHeight;
-      const horizontalPadding = 20;
-      const borderRadius = 10;
-
-      const backgroundWidth = Math.min(text.width! + (horizontalPadding * 2), maxTextWidth);
-      const backgroundHeight = fixedBoxHeight;
+      // Calculate box dimensions
+      const fixedBoxHeight = textBreakResult.needsLineBreak ? 
+        textBreakResult.totalHeight + 20 : // Extra height for multi-line
+        themeStyle.fixedBoxHeight; // Original height for single line
+      
+      const backgroundWidth = Math.max(text.width! + (horizontalPadding * 2), 200); // Minimum width
+      const backgroundHeight = Math.max(fixedBoxHeight, textBreakResult.totalHeight + 20);
 
       const background = new Rect({
         left: 0,
@@ -81,33 +90,46 @@ export const addElementToCanvas = (
         width: backgroundWidth,
         height: backgroundHeight,
         fill: themeStyle.boxColor,
-        rx: borderRadius,
-        ry: borderRadius,
+        rx: 10,
+        ry: 10,
         originX: 'left',
         originY: 'top'
       });
 
-
-        text.set({
+      // Center text within the box
+      text.set({
         left: horizontalPadding,
-        top: (fixedBoxHeight - text.height!) / 2
+        top: (backgroundHeight - text.height!) / 2
       });
 
+      // Calculate position adjustments if text broke into multiple lines
+      if (textBreakResult.needsLineBreak && allElements) {
+        const heightIncrease = backgroundHeight - themeStyle.fixedBoxHeight;
+        const adjustments = calculatePositionAdjustments(
+          { x: elementX, y: elementY },
+          themeStyle.fixedBoxHeight,
+          backgroundHeight,
+          allElements.map(el => ({ field: el.field, position: el.position }))
+        );
+
+        // Store adjustments for other elements
+        adjustments.forEach(adj => {
+          globalPositionAdjustments.set(adj.field, adj.adjustment.adjustment);
+        });
+
+        console.log('📏 Position adjustments calculated:', adjustments);
+      }
 
       console.log('🎨 classTheme Box Details:', {
         format: format,
         selectedStyle: selectedStyleName,
-        fixedBoxHeight: fixedBoxHeight,
+        textBroken: textBreakResult.needsLineBreak,
+        lines: textBreakResult.lines.length,
+        originalHeight: themeStyle.fixedBoxHeight,
+        finalHeight: backgroundHeight,
         textWidth: text.width,
         textHeight: text.height,
-        rectWidth: background.width,
-        rectHeight: background.height,
-        rectFill: background.fill,
-        textLeftInGroup: text.left,
-        textTopInGroup: text.top,
-        constrainedFontSize: textConstraints.fontSize,
-        originalText: textContent,
-        finalText: textConstraints.text
+        finalText: finalText
       });
 
       const group = new Group([background, text], {
@@ -116,32 +138,21 @@ export const addElementToCanvas = (
         selectable: false,
         evented: false
       });
-      console.log("🧱 Adicionando group com box + texto:", {
-  text: text.text,
-  position: { x: elementX, y: elementY },
-  rectWidth: background.width,
-  rectHeight: background.height
-      });
       
       canvas.add(group);
     } else {
-      // Fallback to original logic if styleConfig is not found
-      console.log("⚠️ classTheme styleConfig not found or invalid. Using fallback. eventData.lessonThemeBoxStyle was:", eventData?.lessonThemeBoxStyle, "eventData.boxColor:", eventData?.boxColor);
-      
-      // Apply text constraints for fallback as well
-      const textConstraints = constrainTextToCanvas(
+      // Fallback logic with text breaking
+      const maxTextWidth = Math.min(canvasWidth - elementX - 40, 400);
+      const textBreakResult = breakTextToFitWidth(
         textContent,
-        elementX,
-        elementY,
+        maxTextWidth,
         formatStyle.fontSize,
-        formatStyle.fontFamily,
-        canvasWidth,
-        canvasHeight,
-        40
+        formatStyle.fontFamily
       );
 
-      const text = new FabricText(textConstraints.text, {
-        fontSize: textConstraints.fontSize,
+      const finalText = textBreakResult.lines.join('\n');
+      const text = new FabricText(finalText, {
+        fontSize: formatStyle.fontSize,
         fontFamily: formatStyle.fontFamily,
         fill: formatStyle.color,
         textAlign: 'center'
@@ -168,39 +179,26 @@ export const addElementToCanvas = (
       canvas.add(group);
     }
   } else {
-    // Apply text constraints to prevent truncation for all other text elements
-    const textConstraints = constrainTextToCanvas(
-      textContent,
-      elementX,
-      elementY,
-      formatStyle.fontSize,
-      formatStyle.fontFamily,
-      canvasWidth,
-      canvasHeight
-    );
-
+    // For all other text elements, keep original formatting but ensure no truncation
     const isDate = field === "date";
     const fontFamily = isDate ? "TorokaWide" : formatStyle.fontFamily;
-    const content = getTextContent(field, eventData);
     
-    const text = new FabricText(textConstraints.text, {
+    const text = new FabricText(textContent, {
       left: elementX,
       top: elementY,
-      fontSize: textConstraints.fontSize,
-      fontFamily: formatStyle.fontFamily,
+      fontSize: formatStyle.fontSize, // Keep original font size
+      fontFamily: formatStyle.fontFamily, // Keep original font family
       fill: formatStyle.color,
       selectable: false,
       evented: false
     });
 
-    console.log('📝 Text element constrained:', {
+    console.log('📝 Text element added with original formatting:', {
       field,
-      originalFontSize: formatStyle.fontSize,
-      constrainedFontSize: textConstraints.fontSize,
-      originalText: textContent,
-      finalText: textConstraints.text,
-      position: { x: elementX, y: elementY },
-      canvasSize: { width: canvasWidth, height: canvasHeight }
+      fontSize: formatStyle.fontSize,
+      fontFamily: formatStyle.fontFamily,
+      text: textContent,
+      position: { x: elementX, y: elementY }
     });
 
     canvas.add(text);

@@ -45,16 +45,23 @@ export const loadBackgroundImageToCanvas = async (
 };
 
 export const setupCanvasContainer = (width: number, height: number): HTMLCanvasElement => {
+  const existingCanvas = document.getElementById('temp-canvas') as HTMLCanvasElement;
+  if (existingCanvas) {
+    document.body.removeChild(existingCanvas);
+  }
+
   const tempCanvas = document.createElement('canvas');
+  tempCanvas.id = 'temp-canvas';
   tempCanvas.width = width;
   tempCanvas.height = height;
   
-  // Create an invisible and off-screen canvas
-  tempCanvas.style.position = 'absolute';
+  // Position the canvas completely off-screen and hidden during generation
+  tempCanvas.style.position = 'fixed';
+  tempCanvas.style.top = '-9999px';
   tempCanvas.style.left = '-9999px';
-  tempCanvas.style.top = '0';
-  tempCanvas.style.opacity = '0';
+  tempCanvas.style.visibility = 'hidden';
   tempCanvas.style.pointerEvents = 'none';
+  tempCanvas.style.zIndex = '-1000';
   
   document.body.appendChild(tempCanvas);
   return tempCanvas;
