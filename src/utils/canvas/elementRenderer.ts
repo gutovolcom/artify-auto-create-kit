@@ -1,4 +1,3 @@
-
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
@@ -30,18 +29,36 @@ const getTextAlignmentForFormat = (format: string): 'left' | 'center' => {
 };
 
 // Helper function to get format-specific max width for text breaking
-const getMaxTextWidthForFormat = (format: string, canvasWidth: number, elementX: number): number => {
-  // More restrictive width limits based on format to match the red line boundaries
+const getMaxTextWidthForFormat = (format: string, canvasWidth: number, elementX: number, field: string): number => {
+  // For date/time fields that don't need text breaking, use generous width
+  if (field === 'date' || field === 'time') {
+    return Math.min(canvasWidth - elementX - 40, 600); // Much more generous for date/time
+  }
+  
+  // For teacher names, use more generous limits
+  if (field === 'teacherName') {
+    const formatLimits = {
+      'youtube': Math.min(canvasWidth - elementX - 40, 500),
+      'feed': Math.min(canvasWidth - elementX - 40, 450),
+      'stories': Math.min(canvasWidth - elementX - 40, 400),
+      'ledStudio': Math.min(canvasWidth - elementX - 40, 450),
+      'bannerGCO': Math.min(canvasWidth - elementX - 40, 350),
+      'LP': Math.min(canvasWidth - elementX - 40, 400)
+    };
+    return formatLimits[format as keyof typeof formatLimits] || Math.min(canvasWidth - elementX - 40, 450);
+  }
+  
+  // For other fields that need text breaking, use moderate limits
   const formatLimits = {
-    'youtube': Math.min(canvasWidth - elementX - 60, 320), // More restrictive for YouTube
-    'feed': Math.min(canvasWidth - elementX - 60, 300),    // More restrictive for Feed  
-    'stories': Math.min(canvasWidth - elementX - 60, 280), // More restrictive for Stories
-    'ledStudio': Math.min(canvasWidth - elementX - 60, 350),
-    'bannerGCO': Math.min(canvasWidth - elementX - 40, 400),
-    'LP': Math.min(canvasWidth - elementX - 40, 400)
+    'youtube': Math.min(canvasWidth - elementX - 60, 400),
+    'feed': Math.min(canvasWidth - elementX - 60, 350),    
+    'stories': Math.min(canvasWidth - elementX - 60, 320),
+    'ledStudio': Math.min(canvasWidth - elementX - 60, 380),
+    'bannerGCO': Math.min(canvasWidth - elementX - 40, 300),
+    'LP': Math.min(canvasWidth - elementX - 40, 350)
   };
   
-  return formatLimits[format as keyof typeof formatLimits] || Math.min(canvasWidth - elementX - 40, 400);
+  return formatLimits[format as keyof typeof formatLimits] || Math.min(canvasWidth - elementX - 40, 350);
 };
 
 export const addElementToCanvas = (
@@ -89,7 +106,7 @@ export const addElementToCanvas = (
     if (themeStyle) {
       // Calculate available width for text using format-specific limits
       const horizontalPadding = 20;
-      const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX);
+      const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX, field);
       
       // Break text intelligently while keeping original font settings
       const textBreakResult = breakTextToFitWidth(
@@ -110,12 +127,19 @@ export const addElementToCanvas = (
         originY: 'top'
       });
 
-      // Calculate box dimensions
+      // Calculate box dimensions with improved padding
       const fixedBoxHeight = textBreakResult.needsLineBreak ? 
         textBreakResult.totalHeight + 20 : // Extra height for multi-line
         themeStyle.fixedBoxHeight; // Original height for single line
       
-      const backgroundWidth = Math.max(text.width! + (horizontalPadding * 2), 200); // Minimum width
+      // Improved background width calculation with better padding
+      const textWidth = text.width || 0;
+      const minWidth = 120; // Minimum width for small text
+      const paddingSafety = 10; // Extra padding to prevent cutoff
+      const backgroundWidth = Math.max(
+        textWidth + (horizontalPadding * 2) + paddingSafety,
+        minWidth
+      );
       const backgroundHeight = Math.max(fixedBoxHeight, textBreakResult.totalHeight + 20);
 
       const background = new Rect({
@@ -133,11 +157,11 @@ export const addElementToCanvas = (
       // Position text within the box based on alignment
       if (textAlignment === 'center') {
         text.set({
-          left: (backgroundWidth - text.width!) / 2,
+          left: (backgroundWidth - textWidth) / 2,
           top: (backgroundHeight - text.height!) / 2
         });
       } else {
-        // Left alignment
+        // Left alignment with proper padding
         text.set({
           left: horizontalPadding,
           top: (backgroundHeight - text.height!) / 2
@@ -169,7 +193,8 @@ export const addElementToCanvas = (
         lines: textBreakResult.lines.length,
         originalHeight: themeStyle.fixedBoxHeight,
         finalHeight: backgroundHeight,
-        textWidth: text.width,
+        textWidth: textWidth,
+        backgroundWidth: backgroundWidth,
         textHeight: text.height,
         finalText: finalText,
         textAlignment: textAlignment,
@@ -186,7 +211,7 @@ export const addElementToCanvas = (
       canvas.add(group);
     } else {
       // Fallback logic with text breaking and format-specific alignment
-      const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX);
+      const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX, field);
       const textBreakResult = breakTextToFitWidth(
         textContent,
         maxTextWidth,
@@ -206,8 +231,16 @@ export const addElementToCanvas = (
       const backgroundColor = eventData.boxColor || '#dd303e';
       const borderRadius = 10;
 
+      // Improved background width calculation
+      const textWidth = text.width || 0;
+      const paddingSafety = 10;
+      const backgroundWidth = Math.max(
+        textWidth + (padding * 2) + paddingSafety,
+        120
+      );
+
       const background = new Rect({
-        width: text.width! + (padding * 2),
+        width: backgroundWidth,
         height: text.height! + (padding * 2),
         fill: backgroundColor,
         rx: borderRadius,
@@ -229,7 +262,7 @@ export const addElementToCanvas = (
     const textAlignment = getTextAlignmentForFormat(format);
     
     if (needsTextBreaking) {
-      const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX);
+      const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX, field);
       
       // Apply smart text breaking to prevent truncation
       const textBreakResult = breakTextToFitWidth(
@@ -245,6 +278,7 @@ export const addElementToCanvas = (
         field,
         textBroken: textBreakResult.needsLineBreak,
         lines: textBreakResult.lines.length,
+        maxTextWidth: maxTextWidth,
         reason: 'conditional logic determined text breaking was needed'
       });
     } else {
