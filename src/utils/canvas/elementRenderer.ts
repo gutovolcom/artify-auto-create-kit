@@ -1,7 +1,8 @@
+
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
-import { getTextContent } from './textUtils';
+import { getTextContent, shouldApplyTextBreaking } from './textUtils';
 import { getLessonThemeStyle, lessonThemeStyleColors, CLASS_THEME_BOX_HEIGHTS } from './lessonThemeUtils';
 import { breakTextToFitWidth } from './smartTextBreaker';
 import { calculatePositionAdjustments } from './positionAdjuster';
@@ -198,7 +199,7 @@ export const addElementToCanvas = (
         fontSize: formatStyle.fontSize,
         fontFamily: formatStyle.fontFamily,
         fill: formatStyle.color,
-        textAlign: textAlignment // Apply format-specific alignment
+        textAlign: textAlignment
       });
 
       const padding = 20;
@@ -222,19 +223,36 @@ export const addElementToCanvas = (
       canvas.add(group);
     }
   } else {
-    // For all other text elements (including teacherName), apply smart text breaking
-    const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX);
-    
-    // Apply smart text breaking to prevent truncation
-    const textBreakResult = breakTextToFitWidth(
-      textContent,
-      maxTextWidth,
-      formatStyle.fontSize,
-      formatStyle.fontFamily
-    );
-
-    const finalText = textBreakResult.lines.join('\n');
+    // For all other text elements, apply conditional smart text breaking
+    const needsTextBreaking = shouldApplyTextBreaking(field, eventData);
+    let finalText = textContent;
     const textAlignment = getTextAlignmentForFormat(format);
+    
+    if (needsTextBreaking) {
+      const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX);
+      
+      // Apply smart text breaking to prevent truncation
+      const textBreakResult = breakTextToFitWidth(
+        textContent,
+        maxTextWidth,
+        formatStyle.fontSize,
+        formatStyle.fontFamily
+      );
+
+      finalText = textBreakResult.lines.join('\n');
+      
+      console.log('📝 Smart text breaking applied:', {
+        field,
+        textBroken: textBreakResult.needsLineBreak,
+        lines: textBreakResult.lines.length,
+        reason: 'conditional logic determined text breaking was needed'
+      });
+    } else {
+      console.log('📝 No text breaking applied:', {
+        field,
+        reason: 'conditional logic determined text breaking was not needed'
+      });
+    }
     
     const text = new FabricText(finalText, {
       left: elementX,
@@ -247,13 +265,12 @@ export const addElementToCanvas = (
       evented: false
     });
 
-    console.log('📝 Text element added with smart text breaking:', {
+    console.log('📝 Text element added:', {
       field,
       fontSize: formatStyle.fontSize,
       fontFamily: formatStyle.fontFamily,
       text: finalText,
-      textBroken: textBreakResult.needsLineBreak,
-      lines: textBreakResult.lines.length,
+      smartBreakingApplied: needsTextBreaking,
       position: { x: elementX, y: elementY }
     });
 

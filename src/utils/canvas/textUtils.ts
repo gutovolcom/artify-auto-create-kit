@@ -14,6 +14,28 @@ const formatTeacherNames = (names: string[]): string => {
   return `${allButLast.join(', ')}, e ${lastName}`;
 };
 
+// Helper function to determine if a field needs smart text breaking
+export const shouldApplyTextBreaking = (field: string, eventData: EventData): boolean => {
+  // Never apply text breaking to date and time fields - they have predictable sizes
+  if (field === 'date' || field === 'time') {
+    return false;
+  }
+  
+  // For teacher names, only apply text breaking if multiple teachers
+  if (field === 'teacherName') {
+    const hasMultipleTeachers = eventData.teacherNames && eventData.teacherNames.length > 1;
+    return hasMultipleTeachers || false;
+  }
+  
+  // Apply text breaking for other fields that might need it (title, classTheme)
+  if (field === 'title' || field === 'classTheme') {
+    return true;
+  }
+  
+  // Default: no text breaking for other fields
+  return false;
+};
+
 export function formatDateTime(dateString: string, timeString?: string): string {
   if (!dateString) return "";
 
