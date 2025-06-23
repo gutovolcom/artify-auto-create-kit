@@ -1,4 +1,3 @@
-
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
@@ -28,6 +27,20 @@ const getTextAlignmentForFormat = (format: string): 'left' | 'center' => {
   
   // Default fallback
   return 'center';
+};
+
+// Get format-specific padding for lesson theme boxes
+const getFormatSpecificPadding = (format: string): number => {
+  const formatPadding = {
+    'bannerGCO': 12, // Reduced from 20 for better proportion
+    'ledStudio': 18,
+    'youtube': 20,
+    'feed': 20,
+    'stories': 20,
+    'LP': 20
+  };
+  
+  return formatPadding[format as keyof typeof formatPadding] || 20;
 };
 
 // Improved format-specific max width calculation with accurate text measurement
@@ -105,12 +118,12 @@ export const addElementToCanvas = (
     const selectedStyleName = eventData.lessonThemeBoxStyle;
     const themeStyle = getLessonThemeStyle(selectedStyleName, eventData, format);
     
-    // Get format-specific text alignment
+    // Get format-specific text alignment and padding
     const textAlignment = getTextAlignmentForFormat(format);
+    const horizontalPadding = getFormatSpecificPadding(format);
     
     if (themeStyle) {
       // Calculate available width for text using improved format-specific limits
-      const horizontalPadding = 20;
       const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX, field);
       
       // Break text intelligently while keeping original font settings
@@ -137,12 +150,12 @@ export const addElementToCanvas = (
         textBreakResult.totalHeight + 20 : 
         themeStyle.fixedBoxHeight;
       
-      // Use accurate text measurement for better width calculation
+      // Use accurate text measurement for better width calculation with equal padding
       const actualTextWidth = measureTextWidth(finalText, formatStyle.fontSize, formatStyle.fontFamily);
-      const minWidth = 140; // Increased minimum width
-      const paddingSafety = 15; // Increased safety padding
+      const minWidth = 140; // Minimum width
+      // Remove paddingSafety - use exact padding on both sides
       const backgroundWidth = Math.max(
-        actualTextWidth + (horizontalPadding * 2) + paddingSafety,
+        actualTextWidth + (horizontalPadding * 2), // Equal padding left and right
         minWidth
       );
       const backgroundHeight = Math.max(fixedBoxHeight, textBreakResult.totalHeight + 20);
@@ -159,14 +172,14 @@ export const addElementToCanvas = (
         originY: 'top'
       });
 
-      // Position text within the box based on alignment with improved centering
+      // Position text within the box based on alignment with precise centering
       if (textAlignment === 'center') {
         text.set({
-          left: (backgroundWidth - text.width!) / 2,
+          left: (backgroundWidth - actualTextWidth) / 2, // Use actual text width for precise centering
           top: (backgroundHeight - text.height!) / 2
         });
       } else {
-        // Left alignment with proper padding
+        // Left alignment with exact horizontal padding
         text.set({
           left: horizontalPadding,
           top: (backgroundHeight - text.height!) / 2
@@ -200,6 +213,7 @@ export const addElementToCanvas = (
         finalHeight: backgroundHeight,
         actualTextWidth: actualTextWidth,
         backgroundWidth: backgroundWidth,
+        horizontalPadding: horizontalPadding,
         textHeight: text.height,
         finalText: finalText,
         textAlignment: textAlignment,
@@ -217,6 +231,8 @@ export const addElementToCanvas = (
     } else {
       // Fallback logic with improved text breaking and format-specific alignment
       const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX, field);
+      const horizontalPadding = getFormatSpecificPadding(format);
+      
       const textBreakResult = breakTextToFitWidth(
         textContent,
         maxTextWidth,
@@ -232,21 +248,19 @@ export const addElementToCanvas = (
         textAlign: textAlignment
       });
 
-      const padding = 20;
       const backgroundColor = eventData.boxColor || '#dd303e';
       const borderRadius = 10;
 
       // Use accurate text measurement for better background width calculation
       const actualTextWidth = measureTextWidth(finalText, formatStyle.fontSize, formatStyle.fontFamily);
-      const paddingSafety = 15;
       const backgroundWidth = Math.max(
-        actualTextWidth + (padding * 2) + paddingSafety,
+        actualTextWidth + (horizontalPadding * 2), // Equal padding left and right
         140
       );
 
       const background = new Rect({
         width: backgroundWidth,
-        height: text.height! + (padding * 2),
+        height: text.height! + (horizontalPadding * 2),
         fill: backgroundColor,
         rx: borderRadius,
         ry: borderRadius

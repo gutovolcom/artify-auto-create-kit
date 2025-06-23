@@ -45,7 +45,7 @@ const styleMap = {
   },
   ledStudio: {
     title: { fontFamily: 'Margem-Black', fontSize: 36 },
-    classTheme: { fontFamily: 'Margem-Bold', fontSize: 30 },
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 34 }, // Increased from 30 to 34
     date: { fontFamily: 'Toroka Wide Regular', fontSize: 22 },
     time: { fontFamily: 'Toroka Wide Regular', fontSize: 22 },
     teacherName: { fontFamily: 'Margem-Medium', fontSize: 26 }
