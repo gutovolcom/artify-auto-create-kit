@@ -1,10 +1,10 @@
-
 import React, { useEffect, useRef } from 'react';
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
 import { useLayoutEditorState } from '@/hooks/useLayoutEditorState';
 import { useCanvasManager } from '@/hooks/useCanvasManager';
 import { useLayoutOperations } from '@/hooks/useLayoutOperations';
 import { useCanvasMemoryManager } from '@/hooks/useCanvasMemoryManager';
+import { useLayoutEditorPerformance } from '@/hooks/useLayoutEditorPerformance';
 import { LayoutEditorProps } from './types';
 import { LayoutEditorLoadingStates } from './LayoutEditorLoadingStates';
 import { LayoutEditorContent } from './LayoutEditorContent';
@@ -62,19 +62,6 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
   const displayWidth = formatDimensions.width * scale;
   const displayHeight = formatDimensions.height * scale;
 
-  console.log('🎨 LayoutEditor render:', {
-    templateId,
-    formatName,
-    loadingState,
-    layoutLoadAttempts,
-    isLoadingLayout,
-    canvasReady: !!canvas,
-    layoutDraftSize: layoutDraft.length,
-    scale,
-    formatDimensions,
-    memoryStats: getMemoryStats()
-  });
-
   const {
     handleCanvasReady,
     handleBackgroundLoaded,
@@ -112,8 +99,27 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
     getLayout
   });
 
+  // Integrate performance optimization
   const {
-    handleAddElement,
+    addElementPerformant,
+    updateElementPerformant,
+    removeElementPerformant,
+    loadImageOptimized,
+    metrics,
+    getPerformanceStats,
+    startPerformanceMonitoring,
+    stopPerformanceMonitoring,
+    cleanup: cleanupPerformance
+  } = useLayoutEditorPerformance({
+    canvas,
+    onLayoutUpdate: updateLayoutDraft,
+    onImageLoad: (url) => {
+      console.log('🖼️ Image loaded optimally:', url);
+    }
+  });
+
+  const {
+    handleAddElement: originalAddElement,
     handleDeleteSelected,
     handleSaveLayout
   } = useLayoutOperations({
@@ -133,36 +139,84 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
     updateLayoutDraft
   });
 
+  // Enhanced add element with performance optimization
+  const handleAddElement = (elementType: string) => {
+    const element = layoutElements.find(el => el.field_mapping === elementType);
+    if (!element) return;
+
+    const elementConfig = {
+      id: `${elementType}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      type: element.element_type,
+      field: element.field_mapping,
+      position: { 
+        x: 50 + Math.random() * (displayWidth - 300),
+        y: 50 + Math.random() * (displayHeight - 200)
+      },
+      style: { 
+        fontSize: 20,
+        fontFamily: 'Arial',
+        color: '#333333'
+      }
+    };
+
+    addElementPerformant(elementConfig);
+  };
+
+  // Enhanced delete with performance optimization
+  const handleDeleteSelectedPerformant = () => {
+    if (!selectedObject) return;
+    removeElementPerformant(selectedObject);
+    setSelectedObject(null);
+  };
+
+  console.log('🎨 LayoutEditor render:', {
+    templateId,
+    formatName,
+    loadingState,
+    layoutLoadAttempts,
+    isLoadingLayout,
+    canvasReady: !!canvas,
+    layoutDraftSize: layoutDraft.length,
+    scale,
+    formatDimensions,
+    memoryStats: getMemoryStats(),
+    performanceStats: canvas ? getPerformanceStats() : null
+  });
+
+  // Performance control handlers
+  const handleToggleMonitoring = () => {
+    if (metrics.renderTime > 0) { // Check if monitoring is active
+      stopPerformanceMonitoring();
+    } else {
+      startPerformanceMonitoring();
+    }
+  };
+
+  const handleResetPerformance = () => {
+    const performanceStats = getPerformanceStats();
+    console.log('🔄 Resetting performance metrics:', performanceStats);
+  };
+
   // Fixed: Only reset when template or format actually changes
   useEffect(() => {
     const hasTemplateChanged = previousTemplateRef.current !== templateId;
     const hasFormatChanged = previousFormatRef.current !== formatName;
     
-    console.log('[DEBUG] useEffect check:', { 
-      templateId, 
-      formatName, 
-      hasTemplateChanged, 
-      hasFormatChanged,
-      previous: {
-        template: previousTemplateRef.current,
-        format: previousFormatRef.current
-      }
-    });
-
     if (hasTemplateChanged || hasFormatChanged) {
       console.log('🔄 Template or format actually changed, resetting state');
       previousTemplateRef.current = templateId;
       previousFormatRef.current = formatName;
       
-      // Clean up previous canvas
+      // Clean up previous canvas and performance monitoring
       if (canvas) {
         cleanupCanvas(canvas);
       }
       
+      cleanupPerformance();
       resetState();
       forceGarbageCollection();
     }
-  }, [templateId, formatName, canvas, cleanupCanvas, resetState, forceGarbageCollection]);
+  }, [templateId, formatName, canvas, cleanupCanvas, resetState, forceGarbageCollection, cleanupPerformance]);
 
   // Cleanup timeouts and canvas on unmount
   useEffect(() => {
@@ -176,8 +230,9 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
       if (canvas) {
         cleanupCanvas(canvas);
       }
+      cleanupPerformance();
     };
-  }, [canvas, cleanupCanvas]);
+  }, [canvas, cleanupCanvas, cleanupPerformance]);
 
   // Show loading states if needed
   if (elementsLoading || error) {
@@ -204,13 +259,17 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
       layoutLoadAttempts={layoutLoadAttempts}
       loadingError={loadingError}
       layoutElements={layoutElements}
+      performance Metrics={metrics}
+      isMonitoring={!!canvas && metrics.renderTime > 0}
       onCanvasReady={(fabricCanvas) => handleCanvasReady(fabricCanvas, templateId, formatName)}
       onSelectionChange={setSelectedObject}
       onSaveLayout={handleSaveLayout}
-      onDeleteSelected={handleDeleteSelected}
+      onDeleteSelected={handleDeleteSelectedPerformant}
       onBackgroundLoaded={() => handleBackgroundLoaded(templateId, formatName)}
       onAddElement={handleAddElement}
       onManualReload={() => handleManualReload(templateId, formatName)}
+      onToggleMonitoring={handleToggleMonitoring}
+      onResetPerformance={handleResetPerformance}
     />
   );
 };

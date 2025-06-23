@@ -4,6 +4,7 @@ import { CanvasArea } from './CanvasArea';
 import { ElementToolbar } from './ElementToolbar';
 import { PropertiesPanel } from './PropertiesPanel';
 import { DebugPanel } from './DebugPanel';
+import { PerformancePanel } from './PerformancePanel';
 
 interface LayoutEditorContentProps {
   templateId: string;
@@ -19,6 +20,8 @@ interface LayoutEditorContentProps {
   layoutLoadAttempts: number;
   loadingError: string | null;
   layoutElements: any[];
+  performanceMetrics?: any;
+  isMonitoring?: boolean;
   onCanvasReady: (fabricCanvas: any) => void;
   onSelectionChange: (object: any) => void;
   onSaveLayout: () => void;
@@ -26,6 +29,8 @@ interface LayoutEditorContentProps {
   onBackgroundLoaded: () => void;
   onAddElement: (elementType: string) => void;
   onManualReload: () => void;
+  onToggleMonitoring?: () => void;
+  onResetPerformance?: () => void;
 }
 
 export const LayoutEditorContent: React.FC<LayoutEditorContentProps> = ({
@@ -42,13 +47,17 @@ export const LayoutEditorContent: React.FC<LayoutEditorContentProps> = ({
   layoutLoadAttempts,
   loadingError,
   layoutElements,
+  performanceMetrics,
+  isMonitoring = false,
   onCanvasReady,
   onSelectionChange,
   onSaveLayout,
   onDeleteSelected,
   onBackgroundLoaded,
   onAddElement,
-  onManualReload
+  onManualReload,
+  onToggleMonitoring = () => {},
+  onResetPerformance = () => {}
 }) => {
   return (
     <div className="flex gap-6">
@@ -68,7 +77,7 @@ export const LayoutEditorContent: React.FC<LayoutEditorContentProps> = ({
         onBackgroundLoaded={onBackgroundLoaded}
       />
 
-      <div className="w-80">
+      <div className="w-80 space-y-4">
         <ElementToolbar
           layoutElements={layoutElements}
           onAddElement={onAddElement}
@@ -80,6 +89,15 @@ export const LayoutEditorContent: React.FC<LayoutEditorContentProps> = ({
           onUpdateObject={() => {}}
           onDeleteSelected={onDeleteSelected}
         />
+
+        {performanceMetrics && (
+          <PerformancePanel
+            metrics={performanceMetrics}
+            isMonitoring={isMonitoring}
+            onToggleMonitoring={onToggleMonitoring}
+            onReset={onResetPerformance}
+          />
+        )}
 
         <DebugPanel
           loadingState={loadingState}
