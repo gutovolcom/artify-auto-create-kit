@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -105,9 +106,9 @@ const Index = () => {
     setUserType('user');
   };
 
-  // Check if form is ready for generation - updated to use selectedTeacherIds
+  // Check if form is ready for generation - updated to use selectedTeacherIds only
   const isFormReady = eventData.title && eventData.date && eventData.kvImageId && 
-    (eventData.selectedTeacherIds?.length || eventData.professorPhotos);
+    eventData.selectedTeacherIds && eventData.selectedTeacherIds.length > 0;
 
   // Show loading while checking auth
   if (loading) {
@@ -195,7 +196,7 @@ const Index = () => {
                   !eventData.title && "Título do evento",
                   !eventData.date && "Data",
                   !eventData.kvImageId && "Template de imagem",
-                  !(eventData.selectedTeacherIds?.length || eventData.professorPhotos) && "Professor selecionado"
+                  !(eventData.selectedTeacherIds && eventData.selectedTeacherIds.length > 0) && "Professor selecionado"
                 ].filter(Boolean) as string[]}
               />
             </div>

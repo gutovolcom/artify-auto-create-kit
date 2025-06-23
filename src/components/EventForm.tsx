@@ -16,9 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useSupabaseTeachers } from "@/hooks/useSupabaseTeachers";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
-import { useEffect } from "react";
+import { MultiSelectTeacher } from "@/components/MultiSelectTeacher";
 
 // This map should ideally be shared from where lessonThemeStyleColors is defined in elementRenderer,
 // or defined in a shared constants file. For now, duplicating for clarity of what colors are used.
@@ -35,7 +34,6 @@ interface EventFormProps {
 }
 
 export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
-  const { teachers, loading } = useSupabaseTeachers();
   const { templates } = useSupabaseTemplates();
 
   const formatDisplayNames = {
@@ -46,18 +44,6 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
     ledStudio: "LED Studio",
     LP: "LP"
   };
-
-  useEffect(() => {
-    if (eventData.professorPhotos) {
-      const selectedTeacher = teachers.find(t => t.id === eventData.professorPhotos);
-      if (selectedTeacher) {
-        updateEventData({ 
-          teacherImages: [selectedTeacher.image_url],
-          teacherName: selectedTeacher.name 
-        });
-      }
-    }
-  }, [eventData.professorPhotos, teachers, updateEventData]);
 
   const availableFormats = eventData.kvImageId 
     ? templates.find(t => t.id === eventData.kvImageId)?.formats?.map(f => ({
@@ -112,6 +98,14 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
     if (eventData.lessonThemeBoxStyle === 'Transparent') {
       updateEventData({ boxFontColor: value });
     }
+  };
+
+  const handleTeacherSelectionChange = (teacherIds: string[], teacherImages: string[], teacherNames: string[]) => {
+    updateEventData({
+      selectedTeacherIds: teacherIds,
+      teacherImages: teacherImages,
+      teacherNames: teacherNames
+    });
   };
 
   return (
@@ -223,41 +217,10 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
           </div>
         )}
 
-        <div className="space-y-2">
-          <Label>Foto do professor</Label>
-          {loading ? (
-            <div className="text-sm text-gray-500 p-3 bg-gray-50 rounded-md">
-              Carregando professores...
-            </div>
-          ) : teachers.length === 0 ? (
-            <div className="text-sm text-gray-500 p-3 bg-gray-50 rounded-md">
-              Nenhum professor cadastrado. Cadastre professores no painel administrativo.
-            </div>
-          ) : (
-            <Select value={eventData.professorPhotos || ""} onValueChange={(value) => updateEventData({ professorPhotos: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o professor" />
-              </SelectTrigger>
-              <SelectContent>
-                {teachers.map((teacher) => (
-                  <SelectItem key={teacher.id} value={teacher.id}>
-                    <div className="flex items-center gap-2">
-                      <img 
-                        src={teacher.image_url} 
-                        alt={teacher.name} 
-                        className="w-6 h-6 rounded-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = "/placeholder.svg";
-                        }}
-                      />
-                      {teacher.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
+        <MultiSelectTeacher
+          selectedTeacherIds={eventData.selectedTeacherIds || []}
+          onSelectionChange={handleTeacherSelectionChange}
+        />
         
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
