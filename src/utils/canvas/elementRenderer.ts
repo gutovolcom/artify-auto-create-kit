@@ -1,10 +1,9 @@
-
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
 import { getTextContent, shouldApplyTextBreaking } from './textUtils';
 import { getLessonThemeStyle, lessonThemeStyleColors, CLASS_THEME_BOX_HEIGHTS } from './lessonThemeUtils';
-import { breakTextToFitWidth } from './smartTextBreaker';
+import { breakTextToFitWidthSync } from './smartTextBreaker';
 import { calculatePositionAdjustments } from './positionAdjuster';
 import { measureTextWidthSync, getDynamicSafetyMargin, getAlignmentPadding } from './textMeasurement';
 
@@ -128,7 +127,7 @@ export const addElementToCanvas = (
       const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX, field);
       
       // Break text intelligently while keeping original font settings
-      const textBreakResult = breakTextToFitWidth(
+      const textBreakResult = breakTextToFitWidthSync(
         textContent,
         maxTextWidth,
         formatStyle.fontSize,
@@ -234,7 +233,7 @@ export const addElementToCanvas = (
       const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX, field);
       const horizontalPadding = getFormatSpecificPadding(format);
       
-      const textBreakResult = breakTextToFitWidth(
+      const textBreakResult = breakTextToFitWidthSync(
         textContent,
         maxTextWidth,
         formatStyle.fontSize,
@@ -285,7 +284,7 @@ export const addElementToCanvas = (
       const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX, field);
       
       // Apply smart text breaking to prevent truncation
-      const textBreakResult = breakTextToFitWidth(
+      const textBreakResult = breakTextToFitWidthSync(
         textContent,
         maxTextWidth,
         formatStyle.fontSize,
