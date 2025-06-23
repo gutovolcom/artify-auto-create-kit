@@ -1,3 +1,4 @@
+
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
@@ -5,7 +6,7 @@ import { getTextContent, shouldApplyTextBreaking } from './textUtils';
 import { getLessonThemeStyle, lessonThemeStyleColors, CLASS_THEME_BOX_HEIGHTS } from './lessonThemeUtils';
 import { breakTextToFitWidth } from './smartTextBreaker';
 import { calculatePositionAdjustments } from './positionAdjuster';
-import { measureTextWidth, getDynamicSafetyMargin, getAlignmentPadding } from './textMeasurement';
+import { measureTextWidthSync, getDynamicSafetyMargin, getAlignmentPadding } from './textMeasurement';
 
 // Store position adjustments globally for this rendering session
 let globalPositionAdjustments: Map<string, number> = new Map();
@@ -151,7 +152,7 @@ export const addElementToCanvas = (
         themeStyle.fixedBoxHeight;
       
       // Use accurate text measurement for better width calculation with equal padding
-      const actualTextWidth = measureTextWidth(finalText, formatStyle.fontSize, formatStyle.fontFamily);
+      const actualTextWidth = measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily);
       const minWidth = 140; // Minimum width
       // Remove paddingSafety - use exact padding on both sides
       const backgroundWidth = Math.max(
@@ -252,7 +253,7 @@ export const addElementToCanvas = (
       const borderRadius = 10;
 
       // Use accurate text measurement for better background width calculation
-      const actualTextWidth = measureTextWidth(finalText, formatStyle.fontSize, formatStyle.fontFamily);
+      const actualTextWidth = measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily);
       const backgroundWidth = Math.max(
         actualTextWidth + (horizontalPadding * 2), // Equal padding left and right
         140
@@ -304,6 +305,18 @@ export const addElementToCanvas = (
       console.log('📝 No text breaking applied:', {
         field,
         reason: 'conditional logic determined text breaking was not needed'
+      });
+    }
+    
+    // Add extra debugging for teacher name truncation
+    if (field === 'teacherName' && finalText !== textContent) {
+      console.warn('⚠️ Teacher name text changed during processing:', {
+        original: textContent,
+        final: finalText,
+        originalLength: textContent.length,
+        finalLength: finalText.length,
+        lastCharOriginal: textContent.charAt(textContent.length - 1),
+        lastCharFinal: finalText.charAt(finalText.length - 1)
       });
     }
     

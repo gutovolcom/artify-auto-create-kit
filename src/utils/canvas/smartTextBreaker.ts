@@ -1,77 +1,170 @@
 
-import { FabricText } from 'fabric';
+import { measureTextWidthSync } from './textMeasurement';
 
 export interface TextBreakResult {
   lines: string[];
-  totalHeight: number;
   needsLineBreak: boolean;
+  totalHeight: number;
+  maxLineWidth: number;
 }
 
+// Improved text breaking with better word handling and character-specific logic
 export const breakTextToFitWidth = (
   text: string,
   maxWidth: number,
   fontSize: number,
   fontFamily: string
 ): TextBreakResult => {
-  // Create a temporary text object to measure width
-  const tempText = new FabricText('', {
+  if (!text || maxWidth <= 0) {
+    return {
+      lines: [text || ''],
+      needsLineBreak: false,
+      totalHeight: fontSize * 1.2,
+      maxLineWidth: 0
+    };
+  }
+
+  // First check if the entire text fits
+  const fullTextWidth = measureTextWidthSync(text, fontSize, fontFamily);
+  
+  if (fullTextWidth <= maxWidth) {
+    return {
+      lines: [text],
+      needsLineBreak: false,
+      totalHeight: fontSize * 1.2,
+      maxLineWidth: fullTextWidth
+    };
+  }
+
+  console.log('🔤 Text breaking needed:', {
+    text,
+    textWidth: fullTextWidth,
+    maxWidth,
     fontSize,
     fontFamily
   });
 
-  // Check if the full text fits in one line
-  tempText.set({ text });
-  if (tempText.width! <= maxWidth) {
-    return {
-      lines: [text],
-      totalHeight: tempText.height!,
-      needsLineBreak: false
-    };
-  }
-
-  // Break text into lines
-  const words = text.split(' ');
   const lines: string[] = [];
+  const words = text.split(' ');
   let currentLine = '';
+  let maxLineWidth = 0;
 
-  for (const word of words) {
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
     const testLine = currentLine ? `${currentLine} ${word}` : word;
-    tempText.set({ text: testLine });
+    const testWidth = measureTextWidthSync(testLine, fontSize, fontFamily);
 
-    if (tempText.width! <= maxWidth) {
+    if (testWidth <= maxWidth) {
       currentLine = testLine;
+      maxLineWidth = Math.max(maxLineWidth, testWidth);
     } else {
-      // If current line is not empty, push it and start new line
+      // If we have a current line, add it to lines
       if (currentLine) {
         lines.push(currentLine);
         currentLine = word;
-      } else {
-        // Single word is too long, truncate it
-        let truncated = word;
-        while (truncated.length > 3) {
-          truncated = truncated.slice(0, -1);
-          tempText.set({ text: truncated + '...' });
-          if (tempText.width! <= maxWidth) {
-            break;
-          }
+        
+        // Check if the single word fits
+        const singleWordWidth = measureTextWidthSync(word, fontSize, fontFamily);
+        if (singleWordWidth > maxWidth) {
+          // Break the word character by character
+          console.log('⚠️ Word too long, breaking by character:', word);
+          const brokenWord = breakWordByCharacter(word, maxWidth, fontSize, fontFamily);
+          lines.push(...brokenWord.lines);
+          currentLine = '';
+          maxLineWidth = Math.max(maxLineWidth, brokenWord.maxLineWidth);
+        } else {
+          maxLineWidth = Math.max(maxLineWidth, singleWordWidth);
         }
-        lines.push(truncated + '...');
-        currentLine = '';
+      } else {
+        // The single word is too long, break it
+        const brokenWord = breakWordByCharacter(word, maxWidth, fontSize, fontFamily);
+        lines.push(...brokenword.lines);
+        maxLineWidth = Math.max(maxLineWidth, brokenWord.maxLineWidth);
+      }
+    }
+  }
+
+  // Add the last line if it exists
+  if (currentLine) {
+    lines.push(currentLine);
+    const lastLineWidth = measureTextWidthSync(currentLine, fontSize, fontFamily);
+    maxLineWidth = Math.max(maxLineWidth, lastLineWidth);
+  }
+
+  const lineHeight = fontSize * 1.2;
+  const totalHeight = lines.length * lineHeight;
+
+  console.log('✂️ Text broken into lines:', {
+    originalText: text,
+    lines: lines,
+    totalHeight,
+    maxLineWidth,
+    lineCount: lines.length
+  });
+
+  return {
+    lines,
+    needsLineBreak: true,
+    totalHeight,
+    maxLineWidth
+  };
+};
+
+// Helper function to break a word by character when it's too long
+const breakWordByCharacter = (
+  word: string,
+  maxWidth: number,
+  fontSize: number,
+  fontFamily: string
+): { lines: string[]; maxLineWidth: number } => {
+  const lines: string[] = [];
+  let currentLine = '';
+  let maxLineWidth = 0;
+
+  for (let i = 0; i < word.length; i++) {
+    const char = word[i];
+    const testLine = currentLine + char;
+    const testWidth = measureTextWidthSync(testLine, fontSize, fontFamily);
+
+    if (testWidth <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) {
+        lines.push(currentLine);
+        const lineWidth = measureTextWidthSync(currentLine, fontSize, fontFamily);
+        maxLineWidth = Math.max(maxLineWidth, lineWidth);
+        currentLine = char;
+      } else {
+        // Even a single character doesn't fit, force it
+        lines.push(char);
+        const charWidth = measureTextWidthSync(char, fontSize, fontFamily);
+        maxLineWidth = Math.max(maxLineWidth, charWidth);
       }
     }
   }
 
   if (currentLine) {
     lines.push(currentLine);
+    const lineWidth = measureTextWidthSync(currentLine, fontSize, fontFamily);
+    maxLineWidth = Math.max(maxLineWidth, lineWidth);
   }
 
-  // Calculate total height
-  const lineHeight = tempText.height!;
-  const totalHeight = lineHeight * lines.length;
+  return { lines, maxLineWidth };
+};
 
-  return {
-    lines,
-    totalHeight,
-    needsLineBreak: lines.length > 1
-  };
+// Utility to estimate optimal break points for different content types
+export const getOptimalBreakStrategy = (text: string, field: string): 'word' | 'character' | 'none' => {
+  // For teacher names, prefer word breaks
+  if (field === 'teacherName') {
+    return 'word';
+  }
+  
+  // For dates and times, don't break at all
+  if (field === 'date'|| field === 'time') {
+    return 'none';
+  }
+  
+  // For titles and themes, use word breaks unless very long words exist
+  const hasLongWords = text.split(' ').some(word => word.length > 15);
+  return hasLongWords ? 'character' : 'word';
 };

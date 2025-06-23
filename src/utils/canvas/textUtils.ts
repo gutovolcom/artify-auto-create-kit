@@ -36,6 +36,7 @@ export const shouldApplyTextBreaking = (field: string, eventData: EventData): bo
   return false;
 };
 
+// Improved and more consistent time formatting
 export function formatDateTime(dateString: string, timeString?: string): string {
   if (!dateString) return "";
 
@@ -46,31 +47,72 @@ export function formatDateTime(dateString: string, timeString?: string): string 
   let result = `${dd}/${mm}`;
 
   if (timeString) {
+    // Normalize time format and add consistent padding
     const [hour, minute] = timeString.split(":");
     const h = hour.padStart(2, "0");
     const min = minute.padStart(2, "0");
+    
+    // Always use consistent format with proper spacing
+    // This ensures consistent text width regardless of time values
     result += ` às ${h}h${min}`;
+    
+    console.log('📅 Time formatted:', {
+      original: timeString,
+      formatted: `${h}h${min}`,
+      fullResult: result,
+      characterCount: result.length
+    });
   }
 
   return result;
 }
 
 export const getTextContent = (field: string, eventData: EventData): string => {
+  let content = '';
+  
   switch (field) {
     case 'title':
-      return eventData.title;
+      content = eventData.title;
+      break;
     case 'classTheme':
-      return eventData.classTheme || '';
+      content = eventData.classTheme || '';
+      break;
     case 'teacherName':
       // Use combined teacher names with Portuguese formatting
-      return eventData.teacherNames && eventData.teacherNames.length > 0 
+      content = eventData.teacherNames && eventData.teacherNames.length > 0 
         ? formatTeacherNames(eventData.teacherNames)
         : eventData.teacherName || '';
+      break;
     case 'date':
-      return formatDateTime(eventData.date, eventData.time);
+      content = formatDateTime(eventData.date, eventData.time);
+      break;
     case 'time':
-      return "";
+      content = "";
+      break;
     default:
-      return '';
+      content = '';
   }
+  
+  // Debug logging for problematic content
+  if (field === 'date' && eventData.time) {
+    console.log('📅 Date field processing:', {
+      field,
+      eventTime: eventData.time,
+      eventDate: eventData.date,
+      finalContent: content,
+      contentLength: content.length
+    });
+  }
+  
+  if (field === 'teacherName' && content) {
+    console.log('👨‍🏫 Teacher name processing:', {
+      field,
+      content,
+      contentLength: content.length,
+      lastChar: content.charAt(content.length - 1),
+      teacherNames: eventData.teacherNames
+    });
+  }
+  
+  return content;
 };
