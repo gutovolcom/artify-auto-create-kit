@@ -38,24 +38,24 @@ const getMaxTextWidthForFormat = (format: string, canvasWidth: number, elementX:
   // For teacher names, use more generous limits
   if (field === 'teacherName') {
     const formatLimits = {
-      'youtube': Math.min(canvasWidth - elementX - 40, 500),
-      'feed': Math.min(canvasWidth - elementX - 40, 450),
-      'stories': Math.min(canvasWidth - elementX - 40, 400),
-      'ledStudio': Math.min(canvasWidth - elementX - 40, 450),
-      'bannerGCO': Math.min(canvasWidth - elementX - 40, 350),
-      'LP': Math.min(canvasWidth - elementX - 40, 400)
+      'youtube': Math.min(canvasWidth - elementX - 40, 600),
+      'feed': Math.min(canvasWidth - elementX - 40, 600),
+      'stories': Math.min(canvasWidth - elementX - 40, 550),
+      'ledStudio': Math.min(canvasWidth - elementX - 40, 550),
+      'bannerGCO': Math.min(canvasWidth - elementX - 40, 450),
+      'LP': Math.min(canvasWidth - elementX - 40, 500)
     };
     return formatLimits[format as keyof typeof formatLimits] || Math.min(canvasWidth - elementX - 40, 450);
   }
   
   // For other fields that need text breaking, use moderate limits
   const formatLimits = {
-    'youtube': Math.min(canvasWidth - elementX - 60, 400),
-    'feed': Math.min(canvasWidth - elementX - 60, 350),    
-    'stories': Math.min(canvasWidth - elementX - 60, 320),
-    'ledStudio': Math.min(canvasWidth - elementX - 60, 380),
-    'bannerGCO': Math.min(canvasWidth - elementX - 40, 300),
-    'LP': Math.min(canvasWidth - elementX - 40, 350)
+    'youtube': Math.min(canvasWidth - elementX - 60, 600),
+    'feed': Math.min(canvasWidth - elementX - 60, 600),    
+    'stories': Math.min(canvasWidth - elementX - 60, 5500),
+    'ledStudio': Math.min(canvasWidth - elementX - 60, 5500),
+    'bannerGCO': Math.min(canvasWidth - elementX - 40, 450),
+    'LP': Math.min(canvasWidth - elementX - 40, 500)
   };
   
   return formatLimits[format as keyof typeof formatLimits] || Math.min(canvasWidth - elementX - 40, 350);
