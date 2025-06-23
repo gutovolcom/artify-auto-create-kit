@@ -57,16 +57,33 @@ export const AdvancedEditorContainer: React.FC<AdvancedEditorContainerProps> = (
     forceGarbageCollection
   } = useCanvasMemoryManager();
 
-  // Advanced undo/redo system
+  // Advanced undo/redo system - use the correct method names from the actual hook
   const {
     undo,
     redo,
     canUndo,
     canRedo,
-    saveState,
-    clearHistory,
-    getHistoryStats
+    saveCanvasState: saveState,
+    history
   } = useCanvasStateHistory(canvas);
+
+  // Create helper functions for history management
+  const clearHistory = () => {
+    if (history) {
+      history.clear();
+    }
+  };
+
+  const getHistoryStats = () => {
+    if (!history) {
+      return { currentSize: 0, maxSize: 50, lastActionTime: null };
+    }
+    return {
+      currentSize: history.getCurrentSize ? history.getCurrentSize() : 0,
+      maxSize: 50,
+      lastActionTime: history.getLastActionTime ? history.getLastActionTime() : null
+    };
+  };
 
   // Track previous values to prevent unnecessary resets
   const previousTemplateRef = useRef<string | null>(null);
@@ -150,7 +167,7 @@ export const AdvancedEditorContainer: React.FC<AdvancedEditorContainerProps> = (
     layoutElements,
     layoutDraft,
     setLayoutDraft,
-    saveLayout: saveAdvancedLayout,
+    saveLayout: (config) => saveAdvancedLayout(templateId, formatName, config),
     templateId,
     formatName,
     onSave,
@@ -248,7 +265,7 @@ export const AdvancedEditorContainer: React.FC<AdvancedEditorContainerProps> = (
       resetState();
       forceGarbageCollection();
     }
-  }, [templateId, formatName, canvas, cleanupCanvas, resetState, forceGarbageCollection, cleanupPerformance, clearHistory]);
+  }, [templateId, formatName, canvas, cleanupCanvas, resetState, forceGarbageCollection, cleanupPerformance]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -265,7 +282,7 @@ export const AdvancedEditorContainer: React.FC<AdvancedEditorContainerProps> = (
       cleanupPerformance();
       clearHistory();
     };
-  }, [canvas, cleanupCanvas, cleanupPerformance, clearHistory]);
+  }, [canvas, cleanupCanvas, cleanupPerformance]);
 
   // Show loading states if needed
   if (elementsLoading || error) {

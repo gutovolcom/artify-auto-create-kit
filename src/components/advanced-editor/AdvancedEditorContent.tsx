@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { AdvancedCanvasArea } from './AdvancedCanvasArea';
 import { AdvancedElementToolbar } from './AdvancedElementToolbar';
 import { AdvancedPropertiesPanel } from './AdvancedPropertiesPanel';
 import { AdvancedControlPanel } from './AdvancedControlPanel';
 import { PerformancePanel } from '../layout-editor/PerformancePanel';
-import { DebugPanel } from '../layout-editor/Debug Panel';
+import { DebugPanel } from '../layout-editor/DebugPanel';
 
 interface AdvancedEditorContentProps {
   templateId: string;

@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Palette } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const AdvancedEditor = () => {
   const { user, loading } = useAuth();
@@ -48,7 +49,9 @@ const AdvancedEditor = () => {
                 </p>
               </CardHeader>
               <CardContent>
-                <LoginForm />
+                <LoginForm onLogin={(userType) => {
+                  toast.success(`Logged in as ${userType}`);
+                }} />
                 <div className="mt-4 text-center">
                   <Link to="/">
                     <Button variant="ghost" size="sm">

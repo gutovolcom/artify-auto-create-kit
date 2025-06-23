@@ -9,15 +9,11 @@ import {
   Save, 
   Trash2, 
   Copy, 
-  Paste,
+  Clipboard,
   RotateCcw,
   RotateCw,
   FlipHorizontal,
-  FlipVertical,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  AlignJustify
+  FlipVertical
 } from 'lucide-react';
 
 interface AdvancedCanvasToolbarProps {
@@ -144,7 +140,7 @@ export const AdvancedCanvasToolbar: React.FC<AdvancedCanvasToolbarProps> = ({
           onClick={handlePaste}
           title="Paste (Ctrl+V)"
         >
-          <Paste className="w-4 h-4" />
+          <Clipboard className="w-4 h-4" />
         </Button>
         <Button
           variant="ghost"

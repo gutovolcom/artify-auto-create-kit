@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { useSupabaseTemplates } from '@/hooks/useSupabaseTemplates';
+import { useAdvancedTemplateFormats } from '@/hooks/useAdvancedTemplateFormats';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +19,7 @@ interface AdvancedTemplateSelectorProps {
 export const AdvancedTemplateSelector: React.FC<AdvancedTemplateSelectorProps> = ({
   onSelectTemplate
 }) => {
-  const { templates, templateFormats, loading, error } = useSupabaseTemplates();
+  const { templates, templateFormats, loading, error } = useAdvancedTemplateFormats();
 
   if (loading) {
     return (
