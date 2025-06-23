@@ -9,9 +9,14 @@ const getSerializationMargin = (format: string): number => {
   const dimensions = getFormatDimensions(format);
   const area = dimensions.width * dimensions.height;
   
-  // For very small formats like bannerGCO, use minimal margins to prevent over-constraining
+  // For bannerGCO, use ultra-minimal margins to preserve user positioning
+  if (format === 'bannerGCO') {
+    return 1; // Ultra-minimal margin for bannerGCO
+  }
+  
+  // For very small formats, use minimal margins
   if (area < 60000) {
-    return 5; // Much smaller margin for tiny formats during serialization
+    return 5;
   }
   
   // For medium formats, use moderate margins
@@ -21,6 +26,20 @@ const getSerializationMargin = (format: string): number => {
   
   // For large formats, use standard margins
   return 20;
+};
+
+// Check if format should use minimal validation (bannerGCO specific fix)
+const shouldUseMinimalValidation = (format: string): boolean => {
+  return format === 'bannerGCO';
+};
+
+// Enhanced precision rounding for small formats
+const precisionRound = (value: number, format: string): number => {
+  if (format === 'bannerGCO') {
+    // Use higher precision for bannerGCO
+    return Math.round(value * 1000) / 1000;
+  }
+  return Math.round(value * 100) / 100;
 };
 
 export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, format?: string): any => {
@@ -35,7 +54,9 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
     console.log('Scale factor:', scale, 'Format:', format);
     
     const serializationMargin = format ? getSerializationMargin(format) : 20;
-    console.log(`📏 Using ${serializationMargin}px serialization margin for format: ${format}`);
+    const useMinimalValidation = format ? shouldUseMinimalValidation(format) : false;
+    
+    console.log(`📏 Using ${serializationMargin}px serialization margin for format: ${format}${useMinimalValidation ? ' (minimal validation)' : ''}`);
     
     const elements = canvas.getObjects()
       // Filter out teacher photo elements - they're handled by photoPlacementRules.ts
@@ -52,10 +73,10 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
         console.log('[bannerGCO] Scale Factor:', scale, 'Serialization Margin:', serializationMargin);
       }
       
-      // Calculate UNSCALED position (real canvas coordinates) with better precision
+      // Calculate UNSCALED position with enhanced precision for small formats
       const unscaledPosition = {
-        x: Math.round((obj.left || 0) / scale * 100) / 100, // Better precision for small formats
-        y: Math.round((obj.top || 0) / scale * 100) / 100
+        x: precisionRound((obj.left || 0) / scale, format || ''),
+        y: precisionRound((obj.top || 0) / scale, format || '')
       };
 
       // Enhanced dimension calculation with fallback chain
@@ -86,62 +107,64 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
         size: { width, height }
       };
 
-      // Enhanced boundary validation with format-specific margins
-      if (format) {
+      // Enhanced boundary validation with format-specific behavior
+      if (format && !useMinimalValidation) {
+        // Standard validation for all formats except bannerGCO
         const validation = validateElementPosition(elementBounds, format);
-        if (format === 'bannerGCO') {
-          console.log('[bannerGCO] Validation Result for field:', obj.fieldMapping, JSON.parse(JSON.stringify(validation)));
-        }
+        
         if (!validation.isValid) {
           console.warn(`⚠️ Element ${obj.fieldMapping} has boundary violations:`, validation.violations);
-
-          if (format === 'bannerGCO') {
-            console.log('[bannerGCO] Position Correction: ElementBounds for constrainToCanvas', JSON.parse(JSON.stringify(elementBounds)));
-          }
           
           // Auto-correct with format-specific margin
           const corrected = constrainToCanvas(elementBounds, format, serializationMargin);
-          if (format === 'bannerGCO') {
-            console.log('[bannerGCO] Position Correction: Corrected Position from constrainToCanvas', JSON.parse(JSON.stringify(corrected.position)));
-          }
           unscaledPosition.x = corrected.position.x;
           unscaledPosition.y = corrected.position.y;
           
           // Also constrain size if element is too large for format
           const formatDims = getFormatDimensions(format);
-          // Recalculate maxWidth/maxHeight based on *potentially corrected* unscaledPosition
-          const currentUnscaledX = unscaledPosition.x;
-          const currentUnscaledY = unscaledPosition.y;
-
-          const maxWidth = formatDims.width - currentUnscaledX - serializationMargin;
-          const maxHeight = formatDims.height - currentUnscaledY - serializationMargin;
-
-          if (format === 'bannerGCO') {
-            console.log('[bannerGCO] Size Correction: Calculated MaxWidth', maxWidth, 'MaxHeight', maxHeight, 'based on unscaledPosition', JSON.parse(JSON.stringify(unscaledPosition)));
-          }
+          const maxWidth = formatDims.width - unscaledPosition.x - serializationMargin;
+          const maxHeight = formatDims.height - unscaledPosition.y - serializationMargin;
           
-          const originalWidthForLog = width;
-          const originalHeightForLog = height;
-
           if (width > maxWidth) {
             width = Math.max(50, maxWidth);
-            if (format === 'bannerGCO') {
-              console.log('[bannerGCO] Size Correction: Width constrained for field:', obj.fieldMapping, 'from', originalWidthForLog, 'to', width);
-            }
-            console.log(`📏 Constrained width from ${originalWidthForLog} to ${width}`);
+            console.log(`📏 Constrained width to ${width}`);
           }
           if (height > maxHeight) {
             height = Math.max(30, maxHeight);
-            if (format === 'bannerGCO') {
-              console.log('[bannerGCO] Size Correction: Height constrained for field:', obj.fieldMapping, 'from', originalHeightForLog, 'to', height);
-            }
-            console.log(`📏 Constrained height from ${originalHeightForLog} to ${height}`);
+            console.log(`📏 Constrained height to ${height}`);
           }
           
           console.log(`✅ Auto-corrected ${obj.fieldMapping} with ${serializationMargin}px margin:`, {
             position: corrected.position,
             size: { width, height }
           });
+        }
+      } else if (format && useMinimalValidation) {
+        // Minimal validation for bannerGCO - only prevent truly invalid positions
+        const formatDims = getFormatDimensions(format);
+        
+        // Only constrain if element is completely outside canvas or at negative positions
+        if (unscaledPosition.x < 0) {
+          unscaledPosition.x = 0;
+          console.log(`[${format}] Minimal correction: X position set to 0`);
+        }
+        if (unscaledPosition.y < 0) {
+          unscaledPosition.y = 0;
+          console.log(`[${format}] Minimal correction: Y position set to 0`);
+        }
+        
+        // Only constrain if element starts way beyond canvas boundaries
+        if (unscaledPosition.x > formatDims.width) {
+          unscaledPosition.x = formatDims.width - width - 1;
+          console.log(`[${format}] Minimal correction: X position constrained to canvas`);
+        }
+        if (unscaledPosition.y > formatDims.height) {
+          unscaledPosition.y = formatDims.height - height - 1;
+          console.log(`[${format}] Minimal correction: Y position constrained to canvas`);
+        }
+        
+        if (format === 'bannerGCO') {
+          console.log('[bannerGCO] Minimal validation applied, preserving user positioning:', unscaledPosition);
         }
       }
 
@@ -151,7 +174,8 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
         position: unscaledPosition,
         size: { width, height },
         type: obj.elementType,
-        scaleFactor: scale
+        scaleFactor: scale,
+        validationType: useMinimalValidation ? 'minimal' : 'standard'
       });
 
       // Create clean serializable object with boundary-validated coordinates
@@ -194,7 +218,7 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
       }
     });
 
-    console.log(`✅ Layout serialized with format-specific boundary validation (${serializationMargin}px margin, teacher photos filtered out):`, elements);
+    console.log(`✅ Layout serialized with ${useMinimalValidation ? 'minimal' : 'standard'} validation (${serializationMargin}px margin, teacher photos filtered out):`, elements);
     
     if (format) {
       const formatDims = getFormatDimensions(format);

@@ -128,9 +128,18 @@ export const useLayoutOperations = ({
     }
 
     try {
-      // Use layout draft if available, otherwise serialize fresh with format validation
-      const elements = layoutDraft.length > 0 ? layoutDraft : serializeCanvasLayout(canvas, scale, formatName);
-      console.log('💾 Saving layout with validated elements for format:', formatName, 'Elements count:', elements.length);
+      // Always prioritize layout draft for consistent saves, especially for bannerGCO
+      let elements = layoutDraft;
+      
+      // Only serialize fresh if no draft exists
+      if (elements.length === 0) {
+        console.log('💾 No layout draft found, serializing fresh for format:', formatName);
+        elements = serializeCanvasLayout(canvas, scale, formatName);
+      } else {
+        console.log('💾 Using existing layout draft for consistent save:', formatName, 'Elements count:', elements.length);
+      }
+
+      console.log('💾 Saving layout with validated elements for format:', formatName, 'Final elements:', elements);
 
       await saveLayout({
         template_id: templateId,

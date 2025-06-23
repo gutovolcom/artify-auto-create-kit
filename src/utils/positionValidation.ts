@@ -64,13 +64,20 @@ export const constrainToCanvas = (
 ): ElementBounds => {
   const formatDimensions = getFormatDimensions(format);
   
-  // For very small formats, ensure margin doesn't make positioning impossible
-  const area = formatDimensions.width * formatDimensions.height;
+  // For bannerGCO, use ultra-minimal margins to preserve user positioning
   let effectiveMargin = margin;
   
-  if (area < 60000) { // bannerGCO and other tiny formats
-    effectiveMargin = Math.min(margin, Math.floor(Math.min(formatDimensions.width, formatDimensions.height) * 0.05));
-    console.log(`📏 Adjusted margin for small format ${format}: ${margin} → ${effectiveMargin}px`);
+  if (format === 'bannerGCO') {
+    effectiveMargin = Math.min(margin, 1); // Ultra-minimal for bannerGCO
+    console.log(`📏 [bannerGCO] Using ultra-minimal margin: ${effectiveMargin}px to preserve positioning`);
+  } else {
+    // For very small formats, ensure margin doesn't make positioning impossible
+    const area = formatDimensions.width * formatDimensions.height;
+    
+    if (area < 60000) {
+      effectiveMargin = Math.min(margin, Math.floor(Math.min(formatDimensions.width, formatDimensions.height) * 0.05));
+      console.log(`📏 Adjusted margin for small format ${format}: ${margin} → ${effectiveMargin}px`);
+    }
   }
   
   const maxX = formatDimensions.width - element.size.width - effectiveMargin;

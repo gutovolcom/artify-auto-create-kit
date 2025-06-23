@@ -30,6 +30,11 @@ const getConstraintMargin = (format: string): number => {
   return 10;
 };
 
+// Check if format should skip real-time constraining (bannerGCO specific fix)
+const shouldSkipRealTimeConstraining = (format: string): boolean => {
+  return format === 'bannerGCO';
+};
+
 export const useCanvasEventHandlers = ({
   scale,
   setLayoutDraft
@@ -59,12 +64,19 @@ export const useCanvasEventHandlers = ({
         return;
       }
 
+      // Skip real-time constraining for bannerGCO to prevent positioning issues
+      if (shouldSkipRealTimeConstraining(format)) {
+        console.log(`🎯 [${format}] Skipping real-time constraining to preserve user positioning`);
+        updateLayoutDraft(fabricCanvas, format);
+        return;
+      }
+
       const unscaledX = (obj.left || 0) / scale;
       const unscaledY = (obj.top || 0) / scale;
       const objWidth = ((obj.width || 100) * (obj.scaleX || 1));
       const objHeight = ((obj.height || 50) * (obj.scaleY || 1));
 
-      // Use format-specific constraint margin
+      // Use format-specific constraint margin for other formats
       const constraintMargin = getConstraintMargin(format);
       
       const constrained = constrainToCanvas(
@@ -93,7 +105,7 @@ export const useCanvasEventHandlers = ({
     fabricCanvas.on('object:scaling', handleElementChange);
 
     eventListenersAttachedRef.current = true;
-    console.log(`✅ Canvas event listeners setup with format-specific boundary validation (${format ? getConstraintMargin(format) : 10}px margin)`);
+    console.log(`✅ Canvas event listeners setup ${shouldSkipRealTimeConstraining(format || '') ? 'WITHOUT' : 'with'} boundary validation for ${format}`);
   }, [scale, updateLayoutDraft]);
 
   const clearEventListeners = useCallback(() => {
