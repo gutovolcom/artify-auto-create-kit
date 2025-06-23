@@ -78,7 +78,7 @@ export const breakTextToFitWidth = (
       } else {
         // The single word is too long, break it
         const brokenWord = breakWordByCharacter(word, maxWidth, fontSize, fontFamily);
-        lines.push(...brokenword.lines);
+        lines.push(...brokenWord.lines);
         maxLineWidth = Math.max(maxLineWidth, brokenWord.maxLineWidth);
       }
     }
