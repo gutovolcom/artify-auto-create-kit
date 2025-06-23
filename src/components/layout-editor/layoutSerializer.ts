@@ -4,6 +4,25 @@ import { validateElementPosition, constrainToCanvas, getFormatDimensions } from 
 
 type FabricCanvas = fabric.Canvas;
 
+// Format-specific serialization margin calculation
+const getSerializationMargin = (format: string): number => {
+  const dimensions = getFormatDimensions(format);
+  const area = dimensions.width * dimensions.height;
+  
+  // For very small formats like bannerGCO, use minimal margins to prevent over-constraining
+  if (area < 60000) {
+    return 5; // Much smaller margin for tiny formats during serialization
+  }
+  
+  // For medium formats, use moderate margins
+  if (area < 500000) {
+    return 10;
+  }
+  
+  // For large formats, use standard margins
+  return 20;
+};
+
 export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, format?: string): any => {
   if (!canvas) {
     console.warn('Cannot serialize layout: canvas is not available');
@@ -11,9 +30,12 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
   }
 
   try {
-    console.log('🚫 Serializing canvas layout with enhanced boundary validation');
+    console.log('🚫 Serializing canvas layout with format-specific boundary validation');
     console.log('Canvas objects to serialize:', canvas.getObjects().length);
     console.log('Scale factor:', scale, 'Format:', format);
+    
+    const serializationMargin = format ? getSerializationMargin(format) : 20;
+    console.log(`📏 Using ${serializationMargin}px serialization margin for format: ${format}`);
     
     const elements = canvas.getObjects()
       // Filter out teacher photo elements - they're handled by photoPlacementRules.ts
@@ -27,12 +49,13 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
       .map((obj: any) => {
       if (format === 'bannerGCO') {
         console.log('[bannerGCO] Raw Object Props for field:', obj.fieldMapping, { left: obj.left, top: obj.top, width: obj.width, height: obj.height, scaleX: obj.scaleX, scaleY: obj.scaleY });
-        console.log('[bannerGCO] Scale Factor:', scale);
+        console.log('[bannerGCO] Scale Factor:', scale, 'Serialization Margin:', serializationMargin);
       }
-      // Calculate UNSCALED position (real canvas coordinates)
+      
+      // Calculate UNSCALED position (real canvas coordinates) with better precision
       const unscaledPosition = {
-        x: Math.round((obj.left || 0) / scale),
-        y: Math.round((obj.top || 0) / scale)
+        x: Math.round((obj.left || 0) / scale * 100) / 100, // Better precision for small formats
+        y: Math.round((obj.top || 0) / scale * 100) / 100
       };
 
       // Enhanced dimension calculation with fallback chain
@@ -63,7 +86,7 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
         size: { width, height }
       };
 
-      // Enhanced boundary validation and auto-correction
+      // Enhanced boundary validation with format-specific margins
       if (format) {
         const validation = validateElementPosition(elementBounds, format);
         if (format === 'bannerGCO') {
@@ -75,8 +98,9 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
           if (format === 'bannerGCO') {
             console.log('[bannerGCO] Position Correction: ElementBounds for constrainToCanvas', JSON.parse(JSON.stringify(elementBounds)));
           }
-          // Auto-correct the position and size if needed
-          const corrected = constrainToCanvas(elementBounds, format, 20); // 20px margin
+          
+          // Auto-correct with format-specific margin
+          const corrected = constrainToCanvas(elementBounds, format, serializationMargin);
           if (format === 'bannerGCO') {
             console.log('[bannerGCO] Position Correction: Corrected Position from constrainToCanvas', JSON.parse(JSON.stringify(corrected.position)));
           }
@@ -89,8 +113,8 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
           const currentUnscaledX = unscaledPosition.x;
           const currentUnscaledY = unscaledPosition.y;
 
-          const maxWidth = formatDims.width - currentUnscaledX - 20;
-          const maxHeight = formatDims.height - currentUnscaledY - 20;
+          const maxWidth = formatDims.width - currentUnscaledX - serializationMargin;
+          const maxHeight = formatDims.height - currentUnscaledY - serializationMargin;
 
           if (format === 'bannerGCO') {
             console.log('[bannerGCO] Size Correction: Calculated MaxWidth', maxWidth, 'MaxHeight', maxHeight, 'based on unscaledPosition', JSON.parse(JSON.stringify(unscaledPosition)));
@@ -114,7 +138,7 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
             console.log(`📏 Constrained height from ${originalHeightForLog} to ${height}`);
           }
           
-          console.log(`✅ Auto-corrected ${obj.fieldMapping}:`, {
+          console.log(`✅ Auto-corrected ${obj.fieldMapping} with ${serializationMargin}px margin:`, {
             position: corrected.position,
             size: { width, height }
           });
@@ -170,7 +194,7 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
       }
     });
 
-    console.log('✅ Layout serialized with enhanced boundary validation (teacher photos filtered out):', elements);
+    console.log(`✅ Layout serialized with format-specific boundary validation (${serializationMargin}px margin, teacher photos filtered out):`, elements);
     
     if (format) {
       const formatDims = getFormatDimensions(format);

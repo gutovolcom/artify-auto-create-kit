@@ -63,15 +63,25 @@ export const constrainToCanvas = (
   margin: number = 10
 ): ElementBounds => {
   const formatDimensions = getFormatDimensions(format);
-  const maxX = formatDimensions.width - element.size.width - margin;
-  const maxY = formatDimensions.height - element.size.height - margin;
+  
+  // For very small formats, ensure margin doesn't make positioning impossible
+  const area = formatDimensions.width * formatDimensions.height;
+  let effectiveMargin = margin;
+  
+  if (area < 60000) { // bannerGCO and other tiny formats
+    effectiveMargin = Math.min(margin, Math.floor(Math.min(formatDimensions.width, formatDimensions.height) * 0.05));
+    console.log(`📏 Adjusted margin for small format ${format}: ${margin} → ${effectiveMargin}px`);
+  }
+  
+  const maxX = formatDimensions.width - element.size.width - effectiveMargin;
+  const maxY = formatDimensions.height - element.size.height - effectiveMargin;
   
   const constrainedPosition = {
-    x: Math.max(margin, Math.min(element.position.x, maxX)),
-    y: Math.max(margin, Math.min(element.position.y, maxY))
+    x: Math.max(effectiveMargin, Math.min(element.position.x, maxX)),
+    y: Math.max(effectiveMargin, Math.min(element.position.y, maxY))
   };
   
-  console.log(`Constrained element to canvas ${format}:`, {
+  console.log(`Constrained element to canvas ${format} with ${effectiveMargin}px margin:`, {
     original: element.position,
     constrained: constrainedPosition,
     formatDimensions,
@@ -86,10 +96,19 @@ export const constrainToCanvas = (
 
 export const getSafeZone = (format: string, margin: number = 50) => {
   const dimensions = getFormatDimensions(format);
+  
+  // For small formats, use smaller safe zone margins
+  const area = dimensions.width * dimensions.height;
+  let effectiveMargin = margin;
+  
+  if (area < 60000) {
+    effectiveMargin = Math.min(margin, 10); // Much smaller safe zone for tiny formats
+  }
+  
   return {
-    x: margin,
-    y: margin,
-    width: dimensions.width - (margin * 2),
-    height: dimensions.height - (margin * 2)
+    x: effectiveMargin,
+    y: effectiveMargin,
+    width: dimensions.width - (effectiveMargin * 2),
+    height: dimensions.height - (effectiveMargin * 2)
   };
 };

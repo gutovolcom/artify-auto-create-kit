@@ -2,7 +2,7 @@
 import { useCallback, useRef } from 'react';
 import * as fabric from 'fabric';
 import { serializeCanvasLayout } from '@/components/layout-editor/layoutSerializer';
-import { constrainToCanvas } from '@/utils/positionValidation';
+import { constrainToCanvas, getFormatDimensions } from '@/utils/positionValidation';
 
 type FabricCanvas = fabric.Canvas;
 
@@ -10,6 +10,25 @@ interface UseCanvasEventHandlersProps {
   scale: number;
   setLayoutDraft: (draft: any[]) => void;
 }
+
+// Format-specific margin calculation based on canvas dimensions
+const getConstraintMargin = (format: string): number => {
+  const dimensions = getFormatDimensions(format);
+  const area = dimensions.width * dimensions.height;
+  
+  // For very small formats like bannerGCO (255x192 = 48,960), use minimal margins
+  if (area < 60000) {
+    return 2; // Much smaller margin for tiny formats
+  }
+  
+  // For medium formats, use moderate margins
+  if (area < 500000) {
+    return 5;
+  }
+  
+  // For large formats, use standard margins
+  return 10;
+};
 
 export const useCanvasEventHandlers = ({
   scale,
@@ -45,13 +64,16 @@ export const useCanvasEventHandlers = ({
       const objWidth = ((obj.width || 100) * (obj.scaleX || 1));
       const objHeight = ((obj.height || 50) * (obj.scaleY || 1));
 
+      // Use format-specific constraint margin
+      const constraintMargin = getConstraintMargin(format);
+      
       const constrained = constrainToCanvas(
         {
           position: { x: unscaledX, y: unscaledY },
           size: { width: objWidth / scale, height: objHeight / scale }
         },
         format,
-        10
+        constraintMargin
       );
 
       if (constrained.position.x !== unscaledX || constrained.position.y !== unscaledY) {
@@ -60,7 +82,7 @@ export const useCanvasEventHandlers = ({
           top: constrained.position.y * scale
         });
         fabricCanvas.renderAll();
-        console.log(`🚧 Element constrained to boundaries:`, constrained.position);
+        console.log(`🚧 Element constrained to boundaries with ${constraintMargin}px margin:`, constrained.position);
       }
 
       updateLayoutDraft(fabricCanvas, format);
@@ -71,7 +93,7 @@ export const useCanvasEventHandlers = ({
     fabricCanvas.on('object:scaling', handleElementChange);
 
     eventListenersAttachedRef.current = true;
-    console.log('✅ Canvas event listeners setup with boundary validation and immediate persistence');
+    console.log(`✅ Canvas event listeners setup with format-specific boundary validation (${format ? getConstraintMargin(format) : 10}px margin)`);
   }, [scale, updateLayoutDraft]);
 
   const clearEventListeners = useCallback(() => {
