@@ -2,13 +2,12 @@
 import { CanvasElementConfig } from './types';
 import { getStyleForField, getUserColors } from '@/utils/formatStyleRules';
 import { getLessonThemeStyle, CLASS_THEME_BOX_HEIGHTS } from '@/utils/canvas/lessonThemeUtils';
-import { breakTextToFitWidth } from '@/utils/canvas/smartTextBreaker';
 
 export interface FormatAwareStyle {
   fontSize: number;
   fontFamily: string;
   color: string;
-  fontWeight?: string;
+  fontWeight: string;
   fontStyle?: string;
 }
 
@@ -43,20 +42,6 @@ const getTextAlignmentForFormat = (format: string): 'left' | 'center' => {
   return 'center';
 };
 
-// Get format-specific max width for text breaking preview
-const getMaxTextWidthForFormat = (format: string, canvasWidth: number, elementX: number): number => {
-  const formatLimits = {
-    'youtube': Math.min(canvasWidth - elementX - 60, 320),
-    'feed': Math.min(canvasWidth - elementX - 60, 300),
-    'stories': Math.min(canvasWidth - elementX - 60, 280),
-    'ledStudio': Math.min(canvasWidth - elementX - 60, 350),
-    'bannerGCO': Math.min(canvasWidth - elementX - 40, 400),
-    'LP': Math.min(canvasWidth - elementX - 40, 400)
-  };
-  
-  return formatLimits[format as keyof typeof formatLimits] || Math.min(canvasWidth - elementX - 40, 400);
-};
-
 export const getFormatAwareStyle = (
   config: CanvasElementConfig,
   format: string
@@ -65,26 +50,18 @@ export const getFormatAwareStyle = (
   const userColors = getUserColors(sampleEventData);
   const style = getStyleForField(format, config.field, userColors);
   
-  // Add font weight and style based on field type
-  let fontWeight = 'normal';
+  // Add font style based on field type (but not weight, as it's handled by font family)
   let fontStyle = 'normal';
   
-  if (config.field.toLowerCase().includes('title') || config.field.toLowerCase().includes('headline')) {
-    fontWeight = 'bold';
-  } else if (config.field.toLowerCase().includes('caption') || config.field.toLowerCase().includes('subtitle')) {
+  if (config.field.toLowerCase().includes('caption') || config.field.toLowerCase().includes('subtitle')) {
     fontStyle = 'italic';
-  }
-  
-  // Special handling for lesson theme field
-  if (config.field === 'classTheme') {
-    fontWeight = 'bold';
   }
   
   return {
     fontSize: style.fontSize,
     fontFamily: style.fontFamily,
     color: style.color,
-    fontWeight,
+    fontWeight: style.fontWeight,
     fontStyle
   };
 };
@@ -120,23 +97,20 @@ export const getClassThemeBoxConfig = (
     };
   }
   
-  // Calculate box dimensions with text breaking preview
-  const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX);
-  const sampleText = "Sample Lesson Theme Text";
-  const formatAwareStyle = getFormatAwareStyle(config, format);
+  // Use fixed box height from CLASS_THEME_BOX_HEIGHTS (no dynamic calculation)
+  const boxHeight = themeStyle.fixedBoxHeight;
   
-  const textBreakResult = breakTextToFitWidth(
-    sampleText,
-    maxTextWidth,
-    formatAwareStyle.fontSize,
-    formatAwareStyle.fontFamily
-  );
+  // Calculate appropriate box width based on format
+  const formatBoxWidths = {
+    'youtube': 320,
+    'feed': 300,
+    'stories': 280,
+    'ledStudio': 350,
+    'bannerGCO': 200,
+    'LP': 300
+  };
   
-  const boxHeight = textBreakResult.needsLineBreak ? 
-    textBreakResult.totalHeight + (padding * 2) : 
-    themeStyle.fixedBoxHeight;
-  
-  const boxWidth = Math.max(maxTextWidth + (padding * 2), 200);
+  const boxWidth = formatBoxWidths[format as keyof typeof formatBoxWidths] || 250;
   
   return {
     hasBox: true,
@@ -151,7 +125,7 @@ export const getClassThemeBoxConfig = (
 export const getSampleTextForField = (field: string): string => {
   const sampleTexts = {
     title: 'Sample Event Title',
-    classTheme: 'Sample Lesson Theme',
+    classTheme: 'Sample Theme', // Shorter text to prevent cutoff
     teacherName: 'Professor Name',
     date: '23/06/2025',
     time: '14:00',

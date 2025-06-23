@@ -65,7 +65,7 @@ const addTextElement = (
   const elementX = initialPosition.x * scale;
   const elementY = initialPosition.y * scale;
 
-  // Get format-aware styling instead of generic styling
+  // Get format-aware styling with proper font weights
   const formatStyle = format ? 
     getFormatAwareStyle(config, format) : 
     {
@@ -78,14 +78,14 @@ const addTextElement = (
 
   const sampleText = getSampleTextForField(config.field);
 
-  // Special handling for classTheme field
+  // Special handling for classTheme field with fixed box sizing
   if (config.field === 'classTheme' && format) {
     const boxConfig = getClassThemeBoxConfig(config, format, canvas.getWidth(), initialPosition.x);
     
     if (boxConfig.hasBox) {
-      console.log('🎨 Creating visual lesson theme box in layout editor:', boxConfig);
+      console.log('🎨 Creating fixed-size lesson theme box in layout editor:', boxConfig);
       
-      // Create the background box
+      // Create the background box with fixed dimensions
       const background = new Rect({
         left: 0,
         top: 0,
@@ -98,19 +98,19 @@ const addTextElement = (
         originY: 'top'
       });
 
-      // Create the text with proper styling
+      // Create the text with proper font weight from font family
       const text = new Text(sampleText, {
         fontSize: formatStyle.fontSize * scale,
         fill: formatStyle.color,
         fontFamily: formatStyle.fontFamily,
-        fontWeight: formatStyle.fontWeight,
+        fontWeight: formatStyle.fontWeight, // Use proper font weight
         fontStyle: formatStyle.fontStyle,
         textAlign: boxConfig.textAlignment,
         originX: 'left',
         originY: 'top'
       });
 
-      // Position text within the box
+      // Position text within the fixed-size box
       if (boxConfig.textAlignment === 'center') {
         text.set({
           left: (boxConfig.boxWidth * scale - text.width!) / 2,
@@ -138,7 +138,7 @@ const addTextElement = (
       });
 
       canvas.add(group);
-      console.log('✅ Lesson theme box element added with visual accuracy:', {
+      console.log('✅ Fixed-size lesson theme box element added:', {
         left: group.left,
         top: group.top,
         boxWidth: boxConfig.boxWidth,
@@ -149,14 +149,14 @@ const addTextElement = (
     }
   }
 
-  // Regular text element with format-aware styling
+  // Regular text element with proper font weight
   const text = new Text(sampleText, {
     left: elementX,
     top: elementY,
     fontSize: formatStyle.fontSize * scale,
     fill: formatStyle.color,
     fontFamily: formatStyle.fontFamily,
-    fontWeight: formatStyle.fontWeight,
+    fontWeight: formatStyle.fontWeight, // Use proper font weight
     fontStyle: formatStyle.fontStyle,
     selectable: true,
     evented: true
@@ -169,11 +169,12 @@ const addTextElement = (
   });
 
   canvas.add(text);
-  console.log('✅ Format-aware text element added:', { 
+  console.log('✅ Format-aware text element added with proper font weight:', { 
     left: text.left, 
     top: text.top, 
     fontSize: formatStyle.fontSize * scale, 
     fontFamily: formatStyle.fontFamily,
+    fontWeight: formatStyle.fontWeight,
     id: config.id 
   });
 };

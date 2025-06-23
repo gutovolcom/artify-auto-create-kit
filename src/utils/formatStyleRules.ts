@@ -1,3 +1,4 @@
+
 import { EventData } from "@/pages/Index";
 
 // User color configuration for dynamic color application
@@ -12,7 +13,7 @@ interface FieldStyle {
   fontSize: number;
 }
 
-// Format-specific style map (JSON-like structure)
+// Format-specific style map with complete font definitions
 const styleMap = {
   youtube: {
     title: { fontFamily: 'Margem-Black', fontSize: 140 },
@@ -36,16 +37,41 @@ const styleMap = {
     teacherName: { fontFamily: 'Margem-Medium', fontSize: 62 }
   },
   bannerGCO: {
+    title: { fontFamily: 'Margem-Black', fontSize: 24 },
     classTheme: { fontFamily: 'Margem-Bold', fontSize: 18 },
+    date: { fontFamily: 'Toroka Wide Regular', fontSize: 14 },
+    time: { fontFamily: 'Toroka Wide Regular', fontSize: 14 },
     teacherName: { fontFamily: 'Margem-Medium', fontSize: 16 }
   },
   ledStudio: {
+    title: { fontFamily: 'Margem-Black', fontSize: 36 },
     classTheme: { fontFamily: 'Margem-Bold', fontSize: 30 },
+    date: { fontFamily: 'Toroka Wide Regular', fontSize: 22 },
+    time: { fontFamily: 'Toroka Wide Regular', fontSize: 22 },
     teacherName: { fontFamily: 'Margem-Medium', fontSize: 26 }
   },
   LP: {
+    title: { fontFamily: 'Margem-Black', fontSize: 48 },
     classTheme: { fontFamily: 'Margem-Bold', fontSize: 42 },
+    date: { fontFamily: 'Toroka Wide Regular', fontSize: 32 },
+    time: { fontFamily: 'Toroka Wide Regular', fontSize: 32 },
     teacherName: { fontFamily: 'Margem-Medium', fontSize: 28 }
+  }
+};
+
+// Map font families to proper CSS font weights
+const getFontWeight = (fontFamily: string): string => {
+  switch (fontFamily) {
+    case 'Margem-Black':
+      return '900';
+    case 'Margem-Bold':
+      return 'bold';
+    case 'Margem-Medium':
+      return '500';
+    case 'Toroka Wide Regular':
+    case 'Margem-Regular':
+    default:
+      return 'normal';
   }
 };
 
@@ -54,7 +80,7 @@ export const getStyleForField = (
   format: string,
   field: string,
   userColors: UserColors
-): { fontSize: number; fontFamily: string; color: string } => {
+): { fontSize: number; fontFamily: string; color: string; fontWeight: string } => {
   console.log(`Getting style for format: ${format}, field: ${field}`);
   
   // Get format styles or fallback to default
@@ -73,16 +99,19 @@ export const getStyleForField = (
   
   // Apply dynamic color based on field type
   const color = getColorForField(field, userColors);
+  const fontWeight = getFontWeight(fieldStyle.fontFamily);
   
   console.log(`Applied style for ${format}.${field}:`, {
     fontSize: fieldStyle.fontSize,
     fontFamily: fieldStyle.fontFamily,
+    fontWeight,
     color
   });
   
   return {
     fontSize: fieldStyle.fontSize,
     fontFamily: fieldStyle.fontFamily,
+    fontWeight,
     color
   };
 };
@@ -102,15 +131,15 @@ const getColorForField = (field: string, userColors: UserColors): string => {
 };
 
 // Fallback styling when format or field is not found
-const getDefaultStyle = (field: string, userColors: UserColors): { fontSize: number; fontFamily: string; color: string } => {
+const getDefaultStyle = (field: string, userColors: UserColors): { fontSize: number; fontFamily: string; color: string; fontWeight: string } => {
   console.warn(`Using fallback style for field: ${field}`);
   
   const defaultStyles = {
     title: { fontSize: 48, fontFamily: 'Margem-Black' },
     classTheme: { fontSize: 28, fontFamily: 'Margem-Bold' },
-    teacherName: { fontSize: 32, fontFamily: 'Margem-Regular' },
-    date: { fontSize: 24, fontFamily: 'Margem-Regular' },
-    time: { fontSize: 24, fontFamily: 'Margem-Regular' }
+    teacherName: { fontSize: 32, fontFamily: 'Margem-Medium' },
+    date: { fontSize: 24, fontFamily: 'Toroka Wide Regular' },
+    time: { fontSize: 24, fontFamily: 'Toroka Wide Regular' }
   };
   
   const defaultStyle = defaultStyles[field as keyof typeof defaultStyles] || {
@@ -120,6 +149,7 @@ const getDefaultStyle = (field: string, userColors: UserColors): { fontSize: num
   
   return {
     ...defaultStyle,
+    fontWeight: getFontWeight(defaultStyle.fontFamily),
     color: getColorForField(field, userColors)
   };
 };
