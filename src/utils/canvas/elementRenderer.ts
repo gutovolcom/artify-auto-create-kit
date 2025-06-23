@@ -1,3 +1,4 @@
+
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
@@ -5,6 +6,7 @@ import { getTextContent, shouldApplyTextBreaking } from './textUtils';
 import { getLessonThemeStyle, lessonThemeStyleColors, CLASS_THEME_BOX_HEIGHTS } from './lessonThemeUtils';
 import { breakTextToFitWidth } from './smartTextBreaker';
 import { calculatePositionAdjustments } from './positionAdjuster';
+import { measureTextWidth, getDynamicSafetyMargin, getAlignmentPadding } from './textMeasurement';
 
 // Store position adjustments globally for this rendering session
 let globalPositionAdjustments: Map<string, number> = new Map();
@@ -28,37 +30,40 @@ const getTextAlignmentForFormat = (format: string): 'left' | 'center' => {
   return 'center';
 };
 
-// Helper function to get format-specific max width for text breaking
+// Improved format-specific max width calculation with accurate text measurement
 const getMaxTextWidthForFormat = (format: string, canvasWidth: number, elementX: number, field: string): number => {
-  // For date/time fields that don't need text breaking, use generous width
+  // For date/time fields that don't need text breaking, use very generous width
   if (field === 'date' || field === 'time') {
-    return Math.min(canvasWidth - elementX - 40, 600); // Much more generous for date/time
+    const alignmentPadding = getAlignmentPadding(format, elementX, canvasWidth);
+    return Math.min(canvasWidth - elementX - alignmentPadding, 800); // Much more generous for date/time
   }
   
-  // For teacher names, use more generous limits
+  // For teacher names, use generous limits with dynamic padding
   if (field === 'teacherName') {
+    const dynamicMargin = getDynamicSafetyMargin(60); // Assume average teacher name font size
     const formatLimits = {
-      'youtube': Math.min(canvasWidth - elementX - 40, 600),
-      'feed': Math.min(canvasWidth - elementX - 40, 600),
-      'stories': Math.min(canvasWidth - elementX - 40, 550),
-      'ledStudio': Math.min(canvasWidth - elementX - 40, 550),
-      'bannerGCO': Math.min(canvasWidth - elementX - 40, 450),
-      'LP': Math.min(canvasWidth - elementX - 40, 500)
+      'youtube': Math.min(canvasWidth - elementX - dynamicMargin, 700),
+      'feed': Math.min(canvasWidth - elementX - dynamicMargin, 650),
+      'stories': Math.min(canvasWidth - elementX - dynamicMargin, 600),
+      'ledStudio': Math.min(canvasWidth - elementX - dynamicMargin, 600),
+      'bannerGCO': Math.min(canvasWidth - elementX - dynamicMargin, 500),
+      'LP': Math.min(canvasWidth - elementX - dynamicMargin, 550)
     };
-    return formatLimits[format as keyof typeof formatLimits] || Math.min(canvasWidth - elementX - 40, 450);
+    return formatLimits[format as keyof typeof formatLimits] || Math.min(canvasWidth - elementX - dynamicMargin, 500);
   }
   
-  // For other fields that need text breaking, use moderate limits
+  // For other fields that need text breaking, use improved limits
+  const dynamicMargin = getDynamicSafetyMargin(100); // Assume larger font size for titles
   const formatLimits = {
-    'youtube': Math.min(canvasWidth - elementX - 60, 600),
-    'feed': Math.min(canvasWidth - elementX - 60, 600),    
-    'stories': Math.min(canvasWidth - elementX - 60, 5500),
-    'ledStudio': Math.min(canvasWidth - elementX - 60, 5500),
-    'bannerGCO': Math.min(canvasWidth - elementX - 40, 450),
-    'LP': Math.min(canvasWidth - elementX - 40, 500)
+    'youtube': Math.min(canvasWidth - elementX - dynamicMargin, 800),
+    'feed': Math.min(canvasWidth - elementX - dynamicMargin, 750),    
+    'stories': Math.min(canvasWidth - elementX - dynamicMargin, 700),
+    'ledStudio': Math.min(canvasWidth - elementX - dynamicMargin, 700),
+    'bannerGCO': Math.min(canvasWidth - elementX - dynamicMargin, 500),
+    'LP': Math.min(canvasWidth - elementX - dynamicMargin, 550)
   };
   
-  return formatLimits[format as keyof typeof formatLimits] || Math.min(canvasWidth - elementX - 40, 350);
+  return formatLimits[format as keyof typeof formatLimits] || Math.min(canvasWidth - elementX - dynamicMargin, 450);
 };
 
 export const addElementToCanvas = (
@@ -104,7 +109,7 @@ export const addElementToCanvas = (
     const textAlignment = getTextAlignmentForFormat(format);
     
     if (themeStyle) {
-      // Calculate available width for text using format-specific limits
+      // Calculate available width for text using improved format-specific limits
       const horizontalPadding = 20;
       const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX, field);
       
@@ -119,25 +124,25 @@ export const addElementToCanvas = (
       // Create the text with broken lines and format-specific alignment
       const finalText = textBreakResult.lines.join('\n');
       const text = new FabricText(finalText, {
-        fontSize: formatStyle.fontSize, // Keep original font size
-        fontFamily: formatStyle.fontFamily, // Keep original font family
+        fontSize: formatStyle.fontSize,
+        fontFamily: formatStyle.fontFamily,
         fill: themeStyle.fontColor,
-        textAlign: textAlignment, // Apply format-specific alignment
+        textAlign: textAlignment,
         originX: 'left',
         originY: 'top'
       });
 
-      // Calculate box dimensions with improved padding
+      // Calculate box dimensions with improved padding calculation
       const fixedBoxHeight = textBreakResult.needsLineBreak ? 
-        textBreakResult.totalHeight + 20 : // Extra height for multi-line
-        themeStyle.fixedBoxHeight; // Original height for single line
+        textBreakResult.totalHeight + 20 : 
+        themeStyle.fixedBoxHeight;
       
-      // Improved background width calculation with better padding
-      const textWidth = text.width || 0;
-      const minWidth = 120; // Minimum width for small text
-      const paddingSafety = 10; // Extra padding to prevent cutoff
+      // Use accurate text measurement for better width calculation
+      const actualTextWidth = measureTextWidth(finalText, formatStyle.fontSize, formatStyle.fontFamily);
+      const minWidth = 140; // Increased minimum width
+      const paddingSafety = 15; // Increased safety padding
       const backgroundWidth = Math.max(
-        textWidth + (horizontalPadding * 2) + paddingSafety,
+        actualTextWidth + (horizontalPadding * 2) + paddingSafety,
         minWidth
       );
       const backgroundHeight = Math.max(fixedBoxHeight, textBreakResult.totalHeight + 20);
@@ -154,10 +159,10 @@ export const addElementToCanvas = (
         originY: 'top'
       });
 
-      // Position text within the box based on alignment
+      // Position text within the box based on alignment with improved centering
       if (textAlignment === 'center') {
         text.set({
-          left: (backgroundWidth - textWidth) / 2,
+          left: (backgroundWidth - text.width!) / 2,
           top: (backgroundHeight - text.height!) / 2
         });
       } else {
@@ -193,7 +198,7 @@ export const addElementToCanvas = (
         lines: textBreakResult.lines.length,
         originalHeight: themeStyle.fixedBoxHeight,
         finalHeight: backgroundHeight,
-        textWidth: textWidth,
+        actualTextWidth: actualTextWidth,
         backgroundWidth: backgroundWidth,
         textHeight: text.height,
         finalText: finalText,
@@ -210,7 +215,7 @@ export const addElementToCanvas = (
       
       canvas.add(group);
     } else {
-      // Fallback logic with text breaking and format-specific alignment
+      // Fallback logic with improved text breaking and format-specific alignment
       const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX, field);
       const textBreakResult = breakTextToFitWidth(
         textContent,
@@ -231,12 +236,12 @@ export const addElementToCanvas = (
       const backgroundColor = eventData.boxColor || '#dd303e';
       const borderRadius = 10;
 
-      // Improved background width calculation
-      const textWidth = text.width || 0;
-      const paddingSafety = 10;
+      // Use accurate text measurement for better background width calculation
+      const actualTextWidth = measureTextWidth(finalText, formatStyle.fontSize, formatStyle.fontFamily);
+      const paddingSafety = 15;
       const backgroundWidth = Math.max(
-        textWidth + (padding * 2) + paddingSafety,
-        120
+        actualTextWidth + (padding * 2) + paddingSafety,
+        140
       );
 
       const background = new Rect({
@@ -256,7 +261,7 @@ export const addElementToCanvas = (
       canvas.add(group);
     }
   } else {
-    // For all other text elements, apply conditional smart text breaking
+    // For all other text elements, apply conditional smart text breaking with improved measurement
     const needsTextBreaking = shouldApplyTextBreaking(field, eventData);
     let finalText = textContent;
     const textAlignment = getTextAlignmentForFormat(format);

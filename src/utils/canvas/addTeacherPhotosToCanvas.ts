@@ -13,6 +13,12 @@ export async function addTeacherPhotosToCanvas(
   canvasHeight: number,
   eventData?: EventData
 ) {
+  // Skip photo placement for bannerGCO format as requested
+  if (format === 'bannerGCO') {
+    console.log('🚫 Skipping teacher photos for bannerGCO format - photos removed as requested');
+    return;
+  }
+
   const rule = teacherImageRules[format]?.[imageUrls.length];
 
   if (!rule) {
@@ -28,7 +34,8 @@ export async function addTeacherPhotosToCanvas(
   console.log('🎯 Adding teacher photos:', {
     format,
     imageCount: imageUrls.length,
-    rule
+    rule,
+    canvasDimensions: { width: canvasWidth, height: canvasHeight }
   });
 
   // Add photos only - teacher names are now handled by layout editor positioning
@@ -42,21 +49,34 @@ export async function addTeacherPhotosToCanvas(
           return;
         }
         
-        const scale = rule.height / img.height!;
+        // Calculate scale to fit the specified dimensions
+        const scaleX = rule.width / img.width!;
+        const scaleY = rule.height / img.height!;
+        const scale = Math.min(scaleX, scaleY); // Use minimum to maintain aspect ratio
+        
         img.scale(scale);
 
         const x = canvasWidth - rule.width - (index * rule.xOffset);
         const y = canvasHeight - rule.height;
 
+        // Ensure photo stays within canvas bounds
+        const finalX = Math.max(0, Math.min(x, canvasWidth - rule.width));
+        const finalY = Math.max(0, Math.min(y, canvasHeight - rule.height));
+
         img.set({
-          left: x,
-          top: y,
+          left: finalX,
+          top: finalY,
           selectable: false,
           evented: false,
         });
 
         canvas.add(img);
-        console.log(`📷 Added teacher photo ${index + 1}:`, { x, y, width: rule.width, height: rule.height });
+        console.log(`📷 Added teacher photo ${index + 1}:`, { 
+          originalSize: { width: img.width! / scale, height: img.height! / scale },
+          scaledSize: { width: rule.width, height: rule.height },
+          scale: scale,
+          position: { x: finalX, y: finalY }
+        });
         
         resolve();
       }).catch((error) => {

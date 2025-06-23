@@ -21,15 +21,18 @@ export const teacherImageRules: Record<string, Record<number, PhotoRule>> = {
     2: { width: 490, height: 700, xOffset: 330 },
     3: { width: 420, height: 600, xOffset: 340 }
   },
-  bannerGCO: {
-    1: { width: 300, height: 400, xOffset: 0 },
-    2: { width: 250, height: 350, xOffset: 280 },
-    3: { width: 200, height: 280, xOffset: 250 }
-  },
+  // bannerGCO: Teacher photos removed as requested since canvas is too small (255x192)
+  // Future implementation can be added here if needed:
+  // bannerGCO: {
+  //   1: { width: 120, height: 150, xOffset: 0 },
+  //   2: { width: 100, height: 125, xOffset: 110 },
+  //   3: { width: 80, height: 100, xOffset: 90 }
+  // },
   ledStudio: {
-    1: { width: 400, height: 500, xOffset: 0 },
-    2: { width: 350, height: 450, xOffset: 380 },
-    3: { width: 300, height: 400, xOffset: 350 }
+    // Reduced photo sizes to fit within 1024x256 canvas dimensions
+    1: { width: 180, height: 230, xOffset: 0 }, // Reduced from 400x500
+    2: { width: 160, height: 200, xOffset: 170 }, // Reduced from 350x450
+    3: { width: 140, height: 180, xOffset: 150 } // Reduced from 300x400
   },
   lp: {
     1: { width: 500, height: 650, xOffset: 0 },
