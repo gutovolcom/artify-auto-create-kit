@@ -1,7 +1,12 @@
 
-import { Canvas, Text, Image, Rect } from 'fabric';
+import { Canvas, Text, Image, Rect, Group } from 'fabric';
 import { CanvasElementConfig } from './types';
 import { constrainToCanvas } from '@/utils/positionValidation';
+import { 
+  getFormatAwareStyle, 
+  getClassThemeBoxConfig, 
+  getSampleTextForField 
+} from './formatAwareRendering';
 
 type FabricCanvas = Canvas;
 
@@ -51,36 +56,110 @@ const validateAndPositionElement = (
 
 const addTextElement = (
   canvas: FabricCanvas,
-  config: CanvasElementConfig, // Full config including id, type, field, style
+  config: CanvasElementConfig,
   initialPosition: { x: number; y: number },
-  initialSize: { width: number; height: number }, // Not directly used for text content itself, but good to have for consistency
-  scale: number
+  initialSize: { width: number; height: number },
+  scale: number,
+  format?: string
 ): void => {
   const elementX = initialPosition.x * scale;
   const elementY = initialPosition.y * scale;
 
-  const fontSize = (config.style.fontSize || 24) * scale;
-  const fontFamily = config.style.fontFamily || 'Arial';
-  const color = config.style.color || '#333333';
+  // Get format-aware styling instead of generic styling
+  const formatStyle = format ? 
+    getFormatAwareStyle(config, format) : 
+    {
+      fontSize: 24,
+      fontFamily: 'Arial',
+      color: '#333333',
+      fontWeight: 'normal',
+      fontStyle: 'normal'
+    };
 
-  let fontWeight = 'normal';
-  let fontStyle = 'normal';
-  if (config.field.toLowerCase().includes('title') || config.field.toLowerCase().includes('headline')) {
-    fontWeight = 'bold';
-  } else if (config.field.toLowerCase().includes('caption') || config.field.toLowerCase().includes('subtitle')) {
-    fontStyle = 'italic';
+  const sampleText = getSampleTextForField(config.field);
+
+  // Special handling for classTheme field
+  if (config.field === 'classTheme' && format) {
+    const boxConfig = getClassThemeBoxConfig(config, format, canvas.getWidth(), initialPosition.x);
+    
+    if (boxConfig.hasBox) {
+      console.log('🎨 Creating visual lesson theme box in layout editor:', boxConfig);
+      
+      // Create the background box
+      const background = new Rect({
+        left: 0,
+        top: 0,
+        width: boxConfig.boxWidth * scale,
+        height: boxConfig.boxHeight * scale,
+        fill: boxConfig.boxColor || '#dd303e',
+        rx: 10 * scale,
+        ry: 10 * scale,
+        originX: 'left',
+        originY: 'top'
+      });
+
+      // Create the text with proper styling
+      const text = new Text(sampleText, {
+        fontSize: formatStyle.fontSize * scale,
+        fill: formatStyle.color,
+        fontFamily: formatStyle.fontFamily,
+        fontWeight: formatStyle.fontWeight,
+        fontStyle: formatStyle.fontStyle,
+        textAlign: boxConfig.textAlignment,
+        originX: 'left',
+        originY: 'top'
+      });
+
+      // Position text within the box
+      if (boxConfig.textAlignment === 'center') {
+        text.set({
+          left: (boxConfig.boxWidth * scale - text.width!) / 2,
+          top: (boxConfig.boxHeight * scale - text.height!) / 2
+        });
+      } else {
+        text.set({
+          left: boxConfig.padding * scale,
+          top: (boxConfig.boxHeight * scale - text.height!) / 2
+        });
+      }
+
+      // Create group with background and text
+      const group = new Group([background, text], {
+        left: elementX,
+        top: elementY,
+        selectable: true,
+        evented: true
+      });
+
+      group.set({
+        elementId: config.id,
+        elementType: config.type,
+        fieldMapping: config.field
+      });
+
+      canvas.add(group);
+      console.log('✅ Lesson theme box element added with visual accuracy:', {
+        left: group.left,
+        top: group.top,
+        boxWidth: boxConfig.boxWidth,
+        boxHeight: boxConfig.boxHeight,
+        id: config.id
+      });
+      return;
+    }
   }
 
-  const text = new Text(`[${config.field.toUpperCase()}]`, {
+  // Regular text element with format-aware styling
+  const text = new Text(sampleText, {
     left: elementX,
     top: elementY,
-    fontSize: fontSize,
-    fill: color,
-    fontFamily: fontFamily,
+    fontSize: formatStyle.fontSize * scale,
+    fill: formatStyle.color,
+    fontFamily: formatStyle.fontFamily,
+    fontWeight: formatStyle.fontWeight,
+    fontStyle: formatStyle.fontStyle,
     selectable: true,
-    evented: true,
-    fontWeight: fontWeight,
-    fontStyle: fontStyle
+    evented: true
   });
 
   text.set({
@@ -90,7 +169,13 @@ const addTextElement = (
   });
 
   canvas.add(text);
-  console.log('✅ Text element added:', { left: text.left, top: text.top, fontSize, id: config.id });
+  console.log('✅ Format-aware text element added:', { 
+    left: text.left, 
+    top: text.top, 
+    fontSize: formatStyle.fontSize * scale, 
+    fontFamily: formatStyle.fontFamily,
+    id: config.id 
+  });
 };
 
 const addImageElement = (
@@ -241,11 +326,12 @@ export const addElementToCanvas = (
 
   const validatedLayout = validateAndPositionElement(fullConfig, format);
 
-  console.log('🎨 Adding element to canvas with VALIDATED position and preserved dimensions:', {
+  console.log('🎨 Adding element to canvas with FORMAT-AWARE styling and validated position:', {
     field: fullConfig.field,
     position: validatedLayout.position,
     size: validatedLayout.size,
-    type: fullConfig.type
+    type: fullConfig.type,
+    format: format
   });
   
   if (format === 'bannerGCO') {
@@ -258,7 +344,7 @@ export const addElementToCanvas = (
     if (fullConfig.type === 'image') {
       addImageElement(canvas, fullConfig, validatedLayout.position, validatedLayout.size, scale);
     } else {
-      addTextElement(canvas, fullConfig, validatedLayout.position, validatedLayout.size, scale);
+      addTextElement(canvas, fullConfig, validatedLayout.position, validatedLayout.size, scale, format);
     }
     
     // Ensure element is on top and visible
@@ -271,7 +357,7 @@ export const addElementToCanvas = (
     }
     canvas.renderAll();
     
-    console.log('Element processing initiated successfully with boundary validation and preserved dimensions:', fullConfig.id);
+    console.log('Element processing completed with format-aware visual accuracy:', fullConfig.id);
   } catch (error) {
     console.error('Error adding element to canvas:', error);
   }
