@@ -3,7 +3,6 @@ import React, { useEffect, useRef } from 'react';
 import { useAdvancedLayoutEditor } from '@/hooks/useAdvancedLayoutEditor';
 import { useLayoutEditorState } from '@/hooks/useLayoutEditorState';
 import { useCanvasManager } from '@/hooks/useCanvasManager';
-import { useLayoutOperations } from '@/hooks/useLayoutOperations';
 import { useCanvasMemoryManager } from '@/hooks/useCanvasMemoryManager';
 import { useLayoutEditorPerformance } from '@/hooks/useLayoutEditorPerformance';
 import { useCanvasStateHistory } from '@/hooks/useCanvasStateHistory';
@@ -16,6 +15,15 @@ interface AdvancedEditorContainerProps {
   backgroundImageUrl: string;
   formatDimensions: { width: number; height: number };
   onSave: (layoutData: any) => void;
+}
+
+// Define the Advanced Layout Element interface specifically for this editor
+interface AdvancedLayoutElement {
+  id: string;
+  name: string;
+  element_type: string;
+  field_mapping: string;
+  default_style?: any;
 }
 
 export const AdvancedEditorContainer: React.FC<AdvancedEditorContainerProps> = ({
@@ -57,33 +65,16 @@ export const AdvancedEditorContainer: React.FC<AdvancedEditorContainerProps> = (
     forceGarbageCollection
   } = useCanvasMemoryManager();
 
-  // Advanced undo/redo system - use the correct method names from the actual hook
+  // Advanced undo/redo system
   const {
+    history,
+    saveCanvasState,
     undo,
     redo,
     canUndo,
     canRedo,
-    saveCanvasState: saveState,
-    history
+    updateCanvasInstance
   } = useCanvasStateHistory(canvas);
-
-  // Create helper functions for history management
-  const clearHistory = () => {
-    if (history) {
-      history.clear();
-    }
-  };
-
-  const getHistoryStats = () => {
-    if (!history) {
-      return { currentSize: 0, maxSize: 50, lastActionTime: null };
-    }
-    return {
-      currentSize: history.getCurrentSize ? history.getCurrentSize() : 0,
-      maxSize: 50,
-      lastActionTime: history.getLastActionTime ? history.getLastActionTime() : null
-    };
-  };
 
   // Track previous values to prevent unnecessary resets
   const previousTemplateRef = useRef<string | null>(null);
@@ -123,6 +114,7 @@ export const AdvancedEditorContainer: React.FC<AdvancedEditorContainerProps> = (
       }
       if (newCanvas) {
         registerCanvas(newCanvas);
+        updateCanvasInstance(newCanvas);
       }
       setCanvas(newCanvas);
     },
@@ -153,30 +145,9 @@ export const AdvancedEditorContainer: React.FC<AdvancedEditorContainerProps> = (
     }
   });
 
-  const {
-    handleAddElement: originalAddElement,
-    handleDeleteSelected,
-    handleSaveLayout: originalSaveLayout
-  } = useLayoutOperations({
-    canvas,
-    selectedObject,
-    setSelectedObject,
-    scale,
-    displayWidth,
-    displayHeight,
-    layoutElements,
-    layoutDraft,
-    setLayoutDraft,
-    saveLayout: (config) => saveAdvancedLayout(templateId, formatName, config),
-    templateId,
-    formatName,
-    onSave,
-    updateLayoutDraft
-  });
-
   // Enhanced add element with undo/redo support
   const handleAddElement = (elementType: string) => {
-    const element = layoutElements.find(el => el.field_mapping === elementType);
+    const element = layoutElements.find(el => el.field_mapping === elementType) as AdvancedLayoutElement;
     if (!element) return;
 
     const elementConfig = {
@@ -195,7 +166,7 @@ export const AdvancedEditorContainer: React.FC<AdvancedEditorContainerProps> = (
     };
 
     // Save state before modification
-    saveState();
+    saveCanvasState('Add Element');
     addElementPerformant(elementConfig);
   };
 
@@ -204,16 +175,21 @@ export const AdvancedEditorContainer: React.FC<AdvancedEditorContainerProps> = (
     if (!selectedObject) return;
     
     // Save state before modification
-    saveState();
+    saveCanvasState('Delete Element');
     removeElementPerformant(selectedObject);
     setSelectedObject(null);
   };
 
   // Enhanced save with advanced features
-  const handleSaveAdvancedLayout = () => {
-    originalSaveLayout();
-    // Clear undo history after successful save
-    clearHistory();
+  const handleSaveAdvancedLayout = async () => {
+    try {
+      await saveAdvancedLayout(templateId, formatName, layoutDraft);
+      // Clear undo history after successful save
+      history.clear();
+      console.log('Advanced layout saved successfully');
+    } catch (error) {
+      console.error('Error saving advanced layout:', error);
+    }
   };
 
   // Undo/Redo handlers
@@ -227,6 +203,15 @@ export const AdvancedEditorContainer: React.FC<AdvancedEditorContainerProps> = (
     if (canRedo) {
       redo();
     }
+  };
+
+  // Helper function to get history stats
+  const getHistoryStats = () => {
+    return {
+      currentSize: history.getCurrentSize(),
+      maxSize: 20,
+      lastActionTime: history.getLastActionTime()
+    };
   };
 
   console.log('🎨 Advanced Editor render:', {
@@ -261,11 +246,11 @@ export const AdvancedEditorContainer: React.FC<AdvancedEditorContainerProps> = (
       }
       
       cleanupPerformance();
-      clearHistory();
+      history.clear();
       resetState();
       forceGarbageCollection();
     }
-  }, [templateId, formatName, canvas, cleanupCanvas, resetState, forceGarbageCollection, cleanupPerformance]);
+  }, [templateId, formatName, canvas, cleanupCanvas, resetState, forceGarbageCollection, cleanupPerformance, history]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -280,9 +265,9 @@ export const AdvancedEditorContainer: React.FC<AdvancedEditorContainerProps> = (
         cleanupCanvas(canvas);
       }
       cleanupPerformance();
-      clearHistory();
+      history.clear();
     };
-  }, [canvas, cleanupCanvas, cleanupPerformance]);
+  }, [canvas, cleanupCanvas, cleanupPerformance, history]);
 
   // Show loading states if needed
   if (elementsLoading || error) {
@@ -308,7 +293,7 @@ export const AdvancedEditorContainer: React.FC<AdvancedEditorContainerProps> = (
       loadingState={loadingState}
       layoutLoadAttempts={layoutLoadAttempts}
       loadingError={loadingError}
-      layoutElements={layoutElements}
+      layoutElements={layoutElements as AdvancedLayoutElement[]}
       performanceMetrics={metrics}
       isMonitoring={!!canvas && metrics.renderTime > 0}
       canUndo={canUndo}
@@ -334,7 +319,7 @@ export const AdvancedEditorContainer: React.FC<AdvancedEditorContainerProps> = (
       }}
       onUndo={handleUndo}
       onRedo={handleRedo}
-      onSaveState={saveState}
+      onSaveState={() => saveCanvasState('Manual Save State')}
     />
   );
 };
