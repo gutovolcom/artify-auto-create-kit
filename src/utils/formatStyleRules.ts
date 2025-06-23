@@ -51,8 +51,8 @@ const styleMap = {
     teacherName: { fontFamily: 'Margem-Medium', fontSize: 26 }
   },
   LP: {
-    title: { fontFamily: 'Margem-Black', fontSize: 48 },
-    classTheme: { fontFamily: 'Margem-Bold', fontSize: 42 },
+    title: { fontFamily: 'Margem-Black', fontSize: 58 },
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 48 },
     date: { fontFamily: 'Toroka Wide Regular', fontSize: 32 },
     time: { fontFamily: 'Toroka Wide Regular', fontSize: 32 },
     teacherName: { fontFamily: 'Margem-Medium', fontSize: 28 }
