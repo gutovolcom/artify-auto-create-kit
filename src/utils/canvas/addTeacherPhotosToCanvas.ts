@@ -84,14 +84,15 @@ export async function addTeacherPhotosToCanvas(
         if (eventData?.teacherNames && eventData.teacherNames[index]) {
           const teacherName = eventData.teacherNames[index];
           
-          // Calculate center position of this specific photo
+          // Calculate horizontal center position of this specific photo
           const photoCenterX = x + (rule.width / 2);
-          const photoCenterY = y + (rule.height / 2);
+          // Fixed vertical position: 80px from bottom of canvas
+          const nameY = canvasHeight - 80;
           
           console.log('🏷️ Adding individual name overlay for teacher:', {
             name: teacherName,
             photoCenterX,
-            photoCenterY,
+            nameY,
             photoIndex: index
           });
 
@@ -121,19 +122,19 @@ export async function addTeacherPhotosToCanvas(
             originY: 'center'
           });
 
-          // Create group with background and text, positioned at photo center
+          // Create group with background and text, positioned at fixed bottom position
           const nameOverlay = new Group([background, text], {
             left: photoCenterX,
-            top: photoCenterY,
+            top: nameY,
             selectable: false,
             evented: false
           });
 
           canvas.add(nameOverlay);
-          console.log(`✅ Name overlay added for teacher ${index + 1} at photo center:`, {
+          console.log(`✅ Name overlay added for teacher ${index + 1} at fixed position:`, {
             name: teacherName,
             centerX: photoCenterX,
-            centerY: photoCenterY,
+            fixedY: nameY,
             backgroundSize: { width: backgroundWidth, height: backgroundHeight }
           });
         }
