@@ -4,6 +4,7 @@ import { useLayoutEditor } from '@/hooks/useLayoutEditor';
 import { useLayoutEditorState } from '@/hooks/useLayoutEditorState';
 import { useCanvasManager } from '@/hooks/useCanvasManager';
 import { useLayoutOperations } from '@/hooks/useLayoutOperations';
+import { useCanvasMemoryManager } from '@/hooks/useCanvasMemoryManager';
 import { LayoutEditorProps } from './types';
 import { LayoutEditorLoadingStates } from './LayoutEditorLoadingStates';
 import { LayoutEditorContent } from './LayoutEditorContent';
@@ -38,6 +39,15 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
     resetState
   } = useLayoutEditorState();
 
+  // Integrate memory manager
+  const {
+    registerCanvas,
+    unregisterCanvas,
+    cleanupCanvas,
+    getMemoryStats,
+    forceGarbageCollection
+  } = useCanvasMemoryManager();
+
   // Use refs to track previous values and prevent unnecessary resets
   const previousTemplateRef = useRef<string | null>(null);
   const previousFormatRef = useRef<string | null>(null);
@@ -61,7 +71,8 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
     canvasReady: !!canvas,
     layoutDraftSize: layoutDraft.length,
     scale,
-    formatDimensions
+    formatDimensions,
+    memoryStats: getMemoryStats()
   });
 
   const {
@@ -82,7 +93,17 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
     displayHeight,
     scale,
     layoutDraft,
-    setCanvas,
+    setCanvas: (newCanvas) => {
+      // Unregister old canvas
+      if (canvas) {
+        unregisterCanvas(canvas);
+      }
+      // Register new canvas
+      if (newCanvas) {
+        registerCanvas(newCanvas);
+      }
+      setCanvas(newCanvas);
+    },
     setLoadingState,
     incrementLayoutAttempts,
     setLoadingError,
@@ -132,11 +153,18 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
       console.log('🔄 Template or format actually changed, resetting state');
       previousTemplateRef.current = templateId;
       previousFormatRef.current = formatName;
+      
+      // Clean up previous canvas
+      if (canvas) {
+        cleanupCanvas(canvas);
+      }
+      
       resetState();
+      forceGarbageCollection();
     }
-  }, [templateId, formatName]);
+  }, [templateId, formatName, canvas, cleanupCanvas, resetState, forceGarbageCollection]);
 
-  // Cleanup timeouts on unmount
+  // Cleanup timeouts and canvas on unmount
   useEffect(() => {
     return () => {
       if (loadingTimeoutRef.current) {
@@ -145,8 +173,11 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
       if (layoutUpdateTimeoutRef.current) {
         clearTimeout(layoutUpdateTimeoutRef.current);
       }
+      if (canvas) {
+        cleanupCanvas(canvas);
+      }
     };
-  }, []);
+  }, [canvas, cleanupCanvas]);
 
   // Show loading states if needed
   if (elementsLoading || error) {

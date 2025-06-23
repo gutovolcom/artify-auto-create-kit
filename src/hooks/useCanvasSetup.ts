@@ -2,6 +2,7 @@
 import { useRef, useEffect } from 'react';
 import * as fabric from 'fabric';
 import { loadBackgroundImage } from '@/components/layout-editor/canvasOperations';
+import { batchLoadFonts, ensureFontLoaded, FontConfig } from '@/utils/canvas/fontLoader';
 
 type FabricCanvas = fabric.Canvas;
 
@@ -40,8 +41,26 @@ export const useCanvasSetup = ({
   onDeleteSelectedRef.current = onDeleteSelected;
   onBackgroundLoadedRef.current = onBackgroundLoaded;
 
+  // Preload essential fonts
+  const preloadFonts = async () => {
+    const essentialFonts: FontConfig[] = [
+      { family: 'Arial', size: 16 },
+      { family: 'Arial', size: 20 },
+      { family: 'Arial', size: 24 },
+      { family: 'Helvetica', size: 16 },
+      { family: 'Helvetica', size: 20 },
+      { family: 'Times New Roman', size: 16 },
+      { family: 'Times New Roman', size: 20 }
+    ];
+
+    console.log('🔤 Preloading essential fonts...');
+    const results = await batchLoadFonts(essentialFonts);
+    const loadedCount = results.filter(Boolean).length;
+    console.log(`✅ Preloaded ${loadedCount}/${essentialFonts.length} fonts`);
+  };
+
   // Function to load background with fallback mechanism
-  const loadBackgroundWithFallback = (fabricCanvas: FabricCanvas, imageUrl: string) => {
+  const loadBackgroundWithFallback = async (fabricCanvas: FabricCanvas, imageUrl: string) => {
     console.log('Loading background image with fallback:', imageUrl);
     
     // Set up a timeout fallback
@@ -50,25 +69,24 @@ export const useCanvasSetup = ({
       onBackgroundLoadedRef.current?.();
     }, 3000); // 3 second timeout
 
-    loadBackgroundImage(fabricCanvas, imageUrl, scale)
-      .then(() => {
-        console.log('Background image loaded successfully');
-        if (backgroundLoadTimeoutRef.current) {
-          clearTimeout(backgroundLoadTimeoutRef.current);
-          backgroundLoadTimeoutRef.current = null;
-        }
-        onBackgroundLoadedRef.current?.();
-      })
-      .catch((error) => {
-        console.error('Error loading background image:', error);
-        fabricCanvas.backgroundColor = '#f5f5f5';
-        fabricCanvas.renderAll();
-        if (backgroundLoadTimeoutRef.current) {
-          clearTimeout(backgroundLoadTimeoutRef.current);
-          backgroundLoadTimeoutRef.current = null;
-        }
-        onBackgroundLoadedRef.current?.();
-      });
+    try {
+      await loadBackgroundImage(fabricCanvas, imageUrl, scale);
+      console.log('Background image loaded successfully');
+      if (backgroundLoadTimeoutRef.current) {
+        clearTimeout(backgroundLoadTimeoutRef.current);
+        backgroundLoadTimeoutRef.current = null;
+      }
+      onBackgroundLoadedRef.current?.();
+    } catch (error) {
+      console.error('Error loading background image:', error);
+      fabricCanvas.backgroundColor = '#f5f5f5';
+      fabricCanvas.renderAll();
+      if (backgroundLoadTimeoutRef.current) {
+        clearTimeout(backgroundLoadTimeoutRef.current);
+        backgroundLoadTimeoutRef.current = null;
+      }
+      onBackgroundLoadedRef.current?.();
+    }
   };
 
   // Initialize canvas only once
@@ -77,66 +95,69 @@ export const useCanvasSetup = ({
 
     console.log('Initializing Fabric.js canvas with dimensions:', displayWidth, 'x', displayHeight);
 
-    const fabricCanvas = new fabric.Canvas(canvasRef.current, {
-      width: displayWidth,
-      height: displayHeight,
-      backgroundColor: '#f5f5f5'
-    });
-
-    // Set up event listeners
-    fabricCanvas.on('selection:created', (e) => {
-      onSelectionChangeRef.current(e.selected?.[0]);
-    });
-
-    fabricCanvas.on('selection:updated', (e) => {
-      onSelectionChangeRef.current(e.selected?.[0]);
-    });
-
-    fabricCanvas.on('selection:cleared', () => {
-      onSelectionChangeRef.current(null);
-    });
-
-    fabricCanvas.on('object:modified', (e) => {
-      console.log('Object modified:', {
-        target: e.target,
-        left: e.target?.left,
-        top: e.target?.top
+    // Preload fonts before creating canvas
+    preloadFonts().then(() => {
+      const fabricCanvas = new fabric.Canvas(canvasRef.current!, {
+        width: displayWidth,
+        height: displayHeight,
+        backgroundColor: '#f5f5f5'
       });
+
+      // Set up event listeners
+      fabricCanvas.on('selection:created', (e) => {
+        onSelectionChangeRef.current(e.selected?.[0]);
+      });
+
+      fabricCanvas.on('selection:updated', (e) => {
+        onSelectionChangeRef.current(e.selected?.[0]);
+      });
+
+      fabricCanvas.on('selection:cleared', () => {
+        onSelectionChangeRef.current(null);
+      });
+
+      fabricCanvas.on('object:modified', (e) => {
+        console.log('Object modified:', {
+          target: e.target,
+          left: e.target?.left,
+          top: e.target?.top
+        });
+      });
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          e.preventDefault();
+          onDeleteSelectedRef.current();
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+      fabricCanvasRef.current = fabricCanvas;
+      
+      // Notify parent that canvas is ready
+      onCanvasReady(fabricCanvas);
+
+      // Load background image immediately after canvas creation
+      if (backgroundImageUrl) {
+        loadBackgroundWithFallback(fabricCanvas, backgroundImageUrl);
+      } else {
+        // No background, trigger callback immediately
+        setTimeout(() => {
+          onBackgroundLoadedRef.current?.();
+        }, 100);
+      }
+
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        if (backgroundLoadTimeoutRef.current) {
+          clearTimeout(backgroundLoadTimeoutRef.current);
+        }
+        if (fabricCanvasRef.current) {
+          fabricCanvasRef.current.dispose();
+          fabricCanvasRef.current = null;
+        }
+      };
     });
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        e.preventDefault();
-        onDeleteSelectedRef.current();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    fabricCanvasRef.current = fabricCanvas;
-    
-    // Notify parent that canvas is ready
-    onCanvasReady(fabricCanvas);
-
-    // Load background image immediately after canvas creation
-    if (backgroundImageUrl) {
-      loadBackgroundWithFallback(fabricCanvas, backgroundImageUrl);
-    } else {
-      // No background, trigger callback immediately
-      setTimeout(() => {
-        onBackgroundLoadedRef.current?.();
-      }, 100);
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      if (backgroundLoadTimeoutRef.current) {
-        clearTimeout(backgroundLoadTimeoutRef.current);
-      }
-      if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.dispose();
-        fabricCanvasRef.current = null;
-      }
-    };
   }, []); // Only run once
 
   // Handle background image changes separately

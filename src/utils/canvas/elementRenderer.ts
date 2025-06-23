@@ -1,3 +1,4 @@
+
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
@@ -6,6 +7,7 @@ import { getLessonThemeStyle, lessonThemeStyleColors, CLASS_THEME_BOX_HEIGHTS } 
 import { breakTextToFitWidthSync } from './smartTextBreaker';
 import { calculatePositionAdjustments } from './positionAdjuster';
 import { measureTextWidthSync, getDynamicSafetyMargin, getAlignmentPadding } from './textMeasurement';
+import { ensureFontLoaded, FontConfig } from './fontLoader';
 
 // Store position adjustments globally for this rendering session
 let globalPositionAdjustments: Map<string, number> = new Map();
@@ -79,7 +81,7 @@ const getMaxTextWidthForFormat = (format: string, canvasWidth: number, elementX:
   return formatLimits[format as keyof typeof formatLimits] || Math.min(canvasWidth - elementX - dynamicMargin, 450);
 };
 
-export const addElementToCanvas = (
+export const addElementToCanvas = async (
   canvas: FabricCanvas,
   element: any,
   eventData: EventData,
@@ -107,6 +109,20 @@ export const addElementToCanvas = (
 
   const userColors = getUserColors(eventData);
   const formatStyle = getStyleForField(format, field, userColors);
+  
+  // Ensure font is loaded before proceeding
+  const fontConfig: FontConfig = {
+    family: formatStyle.fontFamily,
+    size: formatStyle.fontSize,
+    weight: 'normal'
+  };
+  
+  try {
+    await ensureFontLoaded(fontConfig);
+    console.log(`✅ Font loaded for ${field}: ${formatStyle.fontFamily}`);
+  } catch (error) {
+    console.warn(`⚠️ Font loading failed for ${field}, proceeding with fallback:`, error);
+  }
   
   // Apply any global position adjustments
   let elementX = position?.x || 0;
@@ -217,7 +233,8 @@ export const addElementToCanvas = (
         textHeight: text.height,
         finalText: finalText,
         textAlignment: textAlignment,
-        maxTextWidth: maxTextWidth
+        maxTextWidth: maxTextWidth,
+        fontLoaded: true
       });
 
       const group = new Group([background, text], {

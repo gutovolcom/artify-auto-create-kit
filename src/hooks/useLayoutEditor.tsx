@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useLayoutCache } from "./useLayoutCache";
 
 interface LayoutElement {
   id: string;
@@ -32,7 +33,12 @@ export const useLayoutEditor = () => {
   const [layoutElements, setLayoutElements] = useState<LayoutElement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [layoutCache, setLayoutCache] = useState<Map<string, LayoutConfig | null>>(new Map());
+  
+  // Replace basic Map cache with sophisticated cache
+  const layoutCache = useLayoutCache({
+    maxAge: 10 * 60 * 1000, // 10 minutes
+    maxSize: 100 // 100 cached layouts
+  });
 
   const fetchLayoutElements = async () => {
     try {
@@ -80,13 +86,8 @@ export const useLayoutEditor = () => {
         throw error;
       }
       
-      // Invalidate cache for this specific layout
-      const cacheKey = `${layoutConfig.template_id}-${layoutConfig.format_name}`;
-      setLayoutCache(prev => {
-        const newCache = new Map(prev);
-        newCache.delete(cacheKey);
-        return newCache;
-      });
+      // Invalidate sophisticated cache
+      layoutCache.invalidate(layoutConfig.template_id, layoutConfig.format_name);
       
       console.log('Layout saved successfully and cache invalidated');
       toast.success('Layout salvo com sucesso!');
@@ -99,12 +100,13 @@ export const useLayoutEditor = () => {
 
   const getLayout = async (templateId: string, formatName: string, forceRefresh: boolean = false): Promise<LayoutConfig | null> => {
     try {
-      const cacheKey = `${templateId}-${formatName}`;
-      
-      // Return cached result if available and not forcing refresh
-      if (!forceRefresh && layoutCache.has(cacheKey)) {
-        console.log('Returning cached layout for:', templateId, formatName);
-        return layoutCache.get(cacheKey) || null;
+      // Try sophisticated cache first
+      if (!forceRefresh) {
+        const cached = layoutCache.get(templateId, formatName);
+        if (cached) {
+          console.log('Returning sophisticated cached layout for:', templateId, formatName);
+          return cached;
+        }
       }
       
       console.log('Fetching fresh layout for template:', templateId, 'format:', formatName);
@@ -118,8 +120,6 @@ export const useLayoutEditor = () => {
 
       if (error) {
         console.error('Error fetching layout:', error);
-        // Cache null result to avoid repeated failed requests
-        setLayoutCache(prev => new Map(prev).set(cacheKey, null));
         return null;
       }
       
@@ -136,8 +136,8 @@ export const useLayoutEditor = () => {
         console.log('No existing layout found');
       }
       
-      // Cache the result
-      setLayoutCache(prev => new Map(prev).set(cacheKey, result));
+      // Cache with sophisticated cache
+      layoutCache.set(templateId, formatName, result);
       return result;
     } catch (error) {
       console.error('Error fetching layout:', error);
@@ -146,26 +146,18 @@ export const useLayoutEditor = () => {
   };
 
   const invalidateLayoutCache = (templateId?: string, formatName?: string) => {
-    if (templateId && formatName) {
-      // Invalidate specific layout
-      const cacheKey = `${templateId}-${formatName}`;
-      setLayoutCache(prev => {
-        const newCache = new Map(prev);
-        newCache.delete(cacheKey);
-        console.log('Invalidated layout cache for:', cacheKey);
-        return newCache;
-      });
-    } else {
-      // Invalidate all cached layouts
-      setLayoutCache(new Map());
-      console.log('Invalidated all layout cache');
-    }
+    layoutCache.invalidate(templateId, formatName);
+    console.log('Layout cache invalidated using sophisticated cache');
   };
 
   const refreshAllLayouts = async () => {
     console.log('Refreshing all layout data...');
-    setLayoutCache(new Map());
+    layoutCache.clear();
     toast.success('Cache de layouts atualizado!');
+  };
+
+  const getCacheStats = () => {
+    return layoutCache.getStats();
   };
 
   useEffect(() => {
@@ -180,6 +172,7 @@ export const useLayoutEditor = () => {
     getLayout,
     invalidateLayoutCache,
     refreshAllLayouts,
+    getCacheStats,
     refetch: fetchLayoutElements
   };
 };
