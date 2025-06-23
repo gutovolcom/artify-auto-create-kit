@@ -222,25 +222,38 @@ export const addElementToCanvas = (
       canvas.add(group);
     }
   } else {
-    // For all other text elements, keep original formatting but ensure no truncation
-    const isDate = field === "date";
-    const fontFamily = isDate ? "TorokaWide" : formatStyle.fontFamily;
+    // For all other text elements (including teacherName), apply smart text breaking
+    const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX);
     
-    const text = new FabricText(textContent, {
+    // Apply smart text breaking to prevent truncation
+    const textBreakResult = breakTextToFitWidth(
+      textContent,
+      maxTextWidth,
+      formatStyle.fontSize,
+      formatStyle.fontFamily
+    );
+
+    const finalText = textBreakResult.lines.join('\n');
+    const textAlignment = getTextAlignmentForFormat(format);
+    
+    const text = new FabricText(finalText, {
       left: elementX,
       top: elementY,
-      fontSize: formatStyle.fontSize, // Keep original font size
-      fontFamily: formatStyle.fontFamily, // Keep original font family
+      fontSize: formatStyle.fontSize,
+      fontFamily: formatStyle.fontFamily,
       fill: formatStyle.color,
+      textAlign: textAlignment,
       selectable: false,
       evented: false
     });
 
-    console.log('📝 Text element added with original formatting:', {
+    console.log('📝 Text element added with smart text breaking:', {
       field,
       fontSize: formatStyle.fontSize,
       fontFamily: formatStyle.fontFamily,
-      text: textContent,
+      text: finalText,
+      textBroken: textBreakResult.needsLineBreak,
+      lines: textBreakResult.lines.length,
       position: { x: elementX, y: elementY }
     });
 
