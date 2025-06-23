@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
 import { useLayoutEditorState } from '@/hooks/useLayoutEditorState';
@@ -259,7 +260,7 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
       layoutLoadAttempts={layoutLoadAttempts}
       loadingError={loadingError}
       layoutElements={layoutElements}
-      performance Metrics={metrics}
+      performanceMetrics={metrics}
       isMonitoring={!!canvas && metrics.renderTime > 0}
       onCanvasReady={(fabricCanvas) => handleCanvasReady(fabricCanvas, templateId, formatName)}
       onSelectionChange={setSelectedObject}
