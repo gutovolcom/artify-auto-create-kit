@@ -91,7 +91,7 @@ const Index = () => {
   };
 
   const handleExport = async () => {
-    const success = await downloadZip();
+    const success = await downloadZip(eventData);
     if (success) {
       toast.success("Arquivo ZIP baixado com sucesso!");
     }

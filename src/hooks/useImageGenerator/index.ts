@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { EventData } from "@/pages/Index";
 import { toast } from "sonner";
@@ -8,6 +7,7 @@ import { useLayoutEditor } from "@/hooks/useLayoutEditor";
 import { validateEventData } from "./helpers";
 import { generateImagesForFormats } from "./imageGeneration";
 import { GeneratedImage, UseImageGeneratorReturn } from "./types";
+import JSZip from "jszip";
 
 export const useImageGenerator = (): UseImageGeneratorReturn => {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
@@ -103,7 +103,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
     }
   };
 
-  const downloadZip = async () => {
+  const downloadZip = async (eventData?: EventData) => {
     if (generatedImages.length === 0) {
       const errorMessage = "Nenhuma imagem para exportar.";
       setError(errorMessage);
@@ -114,13 +114,72 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
     setIsGenerating(true);
     
     try {
-      // In a real app, this would call an API to create and download a ZIP
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      console.log('Starting ZIP creation with images:', generatedImages.length);
       
-      // Simulated successful download
+      // Create a new JSZip instance
+      const zip = new JSZip();
+      
+      // Sanitize event title for filename
+      const sanitizedTitle = eventData?.title 
+        ? eventData.title.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50)
+        : 'Event';
+      
+      // Convert each image URL to blob and add to ZIP
+      for (let i = 0; i < generatedImages.length; i++) {
+        const image = generatedImages[i];
+        
+        try {
+          console.log(`Processing image ${i + 1}/${generatedImages.length}: ${image.platform}`);
+          
+          // Fetch the image as a blob
+          const response = await fetch(image.url);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image for ${image.platform}`);
+          }
+          
+          const blob = await response.blob();
+          
+          // Create a filename: EventTitle_platform.png
+          const filename = `${sanitizedTitle}_${image.platform}.png`;
+          
+          // Add the blob to the ZIP
+          zip.file(filename, blob);
+          
+          console.log(`Added ${filename} to ZIP`);
+          
+        } catch (imageError) {
+          console.warn(`Failed to add ${image.platform} to ZIP:`, imageError);
+          // Continue with other images even if one fails
+        }
+      }
+      
+      console.log('Generating ZIP file...');
+      
+      // Generate the ZIP file
+      const zipBlob = await zip.generateAsync({ 
+        type: "blob",
+        compression: "DEFLATE",
+        compressionOptions: { level: 6 }
+      });
+      
+      // Create download link and trigger download
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${sanitizedTitle}_images.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the URL object
+      URL.revokeObjectURL(url);
+      
+      console.log('ZIP download initiated successfully');
       toast.success("Arquivo ZIP baixado com sucesso!");
       return true;
+      
     } catch (err) {
+      console.error('ZIP creation error:', err);
       const errorMessage = "Erro ao criar arquivo ZIP. Tente novamente.";
       setError(errorMessage);
       toast.error(errorMessage);

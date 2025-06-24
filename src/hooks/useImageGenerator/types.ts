@@ -13,5 +13,5 @@ export interface UseImageGeneratorReturn {
   currentGeneratingFormat: string;
   error: string | null;
   generateImages: (eventData: any) => Promise<GeneratedImage[]>;
-  downloadZip: () => Promise<boolean>;
+  downloadZip: (eventData?: any) => Promise<boolean>;
 }
