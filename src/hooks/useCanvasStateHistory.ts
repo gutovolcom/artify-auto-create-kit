@@ -18,26 +18,12 @@ const serializationProperties = [
 export interface CanvasHistory {
   undoStack: string[];
   redoStack: string[];
-  clear: () => void;
-  getCurrentSize: () => number;
-  getLastActionTime: () => string | null;
 }
 
 export const useCanvasStateHistory = (initialCanvas?: Canvas) => {
   const [history, setHistory] = useState<CanvasHistory>({
     undoStack: [],
     redoStack: [],
-    clear: () => {
-      setHistory(prev => ({
-        ...prev,
-        undoStack: [],
-        redoStack: []
-      }));
-    },
-    getCurrentSize: () => history.undoStack.length,
-    getLastActionTime: () => {
-      return history.undoStack.length > 0 ? new Date().toISOString() : null;
-    }
   });
   const [canvasInstance, setCanvasInstance] = useState<Canvas | null>(initialCanvas || null);
 
@@ -56,12 +42,11 @@ export const useCanvasStateHistory = (initialCanvas?: Canvas) => {
         newUndoStack.shift();
       }
       return {
-        ...prevHistory,
         undoStack: newUndoStack,
         redoStack: [],
       };
     });
-  }, [canvasInstance, history.undoStack.length]);
+  }, [canvasInstance]);
 
   const undo = useCallback(() => {
     if (!canvasInstance || history.undoStack.length === 0) return;
@@ -72,7 +57,6 @@ export const useCanvasStateHistory = (initialCanvas?: Canvas) => {
     setHistory((prevHistory) => {
       const newUndoStack = prevHistory.undoStack.slice(0, -1);
       return {
-        ...prevHistory,
         undoStack: newUndoStack,
         redoStack: [...prevHistory.redoStack, currentCanvasJSON],
       };
@@ -93,7 +77,6 @@ export const useCanvasStateHistory = (initialCanvas?: Canvas) => {
     setHistory((prevHistory) => {
       const newRedoStack = prevHistory.redoStack.slice(0, -1);
       return {
-        ...prevHistory,
         undoStack: [...prevHistory.undoStack, currentCanvasJSON],
         redoStack: newRedoStack,
       };
