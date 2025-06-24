@@ -17,13 +17,13 @@ export const loadBackgroundImage = async (
       return;
     }
     
-    // Add cache busting parameter to force reload
-    const cacheBustedUrl = `${backgroundImageUrl}?t=${Date.now()}`;
+    // Add stronger cache busting with timestamp and random string
+    const cacheBustedUrl = `${backgroundImageUrl}?bust=${Date.now()}&r=${Math.random().toString(36).substring(7)}`;
     
     fabric.Image.fromURL(cacheBustedUrl, {
       crossOrigin: 'anonymous'
     }).then((img) => {
-      console.log('Background image loaded successfully with cache bust');
+      console.log('Background image loaded successfully with enhanced cache bust');
       console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
       console.log('Image dimensions:', img.width, 'x', img.height);
       
@@ -48,7 +48,7 @@ export const loadBackgroundImage = async (
       // Clear existing background and set new one
       canvas.backgroundImage = img;
       canvas.renderAll();
-      console.log('Background image updated successfully with cache bust');
+      console.log('Background image updated successfully with enhanced cache bust');
       resolve();
     }).catch((error) => {
       console.error('Error loading background image:', error);

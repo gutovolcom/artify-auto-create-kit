@@ -1,4 +1,3 @@
-
 import { EventData } from "@/pages/Index";
 
 // User color configuration for dynamic color application
@@ -59,14 +58,14 @@ const styleMap = {
   },
   destaque: {
     title: { fontFamily: 'Margem-Black', fontSize: 24 },
-    classTheme: { fontFamily: 'Margem-Bold', fontSize: 18 },
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 14 }, // Reduced from 18 to 14 for better proportion
     date: { fontFamily: 'Toroka Wide Regular', fontSize: 14 },
     time: { fontFamily: 'Toroka Wide Regular', fontSize: 14 },
     teacherName: { fontFamily: 'Margem-Medium', fontSize: 16 }
   },
   ledStudio: {
     title: { fontFamily: 'Margem-Black', fontSize: 36 },
-    classTheme: { fontFamily: 'Margem-Bold', fontSize: 36 }, // Increased from 30 to 34
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 32 }, // Reduced from 36 to 32 for better proportion with smaller box
     date: { fontFamily: 'Toroka Wide Regular', fontSize: 24 },
     time: { fontFamily: 'Toroka Wide Regular', fontSize: 24 },
     teacherName: { fontFamily: 'Margem-Medium', fontSize: 26 }
