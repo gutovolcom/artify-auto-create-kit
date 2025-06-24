@@ -7,7 +7,7 @@ import { breakTextToFitWidthSync } from './smartTextBreaker';
 import { calculatePositionAdjustments } from './positionAdjuster';
 import { measureTextWidthSync } from './textMeasurement';
 import { ensureFontLoaded, FontConfig } from './fontLoader';
-import { getMaxTextWidthForFormat, getTextAlignmentForFormat, getFormatSpecificPadding } from './renderingUtils';
+import { getMaxTextWidthForFormat, getTextAlignmentForFormat, getFormatSpecificPadding, getVerticalPadding } from './renderingUtils';
 
 export const renderTextBoxElement = async (
   canvas: FabricCanvas,
@@ -53,6 +53,7 @@ export const renderTextBoxElement = async (
     // Get format-specific text alignment and padding
     const textAlignment = getTextAlignmentForFormat(format);
     const horizontalPadding = getFormatSpecificPadding(format);
+    const verticalPadding = getVerticalPadding();
     
     if (themeStyle) {
       // Calculate available width for text using improved format-specific limits
@@ -77,26 +78,19 @@ export const renderTextBoxElement = async (
         originY: 'top'
       });
 
-      // Calculate box dimensions with improved padding calculation
-      const fixedBoxHeight = textBreakResult.needsLineBreak ? 
-        textBreakResult.totalHeight + 20 : 
-        themeStyle.fixedBoxHeight;
+      // Fixed box width calculation - use maxLineWidth for multi-line text
+      const boxWidth = textBreakResult.needsLineBreak ? 
+        Math.max(textBreakResult.maxLineWidth + (horizontalPadding * 2), 140) :
+        Math.max(measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily) + (horizontalPadding * 2), 140);
       
-      // Use accurate text measurement for better width calculation with equal padding
-      const actualTextWidth = measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily);
-      const minWidth = 140; // Minimum width
-      // Remove paddingSafety - use exact padding on both sides
-      const backgroundWidth = Math.max(
-        actualTextWidth + (horizontalPadding * 2), // Equal padding left and right
-        minWidth
-      );
-      const backgroundHeight = Math.max(fixedBoxHeight, textBreakResult.totalHeight + 20);
+      // Fixed box height calculation - use consistent vertical padding
+      const boxHeight = textBreakResult.totalHeight + (verticalPadding * 2);
 
       const background = new Rect({
         left: 0,
         top: 0,
-        width: backgroundWidth,
-        height: backgroundHeight,
+        width: boxWidth,
+        height: boxHeight,
         fill: themeStyle.boxColor,
         rx: 10,
         ry: 10,
@@ -107,24 +101,24 @@ export const renderTextBoxElement = async (
       // Position text within the box based on alignment with precise centering
       if (textAlignment === 'center') {
         text.set({
-          left: (backgroundWidth - actualTextWidth) / 2, // Use actual text width for precise centering
-          top: (backgroundHeight - text.height!) / 2
+          left: (boxWidth - (textBreakResult.needsLineBreak ? textBreakResult.maxLineWidth : text.width!)) / 2,
+          top: verticalPadding
         });
       } else {
         // Left alignment with exact horizontal padding
         text.set({
           left: horizontalPadding,
-          top: (backgroundHeight - text.height!) / 2
+          top: verticalPadding
         });
       }
 
       // Calculate position adjustments if text broke into multiple lines
       if (textBreakResult.needsLineBreak && allElements) {
-        const heightIncrease = backgroundHeight - themeStyle.fixedBoxHeight;
+        const heightIncrease = boxHeight - themeStyle.fixedBoxHeight;
         const adjustments = calculatePositionAdjustments(
           { x: elementX, y: elementY },
           themeStyle.fixedBoxHeight,
-          backgroundHeight,
+          boxHeight,
           allElements.map(el => ({ field: el.field, position: el.position }))
         );
 
@@ -142,10 +136,11 @@ export const renderTextBoxElement = async (
         textBroken: textBreakResult.needsLineBreak,
         lines: textBreakResult.lines.length,
         originalHeight: themeStyle.fixedBoxHeight,
-        finalHeight: backgroundHeight,
-        actualTextWidth: actualTextWidth,
-        backgroundWidth: backgroundWidth,
+        finalHeight: boxHeight,
+        maxLineWidth: textBreakResult.maxLineWidth,
+        boxWidth: boxWidth,
         horizontalPadding: horizontalPadding,
+        verticalPadding: verticalPadding,
         textHeight: text.height,
         finalText: finalText,
         textAlignment: textAlignment,
@@ -165,6 +160,7 @@ export const renderTextBoxElement = async (
       // Fallback logic with improved text breaking and format-specific alignment
       const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX, field);
       const horizontalPadding = getFormatSpecificPadding(format);
+      const verticalPadding = getVerticalPadding();
       const textAlignment = getTextAlignmentForFormat(format);
       
       const textBreakResult = breakTextToFitWidthSync(
@@ -185,16 +181,14 @@ export const renderTextBoxElement = async (
       const backgroundColor = eventData.boxColor || '#dd303e';
       const borderRadius = 10;
 
-      // Use accurate text measurement for better background width calculation
-      const actualTextWidth = measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily);
-      const backgroundWidth = Math.max(
-        actualTextWidth + (horizontalPadding * 2), // Equal padding left and right
-        140
-      );
+      // Fixed box width calculation for fallback
+      const boxWidth = textBreakResult.needsLineBreak ? 
+        Math.max(textBreakResult.maxLineWidth + (horizontalPadding * 2), 140) :
+        Math.max(measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily) + (horizontalPadding * 2), 140);
 
       const background = new Rect({
-        width: backgroundWidth,
-        height: text.height! + (horizontalPadding * 2),
+        width: boxWidth,
+        height: textBreakResult.totalHeight + (verticalPadding * 2),
         fill: backgroundColor,
         rx: borderRadius,
         ry: borderRadius

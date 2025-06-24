@@ -30,6 +30,11 @@ export const getFormatSpecificPadding = (format: string): number => {
   return formatPadding[format as keyof typeof formatPadding] || 20;
 };
 
+// Get vertical padding for consistent box sizing
+export const getVerticalPadding = (): number => {
+  return 16; // Consistent vertical padding
+};
+
 // Improved format-specific max width calculation with accurate text measurement
 export const getMaxTextWidthForFormat = (format: string, canvasWidth: number, elementX: number, field: string): number => {
   // For date/time fields that don't need text breaking, use very generous width
@@ -50,6 +55,20 @@ export const getMaxTextWidthForFormat = (format: string, canvasWidth: number, el
       'LP': Math.min(canvasWidth - elementX - dynamicMargin, 550)
     };
     return formatLimits[format as keyof typeof formatLimits] || Math.min(canvasWidth - elementX - dynamicMargin, 500);
+  }
+  
+  // Special handling for classTheme - increased limits to prevent early breaking
+  if (field === 'classTheme') {
+    const dynamicMargin = getDynamicSafetyMargin(80);
+    const formatLimits = {
+      'youtube': Math.min(canvasWidth - elementX - dynamicMargin, 1000), // Increased from 800
+      'feed': Math.min(canvasWidth - elementX - dynamicMargin, 800),    
+      'stories': Math.min(canvasWidth - elementX - dynamicMargin, 900), // Increased from 700
+      'ledStudio': Math.min(canvasWidth - elementX - dynamicMargin, 750),
+      'bannerGCO': Math.min(canvasWidth - elementX - dynamicMargin, 700), // Increased from 500
+      'LP': Math.min(canvasWidth - elementX - dynamicMargin, 600)
+    };
+    return formatLimits[format as keyof typeof formatLimits] || Math.min(canvasWidth - elementX - dynamicMargin, 600);
   }
   
   // For other fields that need text breaking, use improved limits
