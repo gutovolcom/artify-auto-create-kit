@@ -1,4 +1,3 @@
-
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, FabricImage, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
@@ -291,6 +290,61 @@ export const addElementToCanvas = async (
       });
       canvas.add(group);
     }
+  } else if (type === "text") {
+    console.log('✅ Processing regular text element for YouTube format:', field);
+    
+    const needsTextBreaking = shouldApplyTextBreaking(field, eventData);
+    let finalText = textContent;
+    const textAlignment = getTextAlignmentForFormat(format);
+    
+    if (needsTextBreaking) {
+      const maxTextWidth = getMaxTextWidthForFormat(format, canvasWidth, elementX, field);
+      
+      // Apply smart text breaking to prevent truncation
+      const textBreakResult = breakTextToFitWidthSync(
+        textContent,
+        maxTextWidth,
+        formatStyle.fontSize,
+        formatStyle.fontFamily
+      );
+
+      finalText = textBreakResult.lines.join('\n');
+      
+      console.log('📝 Smart text breaking applied for regular text:', {
+        field,
+        textBroken: textBreakResult.needsLineBreak,
+        lines: textBreakResult.lines.length,
+        maxTextWidth: maxTextWidth,
+        reason: 'conditional logic determined text breaking was needed'
+      });
+    } else {
+      console.log('📝 No text breaking applied for regular text:', {
+        field,
+        reason: 'conditional logic determined text breaking was not needed'
+      });
+    }
+    
+    const text = new FabricText(finalText, {
+      left: elementX,
+      top: elementY,
+      fontSize: formatStyle.fontSize,
+      fontFamily: formatStyle.fontFamily,
+      fill: formatStyle.color,
+      textAlign: textAlignment,
+      selectable: false,
+      evented: false
+    });
+
+    console.log('📝 Regular text element added for YouTube:', {
+      field,
+      fontSize: formatStyle.fontSize,
+      fontFamily: formatStyle.fontFamily,
+      text: finalText,
+      smartBreakingApplied: needsTextBreaking,
+      position: { x: elementX, y: elementY }
+    });
+
+    canvas.add(text);
   } else {
     // For all other text elements, apply conditional smart text breaking with improved measurement
     const needsTextBreaking = shouldApplyTextBreaking(field, eventData);
