@@ -13,9 +13,9 @@ export async function addTeacherPhotosToCanvas(
   canvasHeight: number,
   eventData?: EventData
 ) {
-  // Skip photo placement for bannerGCO format completely
+  // Skip photo placement for bannerGCO format as requested
   if (format === 'bannerGCO') {
-    console.log('🚫 Skipping teacher photos for bannerGCO format - only background image allowed');
+    console.log('🚫 Skipping teacher photos for bannerGCO format - photos removed as requested');
     return;
   }
 

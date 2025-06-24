@@ -25,12 +25,6 @@ export const addElementToCanvas = async (
   const { field } = element;
   console.log(`📌 Processing element: field=${field}, type=${type}, format=${format}`);
 
-  // Special handling for bannerGCO format - skip ALL elements (only background image)
-  if (format === 'bannerGCO') {
-    console.log(`🚫 Skipping ALL elements for bannerGCO format - only background image allowed`);
-    return;
-  }
-
   // Special handling for destaque format - only render classTheme
   if (format === 'destaque' && field !== 'classTheme') {
     console.log(`🚫 Skipping field ${field} for destaque format - only classTheme allowed`);
