@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,9 +12,12 @@ import { Loader2, Edit, Palette } from "lucide-react";
 
 const formatSpecs = {
   youtube: { width: 1920, height: 1080, label: "YouTube" },
+  youtube_ao_vivo: { width: 1920, height: 1080, label: "YouTube Ao Vivo" },
+  youtube_pos_evento: { width: 1920, height: 1080, label: "YouTube Pós Evento" },
   feed: { width: 1080, height: 1080, label: "Feed" },
   stories: { width: 1080, height: 1920, label: "Stories" },
-  bannerGCO: { width: 255, height: 192, label: "Banner GCO" },
+  bannerGCO: { width: 1920, height: 500, label: "Banner GCO" },
+  destaque: { width: 255, height: 192, label: "Destaque" },
   ledStudio: { width: 1024, height: 256, label: "LED Studio" },
   LP: { width: 800, height: 776, label: "LP" },
 };

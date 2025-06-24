@@ -22,6 +22,20 @@ const styleMap = {
     time: { fontFamily: 'Toroka Wide Regular', fontSize: 66 },
     teacherName: { fontFamily: 'Margem-Medium', fontSize: 66 }
   },
+  youtube_ao_vivo: {
+    title: { fontFamily: 'Margem-Black', fontSize: 140 },
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 68 },
+    date: { fontFamily: 'Toroka Wide Regular', fontSize: 66 },
+    time: { fontFamily: 'Toroka Wide Regular', fontSize: 66 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 66 }
+  },
+  youtube_pos_evento: {
+    title: { fontFamily: 'Margem-Black', fontSize: 140 },
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 68 },
+    date: { fontFamily: 'Toroka Wide Regular', fontSize: 66 },
+    time: { fontFamily: 'Toroka Wide Regular', fontSize: 66 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 66 }
+  },
   feed: {
     title: { fontFamily: 'Margem-Black', fontSize: 118 },
     classTheme: { fontFamily: 'Margem-Bold', fontSize: 52 },
@@ -37,6 +51,13 @@ const styleMap = {
     teacherName: { fontFamily: 'Margem-Medium', fontSize: 62 }
   },
   bannerGCO: {
+    title: { fontFamily: 'Margem-Black', fontSize: 72 },
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 54 },
+    date: { fontFamily: 'Toroka Wide Regular', fontSize: 42 },
+    time: { fontFamily: 'Toroka Wide Regular', fontSize: 42 },
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 48 }
+  },
+  destaque: {
     title: { fontFamily: 'Margem-Black', fontSize: 24 },
     classTheme: { fontFamily: 'Margem-Bold', fontSize: 18 },
     date: { fontFamily: 'Toroka Wide Regular', fontSize: 14 },

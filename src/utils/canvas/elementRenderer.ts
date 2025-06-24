@@ -23,7 +23,13 @@ export const addElementToCanvas = async (
 ) => {
   let type = element.type;
   const { field } = element;
-  console.log(`📌 Processing element: field=${field}, type=${type}`);
+  console.log(`📌 Processing element: field=${field}, type=${type}, format=${format}`);
+
+  // Special handling for destaque format - only render classTheme
+  if (format === 'destaque' && field !== 'classTheme') {
+    console.log(`🚫 Skipping field ${field} for destaque format - only classTheme allowed`);
+    return;
+  }
 
   // FORÇA TIPO text_box PARA classTheme
   if (field === 'classTheme' && type !== 'text_box') {
