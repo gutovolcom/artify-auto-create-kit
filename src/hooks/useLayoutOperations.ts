@@ -1,8 +1,9 @@
 
-import { toast } from 'sonner';
+import { useCallback } from 'react';
 import * as fabric from 'fabric';
 import { addElementToCanvas } from '@/components/layout-editor/elementManager';
 import { serializeCanvasLayout } from '@/components/layout-editor/layoutSerializer';
+import { toast } from 'sonner';
 
 type FabricCanvas = fabric.Canvas;
 
@@ -17,141 +18,145 @@ interface LayoutElement {
 interface UseLayoutOperationsProps {
   canvas: FabricCanvas | null;
   selectedObject: any;
-  setSelectedObject: (obj: any) => void;
+  setSelectedObject: (object: any) => void;
   scale: number;
   displayWidth: number;
   displayHeight: number;
   layoutElements: LayoutElement[];
   layoutDraft: any[];
   setLayoutDraft: (draft: any[]) => void;
-  saveLayout: (config: any) => Promise<void>;
+  saveLayout: any;
   templateId: string;
   formatName: string;
   onSave?: () => void;
-  updateLayoutDraft: (canvas: FabricCanvas, format?: string) => void;
+  updateLayoutDraft: (fabricCanvas: FabricCanvas, format?: string) => void;
+  addDeletedElement: (elementId: string) => void;
+  isElementDeleted: (elementId: string) => boolean;
 }
 
-export const useLayoutOperations = ({
-  canvas,
-  selectedObject,
-  setSelectedObject,
-  scale,
-  displayWidth,
-  displayHeight,
-  layoutElements,
-  layoutDraft,
-  setLayoutDraft,
-  saveLayout,
-  templateId,
-  formatName,
-  onSave,
-  updateLayoutDraft
-}: UseLayoutOperationsProps) => {
+export const useLayoutOperations = (props: UseLayoutOperationsProps) => {
+  const {
+    canvas,
+    selectedObject,
+    setSelectedObject,
+    scale,
+    displayWidth,
+    displayHeight,
+    layoutElements,
+    layoutDraft,
+    setLayoutDraft,
+    saveLayout,
+    templateId,
+    formatName,
+    onSave,
+    updateLayoutDraft,
+    addDeletedElement,
+    isElementDeleted
+  } = props;
 
-  const handleAddElement = (elementType: string) => {
+  const handleAddElement = useCallback((elementType: string) => {
     if (!canvas) {
-      toast.error('Canvas não está disponível');
+      console.error('Canvas is not available');
       return;
     }
-    
-    // Skip teacher photo elements - they're handled by photoPlacementRules.ts
-    if (elementType === 'teacherImages' || elementType === 'professorPhotos') {
-      toast.info('Fotos de professores são posicionadas automaticamente pelas regras do formato');
-      return;
-    }
-    
+
     const element = layoutElements.find(el => el.field_mapping === elementType);
     if (!element) {
-      toast.error('Elemento não encontrado');
+      console.error('Element not found:', elementType);
       return;
     }
 
-    // Remove any existing elements with the same field to prevent duplicates
-    const objects = canvas.getObjects();
-    const duplicates = objects.filter((obj: any) => obj.fieldMapping === elementType);
-    duplicates.forEach(duplicate => {
-      canvas.remove(duplicate);
-    });
-
-    // Position new elements in visible area with format-aware positioning
-    const safeMargin = 50;
-    const maxX = Math.max(safeMargin, displayWidth - 300);
-    const maxY = Math.max(safeMargin, displayHeight - 200);
-    
-    const randomX = safeMargin + Math.random() * (maxX - safeMargin);
-    const randomY = safeMargin + Math.random() * (maxY - safeMargin);
-
-    // Enhanced element configuration with proper size handling
     const elementConfig = {
       id: `${elementType}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: element.element_type,
       field: element.field_mapping,
-      position: { x: randomX, y: randomY },
+      position: { 
+        x: 50 + Math.random() * Math.max(50, displayWidth - 300),
+        y: 50 + Math.random() * Math.max(50, displayHeight - 200)
+      },
       style: { 
         fontSize: 20,
         fontFamily: 'Arial',
         color: '#333333',
-        // Add default sizes for different element types
-        ...(element.element_type === 'image' ? { width: 200, height: 200 } : {})
+        ...element.default_style
       }
     };
 
-    console.log('➕ Adding new element with format validation:', elementConfig);
+    console.log('🎨 Adding element to canvas:', elementConfig);
     addElementToCanvas(canvas, elementConfig, scale, formatName);
+    
+    // Update layout draft immediately
     updateLayoutDraft(canvas, formatName);
-    toast.success('Elemento adicionado!');
-  };
+  }, [canvas, layoutElements, displayWidth, displayHeight, formatName, scale, updateLayoutDraft]);
 
-  const handleDeleteSelected = () => {
-    if (!selectedObject || !canvas) {
-      toast.error('Nenhum elemento selecionado');
+  const handleDeleteSelected = useCallback(() => {
+    if (!canvas || !selectedObject) {
+      console.log('No canvas or selected object to delete');
       return;
     }
-    
-    try {
-      console.log('🗑️ Deleting selected object:', selectedObject.elementId);
-      canvas.remove(selectedObject);
-      setSelectedObject(null);
-      canvas.renderAll();
-      updateLayoutDraft(canvas, formatName);
-      toast.success('Elemento removido!');
-    } catch (error) {
-      console.error('❌ Error deleting element:', error);
-      toast.error('Erro ao remover elemento');
-    }
-  };
 
-  const handleSaveLayout = async () => {
+    const elementId = selectedObject.elementId || selectedObject.id;
+    const fieldMapping = selectedObject.fieldMapping || selectedObject.field;
+    
+    console.log('🗑️ Deleting selected element:', { elementId, fieldMapping });
+    
+    // Mark element as deleted in session
+    if (elementId) {
+      addDeletedElement(elementId);
+    }
+    if (fieldMapping) {
+      addDeletedElement(fieldMapping);
+    }
+    
+    // Remove from canvas
+    canvas.remove(selectedObject);
+    canvas.renderAll();
+    
+    // Clear selection
+    setSelectedObject(null);
+    
+    // Update layout draft
+    updateLayoutDraft(canvas, formatName);
+    
+    toast.success('Elemento removido');
+    console.log('✅ Element deleted successfully');
+  }, [canvas, selectedObject, setSelectedObject, formatName, updateLayoutDraft, addDeletedElement]);
+
+  const handleSaveLayout = useCallback(async () => {
     if (!canvas) {
       toast.error('Canvas não está disponível');
       return;
     }
 
     try {
-      // Always prioritize layout draft for consistent saves, especially for bannerGCO
-      let elements = layoutDraft;
+      console.log('💾 Saving layout configuration...');
       
-      // Only serialize fresh if no draft exists
-      if (elements.length === 0) {
-        console.log('💾 No layout draft found, serializing fresh for format:', formatName);
-        elements = serializeCanvasLayout(canvas, scale, formatName);
-      } else {
-        console.log('💾 Using existing layout draft for consistent save:', formatName, 'Elements count:', elements.length);
-      }
-
-      console.log('💾 Saving layout with validated elements for format:', formatName, 'Final elements:', elements);
-
-      await saveLayout({
+      const elements = serializeCanvasLayout(canvas, scale, formatName);
+      console.log('📄 Serialized layout:', elements);
+      
+      const layoutConfig = {
         template_id: templateId,
         format_name: formatName,
-        layout_config: { elements }
-      });
+        layout_config: {
+          elements: elements
+        }
+      };
 
-      onSave?.();
+      await saveLayout(layoutConfig);
+      
+      // Update local draft
+      setLayoutDraft(elements);
+      
+      if (onSave) {
+        onSave();
+      }
+      
+      console.log('✅ Layout saved successfully');
     } catch (error) {
       console.error('❌ Error saving layout:', error);
+      toast.error('Erro ao salvar layout');
     }
-  };
+  }, [canvas, scale, formatName, templateId, saveLayout, setLayoutDraft, onSave]);
 
   return {
     handleAddElement,

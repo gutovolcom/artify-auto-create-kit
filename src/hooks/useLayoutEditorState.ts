@@ -13,24 +13,43 @@ export const useLayoutEditorState = () => {
   const [layoutLoadAttempts, setLayoutLoadAttempts] = useState(0);
   const [layoutDraft, setLayoutDraft] = useState<any[]>([]);
   const [isLoadingLayout, setIsLoadingLayout] = useState(false);
+  const [deletedElementsSession, setDeletedElementsSession] = useState<Set<string>>(new Set());
 
   // Refs to store latest callbacks and prevent stale closures
   const canvasRef = useRef<FabricCanvas | null>(null);
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const layoutUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Track deleted elements to prevent auto-restoration
+  const addDeletedElement = useCallback((elementId: string) => {
+    setDeletedElementsSession(prev => new Set([...prev, elementId]));
+    console.log('🗑️ Element marked as deleted:', elementId);
+  }, []);
+
+  const isElementDeleted = useCallback((elementId: string) => {
+    return deletedElementsSession.has(elementId);
+  }, [deletedElementsSession]);
+
+  const clearDeletedElements = useCallback(() => {
+    setDeletedElementsSession(new Set());
+    console.log('🧹 Cleared deleted elements session');
+  }, []);
+
   // Immediate layout draft update - no debounce to prevent loss during resets
   const setLayoutDraftImmediate = useCallback((draft: any[]) => {
-    console.log('📝 Layout draft updated immediately:', draft.length, 'elements');
-    setLayoutDraft(draft);
+    // Filter out deleted elements from the draft
+    const filteredDraft = draft.filter(element => !isElementDeleted(element.id));
+    console.log('📝 Layout draft updated immediately:', filteredDraft.length, 'elements (filtered from', draft.length, ')');
+    setLayoutDraft(filteredDraft);
     
     // Also persist to sessionStorage as backup
     try {
-      sessionStorage.setItem('layoutDraft', JSON.stringify(draft));
+      sessionStorage.setItem('layoutDraft', JSON.stringify(filteredDraft));
+      sessionStorage.setItem('deletedElements', JSON.stringify([...deletedElementsSession]));
     } catch (error) {
       console.warn('Failed to persist layout draft:', error);
     }
-  }, []);
+  }, [isElementDeleted, deletedElementsSession]);
 
   // Memoized resetState to prevent recreation and infinite loops
   const resetState = useCallback(() => {
@@ -54,6 +73,14 @@ export const useLayoutEditorState = () => {
     // Try to restore from sessionStorage if available
     try {
       const stored = sessionStorage.getItem('layoutDraft');
+      const storedDeleted = sessionStorage.getItem('deletedElements');
+      
+      if (storedDeleted) {
+        const deletedArray = JSON.parse(storedDeleted);
+        setDeletedElementsSession(new Set(deletedArray));
+        console.log('🔄 Restored deleted elements from storage:', deletedArray.length);
+      }
+      
       if (stored) {
         const restoredDraft = JSON.parse(stored);
         console.log('🔄 Restored layout draft from storage:', restoredDraft.length, 'elements');
@@ -66,6 +93,7 @@ export const useLayoutEditorState = () => {
     
     // Only clear draft if no stored version available
     setLayoutDraft([]);
+    setDeletedElementsSession(new Set());
   }, []); // No dependencies to prevent recreation
 
   const safeSetLoadingState = useCallback((newState: LoadingState) => {
@@ -100,6 +128,10 @@ export const useLayoutEditorState = () => {
     canvasRef,
     loadingTimeoutRef,
     layoutUpdateTimeoutRef,
-    resetState
+    resetState,
+    addDeletedElement,
+    isElementDeleted,
+    clearDeletedElements,
+    deletedElementsSession
   };
 };

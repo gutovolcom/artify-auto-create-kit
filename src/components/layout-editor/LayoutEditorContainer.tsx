@@ -37,7 +37,10 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
     canvasRef,
     loadingTimeoutRef,
     layoutUpdateTimeoutRef,
-    resetState
+    resetState,
+    addDeletedElement,
+    isElementDeleted,
+    clearDeletedElements
   } = useLayoutEditorState();
 
   // Integrate memory manager
@@ -137,7 +140,9 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
     templateId,
     formatName,
     onSave,
-    updateLayoutDraft
+    updateLayoutDraft,
+    addDeletedElement,
+    isElementDeleted
   });
 
   // Enhanced add element with performance optimization
@@ -166,6 +171,14 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
   // Enhanced delete with performance optimization
   const handleDeleteSelectedPerformant = () => {
     if (!selectedObject) return;
+    
+    const elementId = selectedObject.elementId || selectedObject.id;
+    const fieldMapping = selectedObject.fieldMapping || selectedObject.field;
+    
+    // Mark as deleted in session
+    if (elementId) addDeletedElement(elementId);
+    if (fieldMapping) addDeletedElement(fieldMapping);
+    
     removeElementPerformant(selectedObject);
     setSelectedObject(null);
   };
@@ -186,7 +199,7 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
 
   // Performance control handlers
   const handleToggleMonitoring = () => {
-    if (metrics.renderTime > 0) { // Check if monitoring is active
+    if (metrics.renderTime > 0) {
       stopPerformanceMonitoring();
     } else {
       startPerformanceMonitoring();
@@ -215,9 +228,10 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = ({
       
       cleanupPerformance();
       resetState();
+      clearDeletedElements(); // Clear deleted elements for new format/template
       forceGarbageCollection();
     }
-  }, [templateId, formatName, canvas, cleanupCanvas, resetState, forceGarbageCollection, cleanupPerformance]);
+  }, [templateId, formatName, canvas, cleanupCanvas, resetState, forceGarbageCollection, cleanupPerformance, clearDeletedElements]);
 
   // Cleanup timeouts and canvas on unmount
   useEffect(() => {

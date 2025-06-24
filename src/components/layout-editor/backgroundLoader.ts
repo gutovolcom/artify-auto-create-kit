@@ -17,10 +17,13 @@ export const loadBackgroundImage = async (
       return;
     }
     
-    fabric.Image.fromURL(backgroundImageUrl, {
+    // Add cache busting parameter to force reload
+    const cacheBustedUrl = `${backgroundImageUrl}?t=${Date.now()}`;
+    
+    fabric.Image.fromURL(cacheBustedUrl, {
       crossOrigin: 'anonymous'
     }).then((img) => {
-      console.log('Background image loaded successfully');
+      console.log('Background image loaded successfully with cache bust');
       console.log('Canvas dimensions:', canvas.width, 'x', canvas.height);
       console.log('Image dimensions:', img.width, 'x', img.height);
       
@@ -42,10 +45,10 @@ export const loadBackgroundImage = async (
         });
       }
       
-      // Set background image using the correct v6 API
+      // Clear existing background and set new one
       canvas.backgroundImage = img;
       canvas.renderAll();
-      console.log('Background image set successfully');
+      console.log('Background image updated successfully with cache bust');
       resolve();
     }).catch((error) => {
       console.error('Error loading background image:', error);

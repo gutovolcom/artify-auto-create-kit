@@ -2,7 +2,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Type, FileText, User, Calendar, Clock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Type, Image, Package } from 'lucide-react';
 
 interface LayoutElement {
   id: string;
@@ -17,139 +19,91 @@ interface ElementToolbarProps {
   onAddElement: (elementType: string) => void;
 }
 
-const getElementIcon = (fieldMapping: string) => {
-  switch (fieldMapping) {
-    case 'title':
-      return <Type className="w-5 h-5 text-primary" />;
-    case 'classTheme':
-      return <FileText className="w-5 h-5 text-secondary" />;
-    case 'teacherName':
-      return <User className="w-5 h-5 text-accent" />;
-    case 'date':
-      return <Calendar className="w-5 h-5 text-muted-foreground" />;
-    case 'time':
-      return <Clock className="w-5 h-5 text-muted-foreground" />;
-    default:
-      return <Type className="w-5 h-5 text-gray-500" />;
-  }
-};
-
-const getElementDescription = (fieldMapping: string) => {
-  switch (fieldMapping) {
-    case 'title':
-      return 'Título principal da aula';
-    case 'classTheme':
-      return 'Tema/conteúdo da aula';
-    case 'teacherName':
-      return 'Nome do professor';
-    case 'date':
-      return 'Data da aula';
-    case 'time':
-      return 'Horário da aula';
-    default:
-      return 'Elemento de texto';
-  }
-};
-
-const getElementFont = (fieldMapping: string) => {
-  switch (fieldMapping) {
-    case 'title':
-      return 'Margem-Black';
-    case 'classTheme':
-      return 'Margem-Bold';
-    case 'teacherName':
-    case 'date':
-    case 'time':
-      return 'Margem-Regular';
-    default:
-      return 'Margem-Regular';
-  }
-};
-
-const getPreviewText = (fieldMapping: string) => {
-  switch (fieldMapping) {
-    case 'title':
-      return 'Título da Aula';
-    case 'classTheme':
-      return 'Tema da Aula';
-    case 'teacherName':
-      return 'Nome do Professor';
-    case 'date':
-      return '15/06/2025';
-    case 'time':
-      return '14:30';
-    default:
-      return 'Texto';
-  }
-};
-
 export const ElementToolbar: React.FC<ElementToolbarProps> = ({
   layoutElements,
   onAddElement
 }) => {
+  const getElementIcon = (elementType: string) => {
+    switch (elementType) {
+      case 'text':
+      case 'text_box':
+        return Type;
+      case 'image':
+        return Image;
+      default:
+        return Package;
+    }
+  };
+
+  const getElementLabel = (fieldName: string) => {
+    const labels: Record<string, string> = {
+      classTheme: "Tema da Aula",
+      teacherName: "Nome do Professor",
+      teacherImages: "Fotos do Professor",
+      professorPhotos: "Fotos do Professor"
+    };
+    return labels[fieldName] || fieldName;
+  };
+
+  const groupedElements = layoutElements.reduce((acc, element) => {
+    const type = element.element_type;
+    if (!acc[type]) acc[type] = [];
+    acc[type].push(element);
+    return acc;
+  }, {} as Record<string, LayoutElement[]>);
+
   return (
-    <Card className="shadow-lg">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <Type className="w-5 h-5" />
-          Elementos Disponíveis
+    <Card className="w-full shadow-sm border-gray-200">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <Package className="h-4 w-4 text-primary" />
+          Elementos
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="text-sm text-muted-foreground mb-4">
-          Clique para adicionar elementos ao layout
-        </div>
-        
-        {/* Text Elements Section */}
-        <div className="space-y-3">
-          <h4 className="text-sm font-medium text-gray-700 border-b border-gray-200 pb-1">
-            Elementos de Texto
-          </h4>
-          
-          {layoutElements.map((element) => (
-            <div key={element.id} className="group">
-              <Button
-                variant="outline"
-                className="w-full p-4 h-auto flex flex-col items-start gap-2 hover:shadow-md transition-all duration-200 hover:border-primary/50 group-hover:bg-gradient-to-r group-hover:from-primary/5 group-hover:to-transparent"
-                onClick={() => onAddElement(element.field_mapping)}
-              >
-                <div className="flex items-center gap-2 w-full">
-                  {getElementIcon(element.field_mapping)}
-                  <span className="font-medium text-left">{element.name}</span>
-                </div>
-                
-                <div className="text-xs text-muted-foreground text-left w-full">
-                  {getElementDescription(element.field_mapping)}
-                </div>
-                
-                <div 
-                  className="text-sm text-left w-full border border-dashed border-gray-300 rounded px-2 py-1 bg-gray-50"
-                  style={{ 
-                    fontFamily: `'${getElementFont(element.field_mapping)}', Arial, sans-serif`,
-                    fontWeight: element.field_mapping === 'title' ? 900 : 
-                               element.field_mapping === 'classTheme' ? 700 : 400
-                  }}
-                >
-                  {getPreviewText(element.field_mapping)}
-                </div>
-                
-                <div className="text-xs text-gray-500 text-left w-full">
-                  Fonte: {getElementFont(element.field_mapping)}
-                </div>
-              </Button>
+        {Object.entries(groupedElements).map(([type, elements]) => (
+          <div key={type} className="space-y-2">
+            <div className="flex items-center gap-2">
+              {React.createElement(getElementIcon(type), { 
+                className: "h-3 w-3 text-muted-foreground" 
+              })}
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {type === 'text_box' ? 'Caixas de Texto' : type === 'text' ? 'Textos' : 'Imagens'}
+              </span>
             </div>
-          ))}
-        </div>
+            
+            <div className="grid grid-cols-1 gap-1">
+              {elements.map((element) => (
+                <Button
+                  key={element.id}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onAddElement(element.field_mapping)}
+                  className="h-8 justify-start text-xs font-normal hover:bg-primary/5 hover:text-primary hover:border-primary/20"
+                >
+                  {React.createElement(getElementIcon(element.element_type), { 
+                    className: "h-3 w-3 mr-2" 
+                  })}
+                  {getElementLabel(element.field_mapping)}
+                  <Badge variant="secondary" className="ml-auto text-xs h-4 px-1">
+                    {element.element_type}
+                  </Badge>
+                </Button>
+              ))}
+            </div>
+            
+            {Object.keys(groupedElements).indexOf(type) < Object.keys(groupedElements).length - 1 && (
+              <Separator className="my-2" />
+            )}
+          </div>
+        ))}
         
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <div className="text-xs font-medium text-blue-800 mb-1">
-            💡 Dica de Uso
+        {layoutElements.length === 0 && (
+          <div className="text-center py-6 text-muted-foreground">
+            <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p className="text-xs">Nenhum elemento disponível</p>
           </div>
-          <div className="text-xs text-blue-700">
-            Os elementos serão posicionados aleatoriamente no canvas. 
-            Use o mouse para movê-los e redimensioná-los conforme necessário.
-          </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

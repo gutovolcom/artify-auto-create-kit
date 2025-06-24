@@ -1,7 +1,7 @@
 
 import { useRef, useEffect } from 'react';
 import * as fabric from 'fabric';
-import { loadBackgroundImage } from '@/components/layout-editor/canvasOperations';
+import { loadBackgroundImage } from '@/components/layout-editor/backgroundLoader';
 import { batchLoadFonts, ensureFontLoaded, FontConfig } from '@/utils/canvas/fontLoader';
 
 type FabricCanvas = fabric.Canvas;
@@ -30,6 +30,7 @@ export const useCanvasSetup = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const backgroundLoadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousBackgroundRef = useRef<string>('');
   
   // Use refs to store the latest callback functions
   const onSelectionChangeRef = useRef(onSelectionChange);
@@ -89,6 +90,51 @@ export const useCanvasSetup = ({
     }
   };
 
+  // Enhanced keyboard handler for arrow key movement
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (!fabricCanvasRef.current) return;
+    
+    const canvas = fabricCanvasRef.current;
+    const activeObject = canvas.getActiveObject();
+    
+    // Arrow key movement
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      if (activeObject) {
+        e.preventDefault();
+        
+        const step = e.shiftKey ? 10 : 1; // 10px with Shift, 1px without
+        const currentLeft = activeObject.left || 0;
+        const currentTop = activeObject.top || 0;
+        
+        switch (e.key) {
+          case 'ArrowLeft':
+            activeObject.set('left', Math.max(0, currentLeft - step));
+            break;
+          case 'ArrowRight':
+            activeObject.set('left', currentLeft + step);
+            break;
+          case 'ArrowUp':
+            activeObject.set('top', Math.max(0, currentTop - step));
+            break;
+          case 'ArrowDown':
+            activeObject.set('top', currentTop + step);
+            break;
+        }
+        
+        activeObject.setCoords();
+        canvas.fire('object:modified', { target: activeObject });
+        canvas.renderAll();
+        console.log(`Moved element by ${step}px with arrow keys`);
+      }
+    }
+    
+    // Delete/Backspace for deletion
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      onDeleteSelectedRef.current();
+    }
+  };
+
   // Initialize canvas only once
   useEffect(() => {
     if (!canvasRef.current || fabricCanvasRef.current) return;
@@ -124,13 +170,6 @@ export const useCanvasSetup = ({
         });
       });
 
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Delete' || e.key === 'Backspace') {
-          e.preventDefault();
-          onDeleteSelectedRef.current();
-        }
-      };
-
       document.addEventListener('keydown', handleKeyDown);
       fabricCanvasRef.current = fabricCanvas;
       
@@ -139,6 +178,7 @@ export const useCanvasSetup = ({
 
       // Load background image immediately after canvas creation
       if (backgroundImageUrl) {
+        previousBackgroundRef.current = backgroundImageUrl;
         loadBackgroundWithFallback(fabricCanvas, backgroundImageUrl);
       } else {
         // No background, trigger callback immediately
@@ -160,12 +200,16 @@ export const useCanvasSetup = ({
     });
   }, []); // Only run once
 
-  // Handle background image changes separately
+  // Handle background image changes separately with proper change detection
   useEffect(() => {
     if (!fabricCanvasRef.current || !backgroundImageUrl) return;
-
-    console.log('Background image URL changed:', backgroundImageUrl);
-    loadBackgroundWithFallback(fabricCanvasRef.current, backgroundImageUrl);
+    
+    // Only reload if the URL actually changed
+    if (previousBackgroundRef.current !== backgroundImageUrl) {
+      console.log('Background image URL changed from', previousBackgroundRef.current, 'to', backgroundImageUrl);
+      previousBackgroundRef.current = backgroundImageUrl;
+      loadBackgroundWithFallback(fabricCanvasRef.current, backgroundImageUrl);
+    }
   }, [backgroundImageUrl, scale]);
 
   return { canvasRef };
