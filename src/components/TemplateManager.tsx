@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
 import { LayoutEditor } from "@/components/LayoutEditor";
-import { Loader2, Edit, Palette } from "lucide-react";
+import { Loader2, Edit, Palette, Plus, AlertCircle, CheckCircle } from "lucide-react";
+import { platformConfigs } from "@/lib/platformConfigs";
 
 const formatSpecs = {
   youtube: { width: 1920, height: 1080, label: "YouTube" },
@@ -23,11 +25,26 @@ const formatSpecs = {
 };
 
 export const TemplateManager = () => {
-  const { templates, loading, createTemplate, deleteTemplate, updateTemplateFormat } = useSupabaseTemplates();
+  const { 
+    templates, 
+    loading, 
+    createTemplate, 
+    deleteTemplate, 
+    updateTemplateFormat,
+    addMissingFormatsToTemplate,
+    getMissingFormats,
+    getAllRequiredFormats
+  } = useSupabaseTemplates();
+  
   const [isCreating, setIsCreating] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<{
     templateId: string;
     templateName: string;
+  } | null>(null);
+  const [addingFormats, setAddingFormats] = useState<{
+    templateId: string;
+    templateName: string;
+    missingFormats: string[];
   } | null>(null);
   const [editingLayout, setEditingLayout] = useState<{
     templateId: string;
@@ -37,6 +54,7 @@ export const TemplateManager = () => {
   const [newTemplateName, setNewTemplateName] = useState("");
   const [newTemplateFiles, setNewTemplateFiles] = useState<Record<string, File>>({});
   const [editTemplateFiles, setEditTemplateFiles] = useState<Record<string, File>>({});
+  const [missingFormatFiles, setMissingFormatFiles] = useState<Record<string, File>>({});
   const [creating, setCreatingState] = useState(false);
 
   const handleCreateTemplate = async () => {
@@ -45,7 +63,8 @@ export const TemplateManager = () => {
       return;
     }
 
-    const missingFormats = Object.keys(formatSpecs).filter(
+    const allRequiredFormats = getAllRequiredFormats();
+    const missingFormats = allRequiredFormats.filter(
       format => !newTemplateFiles[format]
     );
 
@@ -90,9 +109,32 @@ export const TemplateManager = () => {
     }
   };
 
-  const handleFileUpload = (format: string, file: File, isEdit = false) => {
-    if (isEdit) {
+  const handleAddMissingFormats = async () => {
+    if (!addingFormats) return;
+
+    const selectedFormats = Object.keys(missingFormatFiles);
+    if (selectedFormats.length === 0) {
+      toast.error("Selecione pelo menos um formato para adicionar!");
+      return;
+    }
+
+    try {
+      await addMissingFormatsToTemplate(addingFormats.templateId, missingFormatFiles);
+      setAddingFormats(null);
+      setMissingFormatFiles({});
+    } catch (error) {
+      // Error handling is done in the hook
+    }
+  };
+
+  const handleFileUpload = (format: string, file: File, type: 'new' | 'edit' | 'missing' = 'new') => {
+    if (type === 'edit') {
       setEditTemplateFiles(prev => ({
+        ...prev,
+        [format]: file
+      }));
+    } else if (type === 'missing') {
+      setMissingFormatFiles(prev => ({
         ...prev,
         [format]: file
       }));
@@ -113,6 +155,10 @@ export const TemplateManager = () => {
     setEditTemplateFiles({});
   };
 
+  const resetMissingFormatsForm = () => {
+    setMissingFormatFiles({});
+  };
+
   const openLayoutEditor = (templateId: string, formatName: string, imageUrl: string) => {
     setEditingLayout({ templateId, formatName, imageUrl });
   };
@@ -120,6 +166,11 @@ export const TemplateManager = () => {
   const openTemplateEditor = (templateId: string, templateName: string) => {
     setEditingTemplate({ templateId, templateName });
     setEditTemplateFiles({});
+  };
+
+  const openAddFormats = (templateId: string, templateName: string, missingFormats: string[]) => {
+    setAddingFormats({ templateId, templateName, missingFormats });
+    setMissingFormatFiles({});
   };
 
   if (loading) {
@@ -138,7 +189,7 @@ export const TemplateManager = () => {
           <DialogTrigger asChild>
             <Button>Criar Novo Template</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Criar Novo Template</DialogTitle>
               <DialogDescription>
@@ -156,31 +207,34 @@ export const TemplateManager = () => {
                 />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Object.entries(formatSpecs).map(([formatKey, spec]) => (
-                  <Card key={formatKey}>
-                    <CardHeader>
-                      <CardTitle className="text-sm">
-                        {spec.label} ({spec.width}x{spec.height})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                  <Card key={formatKey} className="p-3">
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">
+                        {spec.label}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {spec.width}x{spec.height}
+                      </div>
                       <Input
                         type="file"
                         accept="image/*"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            handleFileUpload(formatKey, file);
+                            handleFileUpload(formatKey, file, 'new');
                           }
                         }}
+                        className="text-xs"
                       />
                       {newTemplateFiles[formatKey] && (
-                        <div className="mt-2 text-sm text-green-600">
-                          ✓ {newTemplateFiles[formatKey].name}
+                        <div className="text-xs text-green-600 flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          {newTemplateFiles[formatKey].name}
                         </div>
                       )}
-                    </CardContent>
+                    </div>
                   </Card>
                 ))}
               </div>
@@ -205,70 +259,122 @@ export const TemplateManager = () => {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {templates.map((template) => (
-          <Card key={template.id}>
-            <CardHeader>
-              <CardTitle className="text-lg">{template.name}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                {template.formats?.map((format) => (
-                  <div key={format.id} className="text-center">
-                    <div className="relative group">
-                      <img
-                        src={format.image_url}
-                        alt={`${format.format_name} format`}
-                        className="w-full h-16 object-cover rounded mb-1"
-                      />
-                      <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => openLayoutEditor(
-                            template.id,
-                            format.format_name,
-                            format.image_url
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {templates.map((template) => {
+          const missingFormats = getMissingFormats(template);
+          const isComplete = missingFormats.length === 0;
+          
+          return (
+            <Card key={template.id} className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-lg">{template.name}</CardTitle>
+                  <Badge variant={isComplete ? "default" : "destructive"} className="text-xs">
+                    {isComplete ? (
+                      <><CheckCircle className="h-3 w-3 mr-1" />Completo</>
+                    ) : (
+                      <><AlertCircle className="h-3 w-3 mr-1" />{missingFormats.length} faltando</>
+                    )}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Formats Grid */}
+                <div className="grid grid-cols-3 gap-2">
+                  {Object.entries(formatSpecs).map(([formatKey, spec]) => {
+                    const format = template.formats?.find(f => f.format_name === formatKey);
+                    const isMissing = !format;
+                    
+                    return (
+                      <div key={formatKey} className="relative group">
+                        <div className={`aspect-square rounded border-2 overflow-hidden ${
+                          isMissing ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                        }`}>
+                          {format ? (
+                            <>
+                              <img
+                                src={format.image_url}
+                                alt={`${spec.label} format`}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => openLayoutEditor(
+                                    template.id,
+                                    formatKey,
+                                    format.image_url
+                                  )}
+                                  className="text-xs"
+                                >
+                                  <Palette className="h-3 w-3 mr-1" />
+                                  Layout
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-red-500">
+                              <AlertCircle className="h-4 w-4" />
+                            </div>
                           )}
-                        >
-                          <Palette className="h-3 w-3 mr-1" />
-                          Layout
-                        </Button>
+                        </div>
+                        <div className="text-xs text-center mt-1 truncate">
+                          {spec.label}
+                        </div>
                       </div>
-                    </div>
-                    <span className="text-xs text-gray-600">
-                      {formatSpecs[format.format_name as keyof typeof formatSpecs]?.label || format.format_name}
-                    </span>
+                    );
+                  })}
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openTemplateEditor(template.id, template.name)}
+                    className="flex items-center gap-1"
+                  >
+                    <Edit className="h-3 w-3" />
+                    Editar
+                  </Button>
+                  
+                  {!isComplete && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => openAddFormats(template.id, template.name, missingFormats)}
+                      className="flex items-center gap-1"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Adicionar Formatos
+                    </Button>
+                  )}
+                  
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => deleteTemplate(template.id)}
+                  >
+                    Excluir
+                  </Button>
+                </div>
+
+                {/* Missing Formats Info */}
+                {!isComplete && (
+                  <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                    <strong>Formatos faltando:</strong> {missingFormats.map(f => formatSpecs[f as keyof typeof formatSpecs]?.label || f).join(', ')}
                   </div>
-                ))}
-              </div>
-              
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => openTemplateEditor(template.id, template.name)}
-                  className="flex items-center gap-1"
-                >
-                  <Edit className="h-3 w-3" />
-                  Editar
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => deleteTemplate(template.id)}
-                >
-                  Excluir
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Template Edit Dialog */}
       <Dialog open={!!editingTemplate} onOpenChange={() => setEditingTemplate(null)}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Template: {editingTemplate?.templateName}</DialogTitle>
             <DialogDescription>
@@ -277,35 +383,34 @@ export const TemplateManager = () => {
           </DialogHeader>
           {editingTemplate && (
             <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Selecione os formatos que deseja atualizar com novas imagens:
-              </p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Object.entries(formatSpecs).map(([formatKey, spec]) => (
-                  <Card key={formatKey}>
-                    <CardHeader>
-                      <CardTitle className="text-sm">
-                        {spec.label} ({spec.width}x{spec.height})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                  <Card key={formatKey} className="p-3">
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium">
+                        {spec.label}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {spec.width}x{spec.height}
+                      </div>
                       <Input
                         type="file"
                         accept="image/*"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            handleFileUpload(formatKey, file, true);
+                            handleFileUpload(formatKey, file, 'edit');
                           }
                         }}
+                        className="text-xs"
                       />
                       {editTemplateFiles[formatKey] && (
-                        <div className="mt-2 text-sm text-green-600">
-                          ✓ {editTemplateFiles[formatKey].name}
+                        <div className="text-xs text-green-600 flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          {editTemplateFiles[formatKey].name}
                         </div>
                       )}
-                    </CardContent>
+                    </div>
                   </Card>
                 ))}
               </div>
@@ -320,6 +425,73 @@ export const TemplateManager = () => {
                 <Button variant="outline" onClick={() => {
                   setEditingTemplate(null);
                   resetEditForm();
+                }}>
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Missing Formats Dialog */}
+      <Dialog open={!!addingFormats} onOpenChange={() => setAddingFormats(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Adicionar Formatos Faltando: {addingFormats?.templateName}</DialogTitle>
+            <DialogDescription>
+              Adicione imagens para os formatos que estão faltando neste template.
+            </DialogDescription>
+          </DialogHeader>
+          {addingFormats && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {addingFormats.missingFormats.map((formatKey) => {
+                  const spec = formatSpecs[formatKey as keyof typeof formatSpecs];
+                  if (!spec) return null;
+                  
+                  return (
+                    <Card key={formatKey} className="p-3">
+                      <div className="space-y-2">
+                        <div className="text-sm font-medium">
+                          {spec.label}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {spec.width}x{spec.height}
+                        </div>
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleFileUpload(formatKey, file, 'missing');
+                            }
+                          }}
+                          className="text-xs"
+                        />
+                        {missingFormatFiles[formatKey] && (
+                          <div className="text-xs text-green-600 flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            {missingFormatFiles[formatKey].name}
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+              
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleAddMissingFormats}
+                  disabled={Object.keys(missingFormatFiles).length === 0}
+                >
+                  Adicionar Formatos
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  setAddingFormats(null);
+                  resetMissingFormatsForm();
                 }}>
                   Cancelar
                 </Button>

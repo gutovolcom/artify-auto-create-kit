@@ -15,6 +15,7 @@ export const generateImagesForFormats = async (
 ): Promise<GeneratedImage[]> => {
   const allGeneratedImages: GeneratedImage[] = [];
   const teacherPhotos = normalizeTeacherPhotos(eventData);
+  const warningsShown: string[] = [];
   
   // Generate images for all formats sequentially
   const formats = Object.keys(platformConfigs) as (keyof typeof platformConfigs)[];
@@ -28,6 +29,14 @@ export const generateImagesForFormats = async (
       
       if (!formatData?.image_url) {
         console.warn(`No background image found for format: ${formatId}, skipping...`);
+        
+        // Show warning toast only once per format type
+        if (!warningsShown.includes(formatId)) {
+          toast.warning(`Formato ${platform.name} não encontrado no template. Adicione este formato ao template para gerá-lo.`, {
+            duration: 3000
+          });
+          warningsShown.push(formatId);
+        }
         continue;
       }
       
@@ -81,8 +90,20 @@ export const generateImagesForFormats = async (
       
     } catch (error) {
       console.error(`Error generating image for ${formatId}:`, error);
+      
+      // Show specific error for this format
+      const platform = platformConfigs[formatId];
+      toast.error(`Erro ao gerar imagem para ${platform.name}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      
       // Continue with other images even if one fails
     }
+  }
+  
+  // Show summary if some formats were missing
+  if (warningsShown.length > 0) {
+    toast.info(`${allGeneratedImages.length} imagens geradas. ${warningsShown.length} formatos não encontrados no template.`, {
+      duration: 5000
+    });
   }
   
   return allGeneratedImages;

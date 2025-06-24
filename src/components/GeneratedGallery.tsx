@@ -32,11 +32,15 @@ export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) =
     );
   }
 
+  // Updated platform mapping to include all new formats
   const platforms = {
     youtube: "YouTube",
+    youtube_ao_vivo: "YouTube Ao Vivo",
+    youtube_pos_evento: "YouTube Pós Evento", 
     feed: "Feed",
     stories: "Stories", 
     bannerGCO: "Banner GCO",
+    destaque: "Destaque",
     ledStudio: "LED Studio",
     LP: "LP",
   };
@@ -54,6 +58,28 @@ export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) =
     document.body.removeChild(link);
   };
 
+  const getAspectRatio = (platform: string): string => {
+    switch (platform) {
+      case "youtube":
+      case "youtube_ao_vivo":
+      case "youtube_pos_evento":
+        return "16/9";
+      case "stories":
+        return "9/16";
+      case "bannerGCO":
+        return "4/1"; // Adjusted for new banner dimensions (1920x500)
+      case "destaque":
+        return "4/3"; // Small format aspect ratio
+      case "ledStudio":
+        return "4/1";
+      case "LP":
+        return "1/1"; // Approximately square
+      case "feed":
+      default:
+        return "1/1";
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="space-y-4">
@@ -62,13 +88,7 @@ export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) =
           <div className="flex w-max space-x-6 p-4">
             {images.map((generatedImage, index) => {
               const platformName = platforms[generatedImage.platform as keyof typeof platforms] || generatedImage.format;
-              
-              // Define aspect ratio based on platform
-              let aspectRatio = "1";
-              if (generatedImage.platform === "youtube") aspectRatio = "16/9";
-              else if (generatedImage.platform === "stories") aspectRatio = "9/16";
-              else if (generatedImage.platform === "bannerGCO") aspectRatio = "4/3";
-              else if (generatedImage.platform === "ledStudio") aspectRatio = "4/1";
+              const aspectRatio = getAspectRatio(generatedImage.platform);
               
               return (
                 <div key={index} className="w-[300px] shrink-0 space-y-3">

@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { platformConfigs } from "@/lib/platformConfigs";
 
 interface Template {
   id: string;
@@ -34,6 +36,11 @@ export const useSupabaseTemplates = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+
+  // Get all required formats from platformConfigs
+  const getAllRequiredFormats = () => {
+    return Object.keys(platformConfigs);
+  };
 
   const fetchTemplates = async () => {
     try {
@@ -94,6 +101,14 @@ export const useSupabaseTemplates = () => {
     if (!user) throw new Error('User not authenticated');
 
     try {
+      // Validate that all required formats are provided
+      const requiredFormats = getAllRequiredFormats();
+      const missingFormats = requiredFormats.filter(format => !formatFiles[format]);
+      
+      if (missingFormats.length > 0) {
+        throw new Error(`Formatos obrigatórios não preenchidos: ${missingFormats.join(', ')}`);
+      }
+
       // Create template record
       const { data: templateData, error: templateError } = await supabase
         .from('templates')
@@ -134,14 +149,35 @@ export const useSupabaseTemplates = () => {
       // Upload new image
       const imageUrl = await uploadImage(file, templateId, formatName);
       
-      // Update the format record and template updated_at
-      const { error: formatError } = await supabase
+      // Check if format exists, if not create it
+      const { data: existingFormat } = await supabase
         .from('template_formats')
-        .update({ image_url: imageUrl })
+        .select('id')
         .eq('template_id', templateId)
-        .eq('format_name', formatName);
+        .eq('format_name', formatName)
+        .single();
 
-      if (formatError) throw formatError;
+      if (existingFormat) {
+        // Update existing format
+        const { error: formatError } = await supabase
+          .from('template_formats')
+          .update({ image_url: imageUrl })
+          .eq('template_id', templateId)
+          .eq('format_name', formatName);
+
+        if (formatError) throw formatError;
+      } else {
+        // Create new format
+        const { error: formatError } = await supabase
+          .from('template_formats')
+          .insert({
+            template_id: templateId,
+            format_name: formatName,
+            image_url: imageUrl
+          });
+
+        if (formatError) throw formatError;
+      }
 
       // Update template's updated_at timestamp
       const { error: templateError } = await supabase
@@ -157,6 +193,22 @@ export const useSupabaseTemplates = () => {
       return imageUrl;
     } catch (error) {
       console.error('Error updating template format:', error);
+      throw error;
+    }
+  };
+
+  const addMissingFormatsToTemplate = async (templateId: string, formatFiles: Record<string, File>) => {
+    try {
+      const formatPromises = Object.entries(formatFiles).map(async ([formatName, file]) => {
+        return updateTemplateFormat(templateId, formatName, file);
+      });
+
+      await Promise.all(formatPromises);
+      await fetchTemplates();
+      toast.success('Formatos adicionados com sucesso!');
+    } catch (error) {
+      console.error('Error adding missing formats:', error);
+      toast.error('Erro ao adicionar formatos');
       throw error;
     }
   };
@@ -178,12 +230,22 @@ export const useSupabaseTemplates = () => {
     }
   };
 
+  // Helper function to get missing formats for a template
+  const getMissingFormats = (template: Template): string[] => {
+    const requiredFormats = getAllRequiredFormats();
+    const existingFormats = template.formats?.map(f => f.format_name) || [];
+    return requiredFormats.filter(format => !existingFormats.includes(format));
+  };
+
   return {
     templates,
     loading,
     createTemplate,
     updateTemplateFormat,
+    addMissingFormatsToTemplate,
     deleteTemplate,
+    getMissingFormats,
+    getAllRequiredFormats,
     refetch: fetchTemplates
   };
 };
