@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { EventData } from "@/pages/Index";
 import { toast } from "sonner";
@@ -119,10 +120,11 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
       // Create a new JSZip instance
       const zip = new JSZip();
       
-      // Sanitize event title for filename
-      const sanitizedTitle = eventData?.title 
-        ? eventData.title.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50)
-        : 'Event';
+      // Sanitize event name for filename - use classTheme instead of title
+      const sanitizedTitle = eventData?.classTheme 
+        ? eventData.classTheme.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50)
+        : eventData?.date?.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30)
+        || 'Event';
       
       // Convert each image URL to blob and add to ZIP
       for (let i = 0; i < generatedImages.length; i++) {

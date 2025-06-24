@@ -17,7 +17,7 @@ export const useActivityLog = () => {
         .from('activity_logs')
         .insert({
           user_id: user.id,
-          event_title: eventData.title,
+          event_title: eventData.classTheme || 'Event', // Use classTheme instead of title
           event_date: eventData.date,
           template_id: eventData.kvImageId,
           teacher_ids: eventData.teacherImages || [],

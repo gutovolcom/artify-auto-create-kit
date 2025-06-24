@@ -27,8 +27,8 @@ export const shouldApplyTextBreaking = (field: string, eventData: EventData): bo
     return hasMultipleTeachers || false;
   }
   
-  // Apply text breaking for other fields that might need it (title, classTheme)
-  if (field === 'title' || field === 'classTheme') {
+  // Apply text breaking for classTheme which might need it
+  if (field === 'classTheme') {
     return true;
   }
   
@@ -71,9 +71,6 @@ export const getTextContent = (field: string, eventData: EventData): string => {
   let content = '';
   
   switch (field) {
-    case 'title':
-      content = eventData.title;
-      break;
     case 'classTheme':
       content = eventData.classTheme || '';
       break;

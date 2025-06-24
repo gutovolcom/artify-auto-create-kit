@@ -175,20 +175,10 @@ export const PlatformPreviews = ({
                     }}
                   >
                     {formatId === 'youtube' ? (
-                      // YouTube-specific layout following the drawYouTubeFormat style
+                      // YouTube-specific layout - removed title section
                       <>
-                        {/* Event title */}
-                        <div className="absolute left-3 top-3">
-                          <div 
-                            className="text-sm font-black text-white tracking-wide leading-tight"
-                            style={{ fontSize: 'clamp(10px, 2.5vw, 14px)' }}
-                          >
-                            {eventData.title.toUpperCase()}
-                          </div>
-                        </div>
-                        
                         {/* Class theme box */}
-                        <div className="absolute left-3 top-8">
+                        <div className="absolute left-3 top-3">
                           <div 
                             className="px-2 py-1 rounded text-xs font-bold"
                             style={{
@@ -239,18 +229,9 @@ export const PlatformPreviews = ({
                         )}
                       </>
                     ) : formatId === 'stories' ? (
-                      // Stories format - vertical layout
+                      // Stories format - vertical layout - removed title section
                       <>
-                        <div className="absolute top-4 left-3 right-3">
-                          <div 
-                            className="font-bold tracking-wide text-center"
-                            style={{ fontSize: 'clamp(10px, 2vw, 12px)' }}
-                          >
-                            {eventData.title.toUpperCase()}
-                          </div>
-                        </div>
-                        
-                        <div className="absolute top-10 left-3">
+                        <div className="absolute top-4 left-3">
                           <div 
                             className="px-2 py-1 rounded font-bold"
                             style={{
@@ -286,18 +267,9 @@ export const PlatformPreviews = ({
                         )}
                       </>
                     ) : formatId === 'bannerGCO' ? (
-                      // Banner GCO format - wide horizontal layout
+                      // Banner GCO format - wide horizontal layout - removed title section
                       <>
-                        <div className="absolute left-3 top-1">
-                          <div 
-                            className="font-bold tracking-wide"
-                            style={{ fontSize: 'clamp(8px, 2vw, 11px)' }}
-                          >
-                            {eventData.title.toUpperCase()}
-                          </div>
-                        </div>
-                        
-                        <div className="absolute left-3 top-5">
+                        <div className="absolute left-3 top-2">
                           <div 
                             className="px-1 py-0.5 rounded font-bold"
                             style={{
@@ -333,18 +305,9 @@ export const PlatformPreviews = ({
                         )}
                       </>
                     ) : formatId === 'ledStudio' ? (
-                      // LED Studio format - very wide horizontal layout
+                      // LED Studio format - very wide horizontal layout - removed title section
                       <>
-                        <div className="absolute left-2 top-1">
-                          <div 
-                            className="font-bold tracking-wide"
-                            style={{ fontSize: 'clamp(6px, 1.5vw, 9px)' }}
-                          >
-                            {eventData.title.toUpperCase()}
-                          </div>
-                        </div>
-                        
-                        <div className="absolute left-2 top-4">
+                        <div className="absolute left-2 top-2">
                           <div 
                             className="px-1 py-0.5 rounded font-bold"
                             style={{
@@ -380,18 +343,9 @@ export const PlatformPreviews = ({
                         )}
                       </>
                     ) : (
-                      // Other formats - simplified layout (Feed, Highlight)
+                      // Other formats - simplified layout (Feed, Highlight) - removed title section
                       <>
                         <div className="absolute top-2 left-2">
-                          <div 
-                            className="font-bold tracking-wide"
-                            style={{ fontSize: 'clamp(8px, 2vw, 10px)' }}
-                          >
-                            {eventData.title.toUpperCase()}
-                          </div>
-                        </div>
-                        
-                        <div className="absolute top-6 left-2">
                           <div 
                             className="px-1 py-0.5 rounded font-bold"
                             style={{

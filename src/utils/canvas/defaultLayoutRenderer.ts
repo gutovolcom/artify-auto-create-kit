@@ -19,30 +19,7 @@ export const addDefaultElements = async (
   const defaultPositions = getDefaultPositions(format, width, height);
   const userColors = getUserColors(eventData);
   
-  // Add title with format-specific styling and text constraints
-  if (eventData.title) {
-    const titleStyle = getStyleForField(format, 'title', userColors);
-    const textConstraints = constrainTextToCanvas(
-      eventData.title,
-      defaultPositions.title.x,
-      defaultPositions.title.y,
-      titleStyle.fontSize,
-      titleStyle.fontFamily,
-      width,
-      height
-    );
-    
-    const title = new FabricText(textConstraints.text, {
-      left: defaultPositions.title.x,
-      top: defaultPositions.title.y,
-      fontSize: textConstraints.fontSize,
-      fontFamily: titleStyle.fontFamily,
-      fill: titleStyle.color,
-      selectable: false,
-      evented: false
-    });
-    canvas.add(title);
-  }
+  // Removed title rendering logic - title field no longer exists
 
   // Add date with format-specific styling and text constraints
   if (eventData.date) {
@@ -192,13 +169,13 @@ export const addDefaultElements = async (
   }
 
   // Add all professor photos with proper rules
-if (eventData.teacherImages && eventData.teacherImages.length > 0) {
-  try {
-    await addTeacherPhotosToCanvas(canvas, eventData.teacherImages, format, width, height);
-  } catch (error) {
-    console.error('Error adding professor photos with rules:', error);
+  if (eventData.teacherImages && eventData.teacherImages.length > 0) {
+    try {
+      await addTeacherPhotosToCanvas(canvas, eventData.teacherImages, format, width, height);
+    } catch (error) {
+      console.error('Error adding professor photos with rules:', error);
+    }
   }
-}
 
   canvas.renderAll();
 };
