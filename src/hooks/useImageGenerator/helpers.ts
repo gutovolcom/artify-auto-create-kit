@@ -20,7 +20,7 @@ export const normalizeTeacherPhotos = (eventData: EventData): string[] => {
 };
 
 export const validateEventData = (eventData: EventData): { isValid: boolean; error?: string } => {
-  if (!eventData.title || !eventData.date || !eventData.kvImageId) {
+  if (!eventData.date || !eventData.kvImageId) {
     return {
       isValid: false,
       error: "Informações incompletas. Preencha todos os campos obrigatórios."

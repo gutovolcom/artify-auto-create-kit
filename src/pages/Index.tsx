@@ -14,7 +14,6 @@ import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
 
 export interface EventData {
-  title: string;
   subtitle: string;
   date: string;
   time: string;
@@ -39,7 +38,6 @@ const Index = () => {
   const [userType, setUserType] = useState<'user' | 'admin'>('user');
   
   const [eventData, setEventData] = useState<EventData>({
-    title: "",
     subtitle: "",
     date: "",
     time: "",
@@ -106,8 +104,8 @@ const Index = () => {
     setUserType('user');
   };
 
-  // Check if form is ready for generation - updated to use selectedTeacherIds only
-  const isFormReady = eventData.title && eventData.date && eventData.kvImageId && 
+  // Check if form is ready for generation - removed title requirement
+  const isFormReady = eventData.date && eventData.kvImageId && 
     eventData.selectedTeacherIds && eventData.selectedTeacherIds.length > 0;
 
   // Show loading while checking auth
@@ -193,7 +191,6 @@ const Index = () => {
                 generationProgress={generationProgress}
                 currentGeneratingFormat={currentGeneratingFormat}
                 missingFields={[
-                  !eventData.title && "Título do evento",
                   !eventData.date && "Data",
                   !eventData.kvImageId && "Template de imagem",
                   !(eventData.selectedTeacherIds && eventData.selectedTeacherIds.length > 0) && "Professor selecionado"

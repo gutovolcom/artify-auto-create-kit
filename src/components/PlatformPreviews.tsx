@@ -84,9 +84,8 @@ export const PlatformPreviews = ({
     return formattedDateTime;
   };
 
-  // Check if the form is ready to generate images
+  // Check if the form is ready to generate images - removed title requirement
   const isFormComplete =
-    eventData.title &&
     eventData.date &&
     eventData.kvImageId &&
     eventData.classTheme;
@@ -122,7 +121,6 @@ export const PlatformPreviews = ({
         <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-yellow-800 text-sm">
           Preencha todos os campos necessários para gerar as pré-visualizações:
           <ul className="list-disc list-inside mt-2">
-            {!eventData.title && <li>Título do evento</li>}
             {!eventData.date && <li>Data do evento</li>}
             {!eventData.kvImageId && <li>Imagem principal (KV)</li>}
             {!eventData.classTheme && <li>Tema da aula</li>}

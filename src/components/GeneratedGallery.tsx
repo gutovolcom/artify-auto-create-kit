@@ -42,10 +42,13 @@ export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) =
   };
 
   const handleDownload = (imageUrl: string, platformName: string, platformId: string) => {
-    // Create download link
+    // Create download link - use classTheme or date as filename base
+    const baseFilename = eventData.classTheme || eventData.date || 'Event';
+    const sanitizedFilename = baseFilename.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+    
     const link = document.createElement('a');
     link.href = imageUrl;
-    link.download = `${eventData.title}_${platformId}.png`;
+    link.download = `${sanitizedFilename}_${platformId}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -74,7 +77,7 @@ export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) =
                       {/* Display the generated image directly */}
                       <img 
                         src={generatedImage.url}
-                        alt={`${platformName} - ${eventData.title}`}
+                        alt={`${platformName} - ${eventData.classTheme || 'Arte gerada'}`}
                         className="w-full h-auto object-cover"
                         style={{
                           aspectRatio: aspectRatio
@@ -85,7 +88,7 @@ export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) =
                   <div className="flex justify-between items-center">
                     <div className="text-sm">
                       <p className="font-medium">{platformName}</p>
-                      <p className="text-gray-500 text-xs">{eventData.title}</p>
+                      <p className="text-gray-500 text-xs">{eventData.classTheme || 'Arte gerada'}</p>
                     </div>
                     <Button 
                       variant="outline" 

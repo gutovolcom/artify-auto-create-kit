@@ -115,16 +115,6 @@ export const EventForm = ({ eventData, updateEventData }: EventFormProps) => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="title">Título do Evento</Label>
-          <Input
-            id="title"
-            placeholder="Insira o título do evento"
-            value={eventData.title || ""}
-            onChange={(e) => updateEventData({ title: e.target.value })}
-          />
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="classTheme">Tema da aula</Label>
           <Textarea
             id="classTheme"
