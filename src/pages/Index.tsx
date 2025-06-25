@@ -12,6 +12,8 @@ import { useImageGenerator } from "@/hooks/useImageGenerator";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
+import { usePersistentState } from '@/hooks/usePersistentState'; // Importe o hook
+
 
 export interface EventData {
   subtitle: string;
@@ -37,7 +39,7 @@ const Index = () => {
   const { user, loading, signOut } = useAuth();
   const [userType, setUserType] = useState<'user' | 'admin'>('user');
   
-  const [eventData, setEventData] = useState<EventData>({
+  const [eventData, setEventData] = usePersistentState('artGeneratorForm', {
     subtitle: "",
     date: "",
     time: "",
