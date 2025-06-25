@@ -1,15 +1,15 @@
-// src/hooks/useImageGenerator/index.ts (CORRIGIDO)
+// src/hooks/useImageGenerator/index.ts (CORRIGIDO E FINALIZADO)
 
 import { useState } from "react";
 import { EventData } from "@/pages/Index";
 import { toast } from "sonner";
-import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
 import { useActivityLog } from "@/hooks/useActivityLog";
 import { useLayoutEditor } from "@/hooks/useLayoutEditor";
 import { validateEventData } from "./helpers";
 import { generateImagesForFormats } from "./imageGeneration";
 import { GeneratedImage, UseImageGeneratorReturn } from "./types";
 import JSZip from "jszip";
+import { supabase } from "@/integrations/supabase/client"; // Importa o cliente Supabase
 
 export const useImageGenerator = (): UseImageGeneratorReturn => {
   const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
@@ -17,11 +17,10 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [currentGeneratingFormat, setCurrentGeneratingFormat] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const { templates, refetch: refetchTemplates } = useSupabaseTemplates();
   const { logActivity } = useActivityLog();
   const { getLayout, refreshAllLayouts } = useLayoutEditor();
 
-  const generateImages = async (eventData: EventData): Promise<GeneratedImage[]> => {
+  const generateImages = async (eventData: EventData) => {
     const validation = validateEventData(eventData);
     if (!validation.isValid) {
       setError(validation.error!);
@@ -36,22 +35,32 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
     setCurrentGeneratingFormat("");
 
     try {
-      console.log('Refreshing templates and layouts before generation...');
-      // 1. CORREÇÃO: Chamamos o refetch, que atualiza a variável 'templates' internamente no hook.
-      await refetchTemplates(); 
+      console.log('Starting image generation for event:', eventData);
+
+      // Limpa o cache de layouts para garantir que os layouts também sejam buscados novamente
       await refreshAllLayouts();
       
-      // Acessamos a variável 'templates' atualizada do estado do hook.
-      const selectedTemplate = templates.find(t => t.id === eventData.kvImageId);
+      // *** A CORREÇÃO PRINCIPAL ESTÁ AQUI ***
+      // Em vez de usar a lista de templates do estado (que pode estar stale),
+      // buscamos diretamente o template selecionado do banco de dados.
+      console.log(`Fetching fresh data for template ID: ${eventData.kvImageId}...`);
+      const { data: selectedTemplate, error: templateError } = await supabase
+        .from('templates')
+        .select('*, formats:template_formats(*)')
+        .eq('id', eventData.kvImageId)
+        .single();
 
-      if (!selectedTemplate) {
-        throw new Error("Template não encontrado. Tente atualizar a página.");
+      if (templateError || !selectedTemplate) {
+        console.error('Template fetching error:', templateError);
+        throw new Error("O template selecionado não pôde ser encontrado. Tente atualizar a página.");
       }
+      
+      console.log('Using fresh template for generation:', selectedTemplate);
       
       const allGeneratedImages = await generateImagesForFormats(
         eventData,
         selectedTemplate,
-        getLayout,
+        getLayout, // Passamos a função getLayout, que já força o refresh de cada layout
         setGenerationProgress,
         setCurrentGeneratingFormat
       );
@@ -72,6 +81,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
         toast.error("Nenhuma imagem foi gerada. Verifique os templates e tente novamente.");
       }
       return allGeneratedImages;
+
     } catch (err) {
       console.error('Image generation error:', err);
       const errorMessage = err instanceof Error ? err.message : "Erro ao gerar imagens. Tente novamente.";
@@ -86,30 +96,31 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
     }
   };
 
-  // 2. CORREÇÃO: A assinatura da função foi atualizada para corresponder ao tipo esperado.
-  const downloadZip = async (imagesToZip: GeneratedImage[], zipName: string): Promise<boolean> => {
-    if (imagesToZip.length === 0) {
+  const downloadZip = async (eventData?: EventData) => {
+    if (generatedImages.length === 0) {
       toast.error("Nenhuma imagem para exportar.");
       return false;
     }
 
-    setIsGenerating(true); // Reutilizando o estado para mostrar um feedback de "processando"
-    toast.info("Preparando o arquivo .zip, por favor aguarde...");
+    setIsGenerating(true);
     
     try {
       const zip = new JSZip();
       
-      const sanitizedTitle = zipName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50) || 'Artes';
+      const sanitizedTitle = eventData?.classTheme 
+        ? eventData.classTheme.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50)
+        : eventData?.date?.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30)
+        || 'Event';
       
-      for (const image of imagesToZip) {
+      for (const image of generatedImages) {
         try {
           const response = await fetch(image.url);
-          if (!response.ok) throw new Error(`Falha ao buscar a imagem para ${image.platform}`);
+          if (!response.ok) throw new Error(`Failed to fetch image for ${image.platform}`);
           const blob = await response.blob();
           const filename = `${sanitizedTitle}_${image.platform}.png`;
           zip.file(filename, blob);
         } catch (imageError) {
-          console.warn(`Falha ao adicionar ${image.platform} ao ZIP:`, imageError);
+          console.warn(`Failed to add ${image.platform} to ZIP:`, imageError);
         }
       }
       
@@ -122,7 +133,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
       const url = URL.createObjectURL(zipBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${sanitizedTitle}_artes.zip`;
+      link.download = `${sanitizedTitle}_images.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
