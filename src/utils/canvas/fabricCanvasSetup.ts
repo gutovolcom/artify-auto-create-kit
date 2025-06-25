@@ -88,11 +88,3 @@ export const cleanupCanvas = (fabricCanvas: FabricCanvas, tempCanvas: HTMLCanvas
     console.error('❌ Failed to cleanup canvas container:', error);
   }
 };
-```
-
-### Resumo das Mudanças e Próximo Passo
-
-1.  **Simplificação:** As lógicas complexas e os fallbacks na função `cleanupCanvas` foram removidos. Agora ela tem uma única responsabilidade: encontrar o container pelo `id` e removê-lo.
-2.  **Segurança:** A função `setupCanvasContainer` também foi simplificada para sempre remover um container antigo (se existir) antes de criar um novo. Isso previne qualquer acúmulo de elementos no DOM, mesmo que uma execução anterior tenha falhado.
-
-Agora, com os três arquivos (`canvasExporter.ts`, `canvasRenderer.tsx`, e `fabricCanvasSetup.ts`) corrigidos, o seu processo de geração de artes deve funcionar sem erros e sem quebrar o layout. Por favor, teste novamen
