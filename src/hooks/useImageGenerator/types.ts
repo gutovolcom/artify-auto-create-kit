@@ -2,6 +2,7 @@
 
 import { platformConfigs } from "@/lib/platformConfigs";
 
+
 // 1. Criamos um tipo chamado 'Platform' que contém exatamente
 //    as chaves do seu objeto platformConfigs.
 //    Ex: "youtube" | "feed" | "stories" | etc.
@@ -22,6 +23,6 @@ export interface UseImageGeneratorReturn {
   currentGeneratingFormat: string; // ADICIONADO: Expõe o formato atual para a UI
   generatedImages: GeneratedImage[];
   generateImages: (eventData: any) => Promise<GeneratedImage[]>; // Ajuste o tipo 'any' se tiver um tipo para EventData
-  downloadZip: (images: GeneratedImage[], zipName: string) => void;
+  downloadZip: (imagesToZip: GeneratedImage[], zipName: string) => Promise<boolean>; // ✅ IMPORTANTE
   error: string | null; // ✅ adicione esta linha
 }
