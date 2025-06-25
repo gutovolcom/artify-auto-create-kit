@@ -30,7 +30,7 @@ const getSerializationMargin = (format: string): number => {
 
 // Check if format should use minimal validation (bannerGCO specific fix)
 const shouldUseMinimalValidation = (format: string): boolean => {
-  return format === 'bannerGCO';
+  return format === 'bannerGCO'|| format === 'destaque';
 };
 
 // Enhanced precision rounding for small formats
