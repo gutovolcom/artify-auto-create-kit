@@ -59,7 +59,7 @@ const styleMap = {
   },
   destaque: {
     title: { fontFamily: 'Margem-Black', fontSize: 24 },
-    classTheme: { fontFamily: 'Margem-Bold', fontSize: 18 },
+    classTheme: { fontFamily: 'Margem-Bold', fontSize: 14 }, // Reduced from 18 to 14
     date: { fontFamily: 'Toroka Wide Regular', fontSize: 14 },
     time: { fontFamily: 'Toroka Wide Regular', fontSize: 14 },
     teacherName: { fontFamily: 'Margem-Medium', fontSize: 16 }

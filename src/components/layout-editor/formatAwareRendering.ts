@@ -30,8 +30,8 @@ const getSampleEventData = () => ({
 
 // Get format-specific text alignment
 const getTextAlignmentForFormat = (format: string): 'left' | 'center' => {
-  const leftAlignedFormats = ['youtube', 'youtube_ao_vivo', 'youtube_pos_evento', 'feed', 'stories', 'ledStudio'];
-  const centerAlignedFormats = ['bannerGCO', 'destaque', 'LP'];
+  const leftAlignedFormats = ['youtube', 'youtube_ao_vivo', 'youtube_pos_evento', 'feed', 'stories', 'ledStudio', 'LP']; // Added LP
+  const centerAlignedFormats = ['bannerGCO', 'destaque'];
   
   if (leftAlignedFormats.includes(format)) {
     return 'left';
@@ -100,13 +100,16 @@ export const getClassThemeBoxConfig = (
   // Use fixed box height from CLASS_THEME_BOX_HEIGHTS (no dynamic calculation)
   const boxHeight = themeStyle.fixedBoxHeight;
   
-  // Calculate appropriate box width based on format
+  // Calculate appropriate box width based on format - improved proportional sizing
   const formatBoxWidths = {
     'youtube': 320,
+    'youtube_ao_vivo': 320,
+    'youtube_pos_evento': 320,
     'feed': 300,
     'stories': 280,
-    'ledStudio': 350,
+    'ledStudio': 300, // Reduced from 350 to 300 for better proportion
     'bannerGCO': 200,
+    'destaque': 150, // Reduced from 200 to 150 for better proportion with smaller text
     'LP': 300
   };
   

@@ -25,15 +25,21 @@ export const addElementToCanvas = async (
   const { field } = element;
   console.log(`📌 Processing element: field=${field}, type=${type}, format=${format}`);
 
+  // Special handling for bannerGCO format - skip ALL text rendering
+  if (format === 'bannerGCO') {
+    console.log(`🚫 Skipping ALL text rendering for bannerGCO format`);
+    return;
+  }
+
   // Special handling for destaque format - only render classTheme
   if (format === 'destaque' && field !== 'classTheme') {
     console.log(`🚫 Skipping field ${field} for destaque format - only classTheme allowed`);
     return;
   }
 
-  // FORÇA TIPO text_box PARA classTheme
+  // ONLY force classTheme to text_box, leave other fields as their original type
   if (field === 'classTheme' && type !== 'text_box') {
-    console.warn('🚨 Forçando type text_box para classTheme dentro do renderer');
+    console.warn('🚨 Forcing type text_box for classTheme only');
     type = 'text_box';
   }
   

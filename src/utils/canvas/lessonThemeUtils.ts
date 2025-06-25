@@ -8,10 +8,13 @@ export const lessonThemeStyleColors = {
 
 export const CLASS_THEME_BOX_HEIGHTS = {
   youtube: 100,
+  youtube_ao_vivo: 100,
+  youtube_pos_evento: 100,
   feed: 64,
   stories: 100,
   bannerGCO: 35, // Reduced from 40.4 to 35 for better proportion
-  ledStudio: 54,
+  destaque: 25, // Added proper height for destaque format (proportional to 14px font)
+  ledStudio: 40, // Reduced from 54 to 40 for better proportion
   LP: 66,
   default: 50 // Default height if format not specified
 };

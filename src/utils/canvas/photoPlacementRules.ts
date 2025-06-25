@@ -11,6 +11,17 @@ export const teacherImageRules: Record<string, Record<number, PhotoRule>> = {
     2: { width: 492, height: 700, xOffset: 380 },
     3: { width: 387, height: 550, xOffset: 400 },
   },
+  // Add identical rules for new YouTube formats
+  youtube_ao_vivo: {
+    1: { width: 703, height: 1000, xOffset: 0 },
+    2: { width: 492, height: 700, xOffset: 380 },
+    3: { width: 387, height: 550, xOffset: 400 },
+  },
+  youtube_pos_evento: {
+    1: { width: 703, height: 1000, xOffset: 0 },
+    2: { width: 492, height: 700, xOffset: 380 },
+    3: { width: 387, height: 550, xOffset: 400 },
+  },
   feed: {
     1: { width: 385, height: 550, xOffset: 0 },
     2: { width: 350, height: 500, xOffset: 320 },
