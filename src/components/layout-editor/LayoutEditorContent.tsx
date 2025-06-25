@@ -18,6 +18,7 @@ interface LayoutEditorContentProps {
   onDeleteSelected: () => void;
   onBackgroundLoaded: () => void;
   onAddElement: (elementType: string) => void;
+  onSaveLayout?: () => void; // ✅ ADICIONE ESTA LINHA
 }
 
 export const LayoutEditorContent: React.FC<LayoutEditorContentProps> = ({

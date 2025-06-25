@@ -19,6 +19,7 @@ interface CanvasAreaProps {
   onSelectionChange: (object: any) => void;
   onDeleteSelected: () => void;
   onBackgroundLoaded?: () => void;
+  onSaveLayout?: () => void; // ✅ ADICIONE ESTA LINHA
 }
 
 export const CanvasArea: React.FC<CanvasAreaProps> = ({
@@ -31,7 +32,8 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
   onCanvasReady,
   onSelectionChange,
   onDeleteSelected,
-  onBackgroundLoaded
+  onBackgroundLoaded,
+  onSaveLayout
 }) => {
   return (
     <div className="flex-1">
