@@ -19,18 +19,18 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
   const { logActivity } = useActivityLog();
   const { getLayout, refreshAllLayouts } = useLayoutEditor();
 
-  const generateImages = async (eventData: EventData): Promise<void> => { // CORRIGIDO: Retorno agora é Promise<void>
+  const generateImages = async (eventData: EventData): Promise<GeneratedImage[]> => {
     const validation = validateEventData(eventData);
     if (!validation.isValid) {
       setError(validation.error!);
       toast.error(validation.error!);
-      return; // Apenas termina a execução
+      return [];
     }
 
     setIsGenerating(true);
     setError(null);
     setGenerationProgress(0);
-    setGeneratedImages([]); // Clear previous images
+    setGeneratedImages([]);
     setCurrentGeneratingFormat("");
 
     try {
@@ -71,35 +71,32 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
       } else {
         toast.error("Nenhuma imagem foi gerada. Verifique os templates e tente novamente.");
       }
-      // CORRIGIDO: Não há mais 'return' aqui
+
+      return allGeneratedImages;
+
     } catch (err) {
       console.error('Image generation error:', err);
       const errorMessage = err instanceof Error ? err.message : "Erro ao gerar imagens. Tente novamente.";
       setError(errorMessage);
       toast.error(errorMessage);
       setGeneratedImages([]);
-      // CORRIGIDO: Não há mais 'return' aqui
+      return [];
     } finally {
       setIsGenerating(false);
-      // Mantemos o progresso em 100% no sucesso ou resetamos no erro,
-      // mas o reset final pode ser tratado no início da próxima geração.
     }
   };
 
-  // CORRIGIDO: A assinatura da função foi atualizada para corresponder ao tipo.
-  const downloadZip = async (imagesToZip: GeneratedImage[], zipName: string) => {
+  const downloadZip = async (imagesToZip: GeneratedImage[], zipName: string): Promise<boolean> => {
     if (imagesToZip.length === 0) {
       toast.error("Nenhuma imagem para exportar.");
-      return;
+      return false;
     }
 
-    setIsGenerating(true); // Reutilizando o estado para mostrar um feedback de "processando"
+    setIsGenerating(true);
     toast.info("Preparando o arquivo .zip, por favor aguarde...");
     
     try {
       const zip = new JSZip();
-      
-      // Usa o nome do zip passado como argumento, já sanitizado pela UI
       const sanitizedTitle = zipName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50) || 'Artes';
       
       for (const image of imagesToZip) {
@@ -131,10 +128,12 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
       URL.revokeObjectURL(url);
       
       toast.success("Arquivo ZIP baixado com sucesso!");
-      
+      return true;
+
     } catch (err) {
       console.error('ZIP creation error:', err);
       toast.error("Erro ao criar arquivo ZIP. Tente novamente.");
+      return false;
     } finally {
       setIsGenerating(false);
     }
@@ -145,7 +144,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
     isGenerating,
     generationProgress,
     currentGeneratingFormat,
-    error, // Mantido se você usar para exibir algum erro na UI
+    error,
     generateImages,
     downloadZip
   };

@@ -94,10 +94,10 @@ const Index = () => {
   };
 
   const handleExport = async () => {
-    const success = await downloadZip(eventData);
+    const success = await downloadZip(generatedImages, eventData.subtitle || "artes");
     if (success) {
-      toast.success("Arquivo ZIP baixado com sucesso!");
-    }
+    toast.success("Arquivo ZIP baixado com sucesso!");
+   }
   };
 
   const handleLogout = async () => {
