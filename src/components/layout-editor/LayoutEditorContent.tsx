@@ -55,7 +55,7 @@ export const LayoutEditorContent: React.FC<LayoutEditorContentProps> = ({
         layoutElements={layoutElements}
         onAddElement={onAddElement}
       />
-    </>
+    
   {onSaveLayout && (
       <div className="fixed bottom-6 right-6 z-50">
         <button
