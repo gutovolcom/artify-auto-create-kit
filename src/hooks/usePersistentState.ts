@@ -1,3 +1,5 @@
+// src/hooks/usePersistentState.ts
+
 import { useState, useEffect } from 'react';
 
 // Este hook funciona como o useState, mas com um superpoder:
