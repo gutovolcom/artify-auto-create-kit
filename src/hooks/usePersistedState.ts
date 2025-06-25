@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 
 export function usePersistedState<T>(key: string, defaultValue: T): [T, (value: T) => void] {
@@ -5,11 +6,10 @@ export function usePersistedState<T>(key: string, defaultValue: T): [T, (value: 
     try {
       const saved = localStorage.getItem(key);
       return saved ? JSON.parse(saved) : defaultValue;
-    } catch (error) {
-      console.error(`Erro ao ler do localStorage para a chave "${key}":`, error);
+    } catch {
       return defaultValue;
     }
-  });
+  };
 
   useEffect(() => {
     try {
