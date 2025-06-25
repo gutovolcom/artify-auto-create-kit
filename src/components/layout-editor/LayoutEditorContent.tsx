@@ -1,27 +1,24 @@
+// src/components/layout-editor/LayoutEditorContent.tsx (CORRIGIDO)
 
 import React from 'react';
 import { CanvasArea } from './CanvasArea';
 import { ElementToolbar } from './ElementToolbar';
 import { PropertiesPanel } from './PropertiesPanel';
-import { DebugPanel } from './DebugPanel';
-import { PerformancePanel } from './PerformancePanel';
+import { DebugPanel } from './DebugPanel'; // Corrigido para o nome correto do componente
 
 interface LayoutEditorContentProps {
-  templateId: string;
+  // Todas as props que vêm do container
   formatName: string;
   formatDimensions: { width: number; height: number };
   backgroundImageUrl: string;
   displayWidth: number;
   displayHeight: number;
   scale: number;
-  canvas: any;
   selectedObject: any;
   loadingState: string;
   layoutLoadAttempts: number;
   loadingError: string | null;
   layoutElements: any[];
-  performanceMetrics?: any;
-  isMonitoring?: boolean;
   onCanvasReady: (fabricCanvas: any) => void;
   onSelectionChange: (object: any) => void;
   onSaveLayout: () => void;
@@ -29,26 +26,20 @@ interface LayoutEditorContentProps {
   onBackgroundLoaded: () => void;
   onAddElement: (elementType: string) => void;
   onManualReload: () => void;
-  onToggleMonitoring?: () => void;
-  onResetPerformance?: () => void;
 }
 
 export const LayoutEditorContent: React.FC<LayoutEditorContentProps> = ({
-  templateId,
   formatName,
   formatDimensions,
   backgroundImageUrl,
   displayWidth,
   displayHeight,
   scale,
-  canvas,
   selectedObject,
   loadingState,
   layoutLoadAttempts,
   loadingError,
   layoutElements,
-  performanceMetrics,
-  isMonitoring = false,
   onCanvasReady,
   onSelectionChange,
   onSaveLayout,
@@ -56,55 +47,46 @@ export const LayoutEditorContent: React.FC<LayoutEditorContentProps> = ({
   onBackgroundLoaded,
   onAddElement,
   onManualReload,
-  onToggleMonitoring = () => {},
-  onResetPerformance = () => {}
 }) => {
   return (
-    <div className="flex gap-6">
-      <CanvasArea
-        formatName={formatName}
-        formatDimensions={formatDimensions}
-        displayWidth={displayWidth}
-        displayHeight={displayHeight}
-        backgroundImageUrl={backgroundImageUrl}
-        scale={scale}
-        canvas={canvas}
-        selectedObject={selectedObject}
-        onCanvasReady={onCanvasReady}
-        onSelectionChange={onSelectionChange}
-        onSave={onSaveLayout}
-        onDeleteSelected={onDeleteSelected}
-        onBackgroundLoaded={onBackgroundLoaded}
-      />
-
-      <div className="w-80 space-y-4">
+    <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex-1 relative">
+        <CanvasArea
+          formatName={formatName}
+          formatDimensions={formatDimensions}
+          displayWidth={displayWidth}
+          displayHeight={displayHeight}
+          backgroundImageUrl={backgroundImageUrl}
+          scale={scale}
+          onCanvasReady={onCanvasReady}
+          onSelectionChange={onSelectionChange}
+          onDeleteSelected={onDeleteSelected}
+          onBackgroundLoaded={onBackgroundLoaded}
+        />
         <ElementToolbar
           layoutElements={layoutElements}
           onAddElement={onAddElement}
         />
+      </div>
 
-        <PropertiesPanel
-          selectedObject={selectedObject}
-          scale={scale}
-          onUpdateObject={() => {}}
-          onDeleteSelected={onDeleteSelected}
-        />
-
-        {performanceMetrics && (
-          <PerformancePanel
-            metrics={performanceMetrics}
-            isMonitoring={isMonitoring}
-            onToggleMonitoring={onToggleMonitoring}
-            onReset={onResetPerformance}
+      <div className="w-full lg:w-72 space-y-4">
+        {selectedObject && (
+          <PropertiesPanel
+            selectedObject={selectedObject}
+            scale={scale}
+            onDeleteSelected={onDeleteSelected}
           />
         )}
-
-        <DebugPanel
-          loadingState={loadingState}
-          layoutLoadAttempts={layoutLoadAttempts}
-          loadingError={loadingError}
-          onManualReload={onManualReload}
-        />
+        
+        {/* Renderiza o painel de debug apenas em desenvolvimento */}
+        {process.env.NODE_ENV === 'development' && (
+          <DebugPanel
+            loadingState={loadingState}
+            layoutLoadAttempts={layoutLoadAttempts}
+            loadingError={loadingError}
+            onManualReload={onManualReload}
+          />
+        )}
       </div>
     </div>
   );

@@ -1,72 +1,57 @@
-// src/components/layout-editor/LayoutEditorContainer.tsx (ATUALIZADO)
+// src/components/layout-editor/LayoutEditorContainer.tsx (CORRIGIDO)
 
 import React from 'react';
-import { CanvasArea } from './CanvasArea';
-import { ElementToolbar } from './ElementToolbar';
-import { PropertiesPanel } from './PropertiesPanel';
-import { PerformancePanel } from './DebugPanel'; // Renomeei para ser mais claro
 import { LayoutEditorProps } from './types';
+import { LayoutEditorLoadingStates } from './LayoutEditorLoadingStates';
+import { LayoutEditorContent } from './LayoutEditorContent';
+
+// Seus hooks existentes
+import { useLayoutEditor } from '@/hooks/useLayoutEditor';
 import { useLayoutEditorState } from '@/hooks/useLayoutEditorState';
 import { useCanvasManager } from '@/hooks/useCanvasManager';
 import { useLayoutOperations } from '@/hooks/useLayoutOperations';
-import { useLayoutEditor } from '@/hooks/useLayoutEditor';
-
 
 export const LayoutEditorContainer: React.FC<LayoutEditorProps & { onSave: () => void }> = (props) => {
-  const { templateId, formatName, backgroundImageUrl, formatDimensions, onSave } = props;
+  const { templateId, formatName, onSave, formatDimensions } = props;
 
-  // Lógica de estado e hooks que você já tem
-  const { layoutElements, saveLayout, getLayout } = useLayoutEditor();
+  const { layoutElements, saveLayout, getLayout, loading: elementsLoading, error } = useLayoutEditor();
+  
   const state = useLayoutEditorState();
-  const { displayWidth, displayHeight, scale } = { displayWidth: 800, displayHeight: 450, scale: 0.41}; // Calcule isso como antes
+  const { canvas, canvasRef, loadingState, layoutLoadAttempts, loadingError, layoutDraft, isLoadingLayout } = state;
+  
+  // Calcula a escala e dimensões de exibição
+  const maxCanvasWidth = 800;
+  const maxCanvasHeight = 600;
+  const scale = Math.min(
+    maxCanvasWidth / formatDimensions.width,
+    maxCanvasHeight / formatDimensions.height
+  );
+  const displayWidth = formatDimensions.width * scale;
+  const displayHeight = formatDimensions.height * scale;
 
   const manager = useCanvasManager({ ...state, displayWidth, displayHeight, scale, getLayout });
-  const operations = useLayoutOperations({ ...props, ...state, ...manager, displayWidth, displayHeight, scale, layoutElements, saveLayout });
-  
-  return (
-    <div className="flex flex-col lg:flex-row gap-6">
-      {/* Área Principal do Canvas com a barra de ferramentas flutuante */}
-      <div className="flex-1 relative">
-        <CanvasArea
-          {...props}
-          {...state}
-          {...manager}
-          {...operations}
-          displayWidth={displayWidth}
-          displayHeight={displayHeight}
-          scale={scale}
-          onCanvasReady={manager.handleCanvasReady}
-          onSelectionChange={state.setSelectedObject}
-          onDeleteSelected={operations.handleDeleteSelected}
-          onBackgroundLoaded={() => manager.handleBackgroundLoaded(templateId, formatName)}
-        />
-        <ElementToolbar
-          layoutElements={layoutElements}
-          onAddElement={operations.handleAddElement}
-        />
-      </div>
+  const operations = useLayoutOperations({ ...props, ...state, displayWidth, displayHeight, scale, layoutElements, saveLayout });
 
-      {/* Barra Lateral de Ferramentas */}
-      <div className="w-full lg:w-72 space-y-4">
-        {/* Painel de propriedades só aparece quando um objeto é selecionado */}
-        {state.selectedObject && (
-          <PropertiesPanel
-            selectedObject={state.selectedObject}
-            scale={scale}
-            onDeleteSelected={operations.handleDeleteSelected}
-          />
-        )}
-        
-        {/* Painel de debug/performance só aparece em modo de desenvolvimento */}
-        {process.env.NODE_ENV === 'development' && (
-          <PerformancePanel
-            loadingState={state.loadingState}
-            layoutLoadAttempts={state.layoutLoadAttempts}
-            loadingError={state.loadingError}
-            onManualReload={() => manager.handleManualReload(templateId, formatName)}
-          />
-        )}
-      </div>
-    </div>
+  if (elementsLoading || error) {
+    return <LayoutEditorLoadingStates elementsLoading={elementsLoading} error={error} />;
+  }
+
+  return (
+    <LayoutEditorContent
+      {...props}
+      {...state}
+      {...operations}
+      displayWidth={displayWidth}
+      displayHeight={displayHeight}
+      scale={scale}
+      layoutElements={layoutElements}
+      onCanvasReady={(fabricCanvas) => manager.handleCanvasReady(fabricCanvas, templateId, formatName)}
+      onSelectionChange={state.setSelectedObject}
+      onDeleteSelected={operations.handleDeleteSelected}
+      onBackgroundLoaded={() => manager.handleBackgroundLoaded(templateId, formatName)}
+      onAddElement={operations.handleAddElement}
+      onManualReload={() => manager.handleManualReload(templateId, formatName)}
+      onSaveLayout={operations.handleSaveLayout}
+    />
   );
 };

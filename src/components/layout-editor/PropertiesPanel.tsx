@@ -9,7 +9,7 @@ import { Settings, Trash2, Move, Layers } from 'lucide-react';
 interface PropertiesPanelProps {
   selectedObject: any;
   scale: number;
-  onUpdateObject: (updates: any) => void;
+  // A prop onUpdateObject foi removida, pois não é mais necessária.
   onDeleteSelected: () => void;
 }
 
