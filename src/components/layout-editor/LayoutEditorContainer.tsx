@@ -4,19 +4,22 @@ import React from 'react';
 import { LayoutEditorProps } from './types';
 import { LayoutEditorLoadingStates } from './LayoutEditorLoadingStates';
 import { LayoutEditorContent } from './LayoutEditorContent';
+import { PropertiesPanel } from './PropertiesPanel'; // CORREÇÃO: Importação adicionada
+import { DebugPanel } from './DebugPanel';
 
 // Seus hooks existentes
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
 import { useLayoutEditorState } from '@/hooks/useLayoutEditorState';
 import { useCanvasManager } from '@/hooks/useCanvasManager';
 import { useLayoutOperations } from '@/hooks/useLayoutOperations';
-import { DebugPanel } from './DebugPanel'; // Importação correta
 
-export const LayoutEditorContainer: React.FC<LayoutEditorProps & { onSave: () => void }> = (props) => {
+export const LayoutEditorContainer: React.FC<LayoutEditorProps> = (props) => {
   const { templateId, formatName, formatDimensions, onSave } = props;
 
   const { layoutElements, saveLayout, getLayout, loading: elementsLoading, error } = useLayoutEditor();
+  
   const state = useLayoutEditorState();
+  const { selectedObject } = state;
   
   const maxCanvasWidth = 800;
   const maxCanvasHeight = 600;
@@ -28,18 +31,7 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps & { onSave: () =>
   const displayHeight = formatDimensions.height * scale;
 
   const manager = useCanvasManager({ ...state, displayWidth, displayHeight, scale, getLayout });
-  
-  // CORREÇÃO: Passamos a prop 'updateLayoutDraft' que estava faltando
-  const operations = useLayoutOperations({
-    ...props,
-    ...state,
-    displayWidth,
-    displayHeight,
-    scale,
-    layoutElements,
-    saveLayout,
-    updateLayoutDraft: manager.updateLayoutDraft // Prop adicionada aqui
-  });
+  const operations = useLayoutOperations({ ...props, ...state, displayWidth, displayHeight, scale, layoutElements, saveLayout, updateLayoutDraft: manager.updateLayoutDraft });
 
   if (elementsLoading || error) {
     return <LayoutEditorLoadingStates elementsLoading={elementsLoading} error={error} />;
@@ -61,14 +53,13 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps & { onSave: () =>
           onDeleteSelected={operations.handleDeleteSelected}
           onBackgroundLoaded={() => manager.handleBackgroundLoaded(templateId, formatName)}
           onAddElement={operations.handleAddElement}
-          onManualReload={() => manager.handleManualReload(templateId, formatName)}
           onSaveLayout={operations.handleSaveLayout}
         />
       </div>
       <div className="w-full lg:w-72 space-y-4">
-        {state.selectedObject && (
+        {selectedObject && (
           <PropertiesPanel
-            selectedObject={state.selectedObject}
+            selectedObject={selectedObject}
             scale={scale}
             onDeleteSelected={operations.handleDeleteSelected}
           />
