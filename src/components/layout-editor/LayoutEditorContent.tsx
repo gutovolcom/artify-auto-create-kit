@@ -32,7 +32,8 @@ export const LayoutEditorContent: React.FC<LayoutEditorContentProps> = ({
   onSelectionChange,
   onDeleteSelected,
   onBackgroundLoaded,
-  onAddElement
+  onAddElement,
+  onSaveLayout
 }) => {
   return (
     <>
@@ -47,6 +48,7 @@ export const LayoutEditorContent: React.FC<LayoutEditorContentProps> = ({
         onSelectionChange={onSelectionChange}
         onDeleteSelected={onDeleteSelected}
         onBackgroundLoaded={onBackgroundLoaded}
+        onSaveLayout={onSaveLayout}
       />
       <ElementToolbar
         layoutElements={layoutElements}

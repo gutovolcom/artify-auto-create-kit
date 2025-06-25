@@ -4,7 +4,7 @@ export interface LayoutEditorProps {
   formatName: string;
   backgroundImageUrl: string;
   formatDimensions: { width: number; height: number };
-  onSave?: () => void;
+  onSaveLayout?: () => void;
 }
 
 export interface CanvasElementConfig {
