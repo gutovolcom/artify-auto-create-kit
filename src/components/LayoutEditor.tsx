@@ -1,3 +1,4 @@
+// src/components/LayoutEditor.tsx (CORRIGIDO)
 
 import React from 'react';
 import { LayoutEditorProps } from './layout-editor/types';
@@ -19,7 +20,8 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
         console.error('LayoutEditor error:', error, errorInfo);
       }}
     >
-      <LayoutEditorContainer {...props} />
+      {/* A prop onSave agora é passada corretamente */}
+      <LayoutEditorContainer {...props} onSave={props.onSave || (() => {})} />
     </ErrorBoundary>
   );
 };
