@@ -165,7 +165,7 @@ const Index = () => {
       </div>
       
       <main className="flex-1 container mx-auto px-4 py-8">
-        
+      
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger value="input">1. Informações do evento</TabsTrigger>
