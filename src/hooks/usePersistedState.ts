@@ -5,7 +5,8 @@ export function usePersistedState<T>(key: string, defaultValue: T): [T, (value: 
     try {
       const saved = localStorage.getItem(key);
       return saved ? JSON.parse(saved) : defaultValue;
-    } catch {
+    } catch (error) {
+      console.error(`Erro ao ler do localStorage para a chave "${key}":`, error);
       return defaultValue;
     }
   });
