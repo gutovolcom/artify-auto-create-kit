@@ -67,5 +67,4 @@ export const LayoutEditorContent: React.FC<LayoutEditorContentProps> = ({
       </div>
     )}
   </>
-);
-    
+)};  
