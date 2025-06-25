@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 
 export function usePersistedState<T>(key: string, defaultValue: T): [T, (value: T) => void] {
