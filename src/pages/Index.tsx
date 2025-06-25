@@ -165,10 +165,7 @@ const Index = () => {
       </div>
       
       <main className="flex-1 container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-center mb-8 text-blue-800">
-          Project GA
-        </h1>
-
+        
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger value="input">1. Informações do evento</TabsTrigger>
