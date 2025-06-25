@@ -16,7 +16,7 @@ export const LayoutEditor: React.FC<LayoutEditorProps> = (props) => {
       onError={(error, errorInfo) => console.error('LayoutEditor Error:', error, errorInfo)}
     >
       {/* CORREÇÃO: a prop onSave agora é passada corretamente */}
-      <LayoutEditorContainer {...props} onSaveLayout={props.onSave || (() => {})} />
+      <LayoutEditorContainer {...props} onSaveLayout={props.onSaveLayout || (() => {})} />
     </ErrorBoundary>
   );
 };
