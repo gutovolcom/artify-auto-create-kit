@@ -14,3 +14,12 @@ export interface GeneratedImage {
   url: string;
   bgImageUrl: any;
 }
+
+// ADICIONE ESTA NOVA INTERFACE NO FINAL DO ARQUIVO
+export interface UseImageGeneratorReturn {
+  isGenerating: boolean;
+  generationProgress: number;
+  generatedImages: GeneratedImage[];
+  generateImages: (eventData: any) => Promise<GeneratedImage[]>; // Ajuste o tipo 'any' se tiver um tipo para EventData
+  downloadZip: (images: GeneratedImage[], zipName: string) => void;
+}
