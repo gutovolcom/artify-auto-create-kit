@@ -1,4 +1,3 @@
-
 import * as fabric from 'fabric';
 import { validateElementPosition, constrainToCanvas, getFormatDimensions } from '@/utils/positionValidation';
 
@@ -10,8 +9,8 @@ const getSerializationMargin = (format: string): number => {
   const area = dimensions.width * dimensions.height;
   
   // For bannerGCO, use ultra-minimal margins to preserve user positioning
-  if (format === 'bannerGCO') {
-    return 1; // Ultra-minimal margin for bannerGCO
+  if (format === 'bannerGCO' || format === 'destaque') { // Adicionado 'destaque' aqui por consistência
+    return 1;
   }
   
   // For very small formats, use minimal margins
@@ -28,15 +27,17 @@ const getSerializationMargin = (format: string): number => {
   return 20;
 };
 
-// Check if format should use minimal validation (bannerGCO specific fix)
+// Check if format should use minimal validation
 const shouldUseMinimalValidation = (format: string): boolean => {
-  return format === 'bannerGCO'|| format === 'destaque';
+  // CORREÇÃO APLICADA AQUI
+  return format === 'bannerGCO' || format === 'destaque';
 };
 
 // Enhanced precision rounding for small formats
 const precisionRound = (value: number, format: string): number => {
-  if (format === 'bannerGCO') {
-    // Use higher precision for bannerGCO
+  // CORREÇÃO APLICADA AQUI
+  if (format === 'bannerGCO' || format === 'destaque') {
+    // Use higher precision for small formats
     return Math.round(value * 1000) / 1000;
   }
   return Math.round(value * 100) / 100;
