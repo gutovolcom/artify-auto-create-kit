@@ -1,4 +1,3 @@
-
 import { useCallback } from 'react';
 import * as fabric from 'fabric';
 import { addElementToCanvas } from '@/components/layout-editor/elementManager';
@@ -131,32 +130,38 @@ export const useLayoutOperations = (props: UseLayoutOperationsProps) => {
     try {
       console.log('💾 Saving layout configuration...');
       
-      const elements = serializeCanvasLayout(canvas, scale, formatName);
-      console.log('📄 Serialized layout:', elements);
+      // *** A CORREÇÃO ESTÁ AQUI ***
+      // Em vez de serializar o canvas novamente (o que pode usar uma versão obsoleta),
+      // nós usamos o 'layoutDraft', que é o estado mais recente e confiável do layout,
+      // pois ele é atualizado a cada modificação.
+      const elementsToSave = layoutDraft;
+      
+      console.log('📄 Layout to be saved:', elementsToSave);
       
       const layoutConfig = {
         template_id: templateId,
         format_name: formatName,
         layout_config: {
-          elements: elements
+          elements: elementsToSave
         }
       };
 
       await saveLayout(layoutConfig);
       
-      // Update local draft
-      setLayoutDraft(elements);
+      // A chamada para `setLayoutDraft(elements)` foi removida pois o `layoutDraft` já está correto.
       
       if (onSave) {
         onSave();
       }
       
       console.log('✅ Layout saved successfully');
+      toast.success('Layout salvo com sucesso!'); // Movido para o final do try para garantir
     } catch (error) {
       console.error('❌ Error saving layout:', error);
       toast.error('Erro ao salvar layout');
     }
-  }, [canvas, scale, formatName, templateId, saveLayout, setLayoutDraft, onSave]);
+  // As dependências continuam corretas, garantindo que a função seja recriada quando necessário.
+  }, [canvas, layoutDraft, templateId, formatName, saveLayout, onSave]);
 
   return {
     handleAddElement,
