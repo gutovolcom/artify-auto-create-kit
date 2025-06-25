@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { EventData } from "@/pages/Index";
 import { toast } from "sonner";
@@ -20,12 +19,12 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
   const { logActivity } = useActivityLog();
   const { getLayout, refreshAllLayouts } = useLayoutEditor();
 
-  const generateImages = async (eventData: EventData) => {
+  const generateImages = async (eventData: EventData): Promise<void> => { // CORRIGIDO: Retorno agora é Promise<void>
     const validation = validateEventData(eventData);
     if (!validation.isValid) {
       setError(validation.error!);
       toast.error(validation.error!);
-      return [];
+      return; // Apenas termina a execução
     }
 
     setIsGenerating(true);
@@ -37,47 +36,31 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
     try {
       console.log('Starting image generation for event:', eventData);
       
-      // Refresh templates and layout data to get the latest versions
       console.log('Refreshing templates and layouts before generation...');
       await refetchTemplates();
       await refreshAllLayouts();
       
-      // Get the selected template from the refreshed data
       const selectedTemplate = templates.find(t => t.id === eventData.kvImageId);
       if (!selectedTemplate) {
-        // Try to fetch templates again if not found
-        await refetchTemplates();
-        const updatedTemplate = templates.find(t => t.id === eventData.kvImageId);
-        if (!updatedTemplate) {
-          throw new Error("Template não encontrado. Tente atualizar a página.");
-        }
+        throw new Error("Template não encontrado. Tente atualizar a página.");
       }
-      
-      const templateToUse = selectedTemplate || templates.find(t => t.id === eventData.kvImageId);
-      console.log('Using template for generation with fresh data:', templateToUse);
       
       const allGeneratedImages = await generateImagesForFormats(
         eventData,
-        templateToUse,
-        getLayout, // This will force refresh layouts during generation
+        selectedTemplate,
+        getLayout,
         setGenerationProgress,
         setCurrentGeneratingFormat
       );
       
-      // Complete progress
       setGenerationProgress(100);
       setCurrentGeneratingFormat("Finalizando...");
       
-      console.log('All images generated with fresh layout data:', allGeneratedImages.length);
-      
-      // Wait a moment before setting final results
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Only set images after ALL are generated
       setGeneratedImages(allGeneratedImages);
       
       if (allGeneratedImages.length > 0) {
-        // Log the activity
         try {
           await logActivity(eventData, allGeneratedImages.map(img => img.platform));
         } catch (logError) {
@@ -88,104 +71,70 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
       } else {
         toast.error("Nenhuma imagem foi gerada. Verifique os templates e tente novamente.");
       }
-      
-      return allGeneratedImages;
+      // CORRIGIDO: Não há mais 'return' aqui
     } catch (err) {
       console.error('Image generation error:', err);
       const errorMessage = err instanceof Error ? err.message : "Erro ao gerar imagens. Tente novamente.";
       setError(errorMessage);
       toast.error(errorMessage);
-      setGeneratedImages([]); // Clear any partial results
-      return [];
+      setGeneratedImages([]);
+      // CORRIGIDO: Não há mais 'return' aqui
     } finally {
       setIsGenerating(false);
-      setGenerationProgress(0);
-      setCurrentGeneratingFormat("");
+      // Mantemos o progresso em 100% no sucesso ou resetamos no erro,
+      // mas o reset final pode ser tratado no início da próxima geração.
     }
   };
 
-  const downloadZip = async (eventData?: EventData) => {
-    if (generatedImages.length === 0) {
-      const errorMessage = "Nenhuma imagem para exportar.";
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return false;
+  // CORRIGIDO: A assinatura da função foi atualizada para corresponder ao tipo.
+  const downloadZip = async (imagesToZip: GeneratedImage[], zipName: string) => {
+    if (imagesToZip.length === 0) {
+      toast.error("Nenhuma imagem para exportar.");
+      return;
     }
 
-    setIsGenerating(true);
+    setIsGenerating(true); // Reutilizando o estado para mostrar um feedback de "processando"
+    toast.info("Preparando o arquivo .zip, por favor aguarde...");
     
     try {
-      console.log('Starting ZIP creation with images:', generatedImages.length);
-      
-      // Create a new JSZip instance
       const zip = new JSZip();
       
-      // Sanitize event name for filename - use classTheme instead of title
-      const sanitizedTitle = eventData?.classTheme 
-        ? eventData.classTheme.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50)
-        : eventData?.date?.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30)
-        || 'Event';
+      // Usa o nome do zip passado como argumento, já sanitizado pela UI
+      const sanitizedTitle = zipName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50) || 'Artes';
       
-      // Convert each image URL to blob and add to ZIP
-      for (let i = 0; i < generatedImages.length; i++) {
-        const image = generatedImages[i];
-        
+      for (const image of imagesToZip) {
         try {
-          console.log(`Processing image ${i + 1}/${generatedImages.length}: ${image.platform}`);
-          
-          // Fetch the image as a blob
           const response = await fetch(image.url);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch image for ${image.platform}`);
-          }
-          
+          if (!response.ok) throw new Error(`Falha ao buscar a imagem para ${image.platform}`);
           const blob = await response.blob();
-          
-          // Create a filename: EventTitle_platform.png
           const filename = `${sanitizedTitle}_${image.platform}.png`;
-          
-          // Add the blob to the ZIP
           zip.file(filename, blob);
-          
-          console.log(`Added ${filename} to ZIP`);
-          
         } catch (imageError) {
-          console.warn(`Failed to add ${image.platform} to ZIP:`, imageError);
-          // Continue with other images even if one fails
+          console.warn(`Falha ao adicionar ${image.platform} ao ZIP:`, imageError);
         }
       }
       
-      console.log('Generating ZIP file...');
-      
-      // Generate the ZIP file
       const zipBlob = await zip.generateAsync({ 
         type: "blob",
         compression: "DEFLATE",
         compressionOptions: { level: 6 }
       });
       
-      // Create download link and trigger download
       const url = URL.createObjectURL(zipBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${sanitizedTitle}_images.zip`;
+      link.download = `${sanitizedTitle}_artes.zip`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
-      // Clean up the URL object
       URL.revokeObjectURL(url);
       
-      console.log('ZIP download initiated successfully');
       toast.success("Arquivo ZIP baixado com sucesso!");
-      return true;
       
     } catch (err) {
       console.error('ZIP creation error:', err);
-      const errorMessage = "Erro ao criar arquivo ZIP. Tente novamente.";
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return false;
+      toast.error("Erro ao criar arquivo ZIP. Tente novamente.");
     } finally {
       setIsGenerating(false);
     }
@@ -196,7 +145,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
     isGenerating,
     generationProgress,
     currentGeneratingFormat,
-    error,
+    error, // Mantido se você usar para exibir algum erro na UI
     generateImages,
     downloadZip
   };
