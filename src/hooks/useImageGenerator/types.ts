@@ -19,6 +19,7 @@ export interface GeneratedImage {
 export interface UseImageGeneratorReturn {
   isGenerating: boolean;
   generationProgress: number;
+  currentGeneratingFormat: string; // ADICIONADO: Expõe o formato atual para a UI
   generatedImages: GeneratedImage[];
   generateImages: (eventData: any) => Promise<GeneratedImage[]>; // Ajuste o tipo 'any' se tiver um tipo para EventData
   downloadZip: (images: GeneratedImage[], zipName: string) => void;
