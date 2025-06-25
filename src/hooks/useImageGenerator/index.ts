@@ -102,7 +102,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
   };
 
   // CORREÇÃO: A assinatura da função foi atualizada para corresponder aos tipos
-  const downloadZip = async (images: GeneratedImage[], eventData?: EventData): Promise<boolean> => {
+  const downloadZip = async (imagesToZip: GeneratedImage[], zipName: string): Promise<boolean> => {
     if (images.length === 0) {
       toast.error("Nenhuma imagem para exportar.");
       return false;
