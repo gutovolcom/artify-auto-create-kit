@@ -56,5 +56,16 @@ export const LayoutEditorContent: React.FC<LayoutEditorContentProps> = ({
         onAddElement={onAddElement}
       />
     </>
-  );
-};
+  {onSaveLayout && (
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={onSaveLayout}
+          className="bg-primary text-white px-4 py-2 rounded-lg shadow hover:bg-primary/90 transition"
+        >
+          Salvar Layout
+        </button>
+      </div>
+    )}
+  </>
+);
+    
