@@ -14,7 +14,7 @@ import { useCanvasManager } from '@/hooks/useCanvasManager';
 import { useLayoutOperations } from '@/hooks/useLayoutOperations';
 
 export const LayoutEditorContainer: React.FC<LayoutEditorProps> = (props) => {
-  const { templateId, formatName, formatDimensions, onSave } = props;
+  const { templateId, formatName, formatDimensions, onSaveLayout } = props;
 
   const { layoutElements, saveLayout, getLayout, loading: elementsLoading, error } = useLayoutEditor();
   

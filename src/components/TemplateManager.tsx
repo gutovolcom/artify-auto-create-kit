@@ -516,7 +516,7 @@ export const TemplateManager = () => {
               formatName={editingLayout.formatName}
               backgroundImageUrl={editingLayout.imageUrl}
               formatDimensions={formatSpecs[editingLayout.formatName as keyof typeof formatSpecs]}
-              onSave={() => {
+              onSaveLayout={() => {
                 setEditingLayout(null);
                 toast.success('Layout salvo com sucesso!');
               }}
