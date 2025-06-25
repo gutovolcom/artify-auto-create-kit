@@ -1,5 +1,8 @@
-
 import { Canvas as FabricCanvas, FabricImage } from 'fabric';
+
+// Passo 1: Definir uma constante para o ID do container.
+// Isso garante que sempre procuramos e removemos o mesmo elemento.
+const CONTAINER_ID = 'temp-canvas-generation-container';
 
 export const createFabricCanvas = (
   tempCanvas: HTMLCanvasElement,
@@ -44,92 +47,52 @@ export const loadBackgroundImageToCanvas = async (
   });
 };
 
+// Passo 2: A função de setup agora é mais simples e confiável.
 export const setupCanvasContainer = (width: number, height: number): HTMLCanvasElement => {
-  const containerId = 'temp-canvas-container';
-  
-  // Remove any existing container to prevent orphaned elements
-  const existingContainer = document.getElementById(containerId);
+  // Sempre remove o container antigo antes de criar um novo.
+  const existingContainer = document.getElementById(CONTAINER_ID);
   if (existingContainer) {
-    console.log('🧹 Removing existing canvas container');
     document.body.removeChild(existingContainer);
   }
 
-  // Create a wrapper container for better cleanup control
+  // Cria o container com o ID constante.
   const container = document.createElement('div');
-  container.id = containerId;
+  container.id = CONTAINER_ID;
   container.style.position = 'fixed';
   container.style.top = '-9999px';
   container.style.left = '-9999px';
-  container.style.visibility = 'hidden';
-  container.style.pointerEvents = 'none';
-  container.style.zIndex = '-1000';
-  container.style.overflow = 'hidden';
-  container.style.width = '0px';
-  container.style.height = '0px';
-
-  // Create the canvas element
+  
   const tempCanvas = document.createElement('canvas');
-  tempCanvas.id = 'temp-canvas';
   tempCanvas.width = width;
   tempCanvas.height = height;
   
-  // Add canvas to container, then container to body
   container.appendChild(tempCanvas);
   document.body.appendChild(container);
   
-  console.log('🎨 Created canvas container with dimensions:', width, 'x', height);
   return tempCanvas;
 };
 
+// Passo 3: A função de limpeza agora é extremamente simples e segura.
 export const cleanupCanvas = (fabricCanvas: FabricCanvas, tempCanvas: HTMLCanvasElement): void => {
   try {
-    console.log('🧹 Starting canvas cleanup...');
-    
-    // First dispose the Fabric.js canvas
+    // Deixa o Fabric.js limpar seus próprios listeners.
     fabricCanvas.dispose();
     
-    // Find the container div that we created
-    const ourContainer = document.getElementById('temp-canvas-container');
-    if (ourContainer && ourContainer.parentElement === document.body) {
-      document.body.removeChild(ourContainer);
-      console.log('✅ Successfully removed our canvas container');
+    // Remove o container pelo ID. Não há como errar.
+    const container = document.getElementById(CONTAINER_ID);
+    if (container && container.parentElement) {
+      container.parentElement.removeChild(container);
+      console.log('✅ Canvas container successfully removed.');
     }
-    
-    // Also handle any Fabric.js created canvas-container divs
-    const fabricContainers = document.querySelectorAll('.canvas-container');
-    fabricContainers.forEach((container, index) => {
-      if (container.parentElement === document.body) {
-        document.body.removeChild(container);
-        console.log(`✅ Removed orphaned Fabric.js container ${index + 1}`);
-      }
-    });
-    
-    // Final cleanup: remove any remaining temp canvas elements
-    const remainingCanvas = document.getElementById('temp-canvas');
-    if (remainingCanvas && remainingCanvas.parentElement) {
-      const parent = remainingCanvas.parentElement;
-      if (parent.parentElement === document.body) {
-        document.body.removeChild(parent);
-        console.log('✅ Removed remaining canvas parent element');
-      }
-    }
-    
-    console.log('🎉 Canvas cleanup completed successfully');
-    
   } catch (error) {
     console.error('❌ Failed to cleanup canvas container:', error);
-    
-    // Fallback cleanup - try to remove any elements that might be left
-    try {
-      const allTempElements = document.querySelectorAll('[id*="temp-canvas"], .canvas-container');
-      allTempElements.forEach((element) => {
-        if (element.parentElement === document.body) {
-          document.body.removeChild(element);
-        }
-      });
-      console.log('🔄 Fallback cleanup completed');
-    } catch (fallbackError) {
-      console.error('❌ Fallback cleanup also failed:', fallbackError);
-    }
   }
 };
+```
+
+### Resumo das Mudanças e Próximo Passo
+
+1.  **Simplificação:** As lógicas complexas e os fallbacks na função `cleanupCanvas` foram removidos. Agora ela tem uma única responsabilidade: encontrar o container pelo `id` e removê-lo.
+2.  **Segurança:** A função `setupCanvasContainer` também foi simplificada para sempre remover um container antigo (se existir) antes de criar um novo. Isso previne qualquer acúmulo de elementos no DOM, mesmo que uma execução anterior tenha falhado.
+
+Agora, com os três arquivos (`canvasExporter.ts`, `canvasRenderer.tsx`, e `fabricCanvasSetup.ts`) corrigidos, o seu processo de geração de artes deve funcionar sem erros e sem quebrar o layout. Por favor, teste novamen
