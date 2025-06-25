@@ -103,66 +103,61 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
 
   // CORREÇÃO: A assinatura da função foi atualizada para corresponder aos tipos
   const downloadZip = async (imagesToZip: GeneratedImage[], zipName: string): Promise<boolean> => {
-    if (images.length === 0) {
-      toast.error("Nenhuma imagem para exportar.");
-      return false;
-    }
+  if (imagesToZip.length === 0) {
+    toast.error("Nenhuma imagem para exportar.");
+    return false;
+  }
 
-    setIsGenerating(true);
+  setIsGenerating(true);
+  
+  try {
+    const zip = new JSZip();
     
-    try {
-      const zip = new JSZip();
-      
-      const sanitizedTitle = eventData?.classTheme 
-        ? eventData.classTheme.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50)
-        : eventData?.date?.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30)
-        || 'Event';
-      
-      for (let i = 0; i < images.length; i++) {
-        const image = images[i];
-        
-        try {
-          const response = await fetch(image.url);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch image for ${image.platform}`);
-          }
-          const blob = await response.blob();
-          const filename = `${sanitizedTitle}_${image.platform}.png`;
-          zip.file(filename, blob);
-        } catch (imageError) {
-          console.warn(`Failed to add ${image.platform} to ZIP:`, imageError);
+    const sanitizedTitle = zipName.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 50) || "Event";
+    
+    for (let i = 0; i < imagesToZip.length; i++) {
+      const image = imagesToZip[i];
+
+      try {
+        const response = await fetch(image.url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image for ${image.platform}`);
         }
+        const blob = await response.blob();
+        const filename = `${sanitizedTitle}_${image.platform}.png`;
+        zip.file(filename, blob);
+      } catch (imageError) {
+        console.warn(`Failed to add ${image.platform} to ZIP:`, imageError);
       }
-      
-      const zipBlob = await zip.generateAsync({ 
-        type: "blob",
-        compression: "DEFLATE",
-        compressionOptions: { level: 6 }
-      });
-      
-      const url = URL.createObjectURL(zipBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${sanitizedTitle}_images.zip`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      URL.revokeObjectURL(url);
-      
-      toast.success("Arquivo ZIP baixado com sucesso!");
-      return true;
-      
-    } catch (err) {
-      console.error('ZIP creation error:', err);
-      const errorMessage = "Erro ao criar arquivo ZIP. Tente novamente.";
-      setError(errorMessage);
-      toast.error(errorMessage);
-      return false;
-    } finally {
-      setIsGenerating(false);
     }
-  };
+    
+    const zipBlob = await zip.generateAsync({ 
+      type: "blob",
+      compression: "DEFLATE",
+      compressionOptions: { level: 6 }
+    });
+    
+    const url = URL.createObjectURL(zipBlob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${sanitizedTitle}_images.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    URL.revokeObjectURL(url);
+    
+    toast.success("Arquivo ZIP baixado com sucesso!");
+    return true;
+
+  } catch (err) {
+    console.error("ZIP creation error:", err);
+    toast.error("Erro ao criar arquivo ZIP. Tente novamente.");
+    return false;
+  } finally {
+    setIsGenerating(false);
+  }
+};
 
   return {
     generatedImages,
