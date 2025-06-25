@@ -11,7 +11,7 @@ export function usePersistentState<T>(key: string, initialState: T): [T, React.D
       // Se encontrarmos algo no localStorage, usamos isso.
       // Senão, usamos o estado inicial que foi passado.
       return storageValue ? JSON.parse(storageValue) : initialState;
-    } catch (error) { {
+    } catch (error) {
       // Em caso de erro (ex: JSON inválido), voltamos para o estado inicial.
       console.error(`Erro ao ler do localStorage para a chave "${key}":`, error);
       return initialState;
