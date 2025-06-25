@@ -23,4 +23,5 @@ export interface UseImageGeneratorReturn {
   generatedImages: GeneratedImage[];
   generateImages: (eventData: any) => Promise<GeneratedImage[]>; // Ajuste o tipo 'any' se tiver um tipo para EventData
   downloadZip: (images: GeneratedImage[], zipName: string) => void;
+  error: string | null; // ✅ adicione esta linha
 }
