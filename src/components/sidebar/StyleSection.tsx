@@ -27,6 +27,8 @@ export const StyleSection = ({
     { value: "#FFFFFF", label: "Branco", color: "#FFFFFF" },
     { value: "#DD303E", label: "Vermelho", color: "#DD303E" },
     { value: "#000000", label: "Preto", color: "#000000" },
+    { value: "#0D134C", label: "Azul", color: "#0D134C" },
+    { value: "#F7C7BE", label: "Rosa Claro", color: "#F7C7BE" },
   ];
 
   return (
