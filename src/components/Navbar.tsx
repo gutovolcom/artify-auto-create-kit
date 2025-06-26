@@ -15,16 +15,19 @@ export const Navbar: FC<NavbarProps> = ({
   onLogout
 }) => {
   return (
-    <header className="w-full bg-white border-b px-6 py-3 flex items-center justify-between">
-      <img src="/logo-nova.svg" alt="Logo GRAN" className="h-5 w-auto" />
-      <UserDropdown
-        userEmail={userEmail}
-        isAdmin={isAdmin}
-        onAdminPanel={onAdminPanel}
-        onSettings={() => {}}
-        onSupport={() => {}}
-        onLogout={onLogout}
-      />
+    <header className="w-full h-16 bg-white border-b flex items-center justify-between px-6">
+      <div className="flex items-center"/>
+      
+      <div className="flex items-center space-x-4">
+        <UserDropdown
+          userEmail={userEmail}
+          isAdmin={isAdmin}
+          onAdminPanel={onAdminPanel}
+          onSettings={() => {}}
+          onSupport={() => {}}
+          onLogout={onLogout}
+        />
+      </div>
     </header>
   );
 };
