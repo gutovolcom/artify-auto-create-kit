@@ -1,12 +1,12 @@
+// src/components/MultiSelectTeacher.tsx
 
-import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Badge } from "@/components/ui/badge";
-import { X, ChevronDown, Check } from "lucide-react";
+import React, { useState } from "react";
 import { useSupabaseTeachers } from "@/hooks/useSupabaseTeachers";
-import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { X, Search } from "lucide-react";
 
 interface MultiSelectTeacherProps {
   selectedTeacherIds: string[];
@@ -19,125 +19,130 @@ export const MultiSelectTeacher: React.FC<MultiSelectTeacherProps> = ({
 }) => {
   const { teachers, loading } = useSupabaseTeachers();
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const selectedTeachers = teachers.filter(teacher => 
-    selectedTeacherIds.includes(teacher.id)
+  const selectedTeachers = teachers.filter((t) => selectedTeacherIds.includes(t.id));
+
+  const filteredTeachers = teachers.filter((t) =>
+    t.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const availableTeachers = teachers.filter(teacher => 
-    !selectedTeacherIds.includes(teacher.id)
-  );
+  const handleToggle = (teacherId: string) => {
+    const isSelected = selectedTeacherIds.includes(teacherId);
+    let updated = isSelected
+      ? selectedTeacherIds.filter((id) => id !== teacherId)
+      : [...selectedTeacherIds, teacherId];
 
-  const handleSelectTeacher = (teacherId: string) => {
-    const newSelectedIds = [...selectedTeacherIds, teacherId];
-    const newTeachers = teachers.filter(t => newSelectedIds.includes(t.id));
-    
-    onSelectionChange(
-      newSelectedIds,
-      newTeachers.map(t => t.image_url).filter(Boolean),
-      newTeachers.map(t => t.name)
-    );
-    setOpen(false);
-  };
+    if (updated.length > 3) return;
 
-  const handleRemoveTeacher = (teacherId: string) => {
-    const newSelectedIds = selectedTeacherIds.filter(id => id !== teacherId);
-    const newTeachers = teachers.filter(t => newSelectedIds.includes(t.id));
-    
+    const teacherObjs = teachers.filter((t) => updated.includes(t.id));
+
     onSelectionChange(
-      newSelectedIds,
-      newTeachers.map(t => t.image_url).filter(Boolean),
-      newTeachers.map(t => t.name)
+      updated,
+      teacherObjs.map((t) => t.image_url),
+      teacherObjs.map((t) => t.name)
     );
   };
 
-  if (loading) {
-    return <div className="text-sm text-gray-500">Carregando professores...</div>;
-  }
+  const handleRemove = (id: string) => {
+    const updated = selectedTeacherIds.filter((tid) => tid !== id);
+    const teacherObjs = teachers.filter((t) => updated.includes(t.id));
+
+    onSelectionChange(
+      updated,
+      teacherObjs.map((t) => t.image_url),
+      teacherObjs.map((t) => t.name)
+    );
+  };
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">
-        Professores Selecionados
-      </label>
-      
-      {/* Selected teachers display */}
-      <div className="flex flex-wrap gap-2 mb-3">
-        {selectedTeachers.map((teacher) => (
-          <Badge
-            key={teacher.id}
-            variant="secondary"
-            className="flex items-center gap-2 px-3 py-1"
-          >
-            {teacher.image_url && (
-              <img
-                src={teacher.image_url}
-                alt={teacher.name}
-                className="w-6 h-6 rounded-full object-cover"
-              />
-            )}
-            <span className="text-sm">{teacher.name}</span>
-            <button
-              onClick={() => handleRemoveTeacher(teacher.id)}
-              className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </Badge>
-        ))}
-      </div>
+      <label className="text-sm text-gray-700 font-medium">Foto do professor:</label>
 
-      {/* Add teacher dropdown */}
-      {selectedTeacherIds.length < 3 && (
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="w-full justify-between"
+      <div className="relative flex items-center border rounded-md px-3 py-2 bg-white">
+        {selectedTeachers.length === 1 && (
+          <div className="flex items-center bg-gray-100 rounded-full px-2 py-1 pr-7 relative">
+            <img
+              src={selectedTeachers[0].image_url}
+              alt={selectedTeachers[0].name}
+              className="w-6 h-6 rounded-full object-cover mr-2"
+            />
+            <span className="text-sm text-gray-700">{selectedTeachers[0].name}</span>
+            <button
+              className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center"
+              onClick={() => handleRemove(selectedTeachers[0].id)}
             >
-              Adicionar Professor
-              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-full p-0" align="start">
-            <Command>
-              <CommandInput placeholder="Buscar professor..." />
-              <CommandList>
-                <CommandEmpty>Nenhum professor encontrado.</CommandEmpty>
-                <CommandGroup>
-                  {availableTeachers.map((teacher) => (
-                    <CommandItem
-                      key={teacher.id}
-                      value={teacher.name}
-                      onSelect={() => handleSelectTeacher(teacher.id)}
-                      className="flex items-center gap-2"
-                    >
-                      {teacher.image_url && (
+              ×
+            </button>
+          </div>
+        )}
+
+        {selectedTeachers.length > 1 && (
+          <div className="flex items-center gap-1">
+            {selectedTeachers.map((t) => (
+              <div key={t.id} className="relative">
+                <img
+                  src={t.image_url}
+                  alt={t.name}
+                  className="w-7 h-7 rounded-full object-cover border border-white"
+                />
+                <button
+                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center"
+                  onClick={() => handleRemove(t.id)}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="ml-auto text-gray-500">
+          <Dialog>
+            <DialogTrigger asChild>
+              <button>
+                <Search className="w-4 h-4" />
+              </button>
+            </DialogTrigger>
+            <DialogContent className="w-[420px] max-w-full">
+              <DialogHeader>
+                <DialogTitle>Selecionar Professor</DialogTitle>
+              </DialogHeader>
+              <Input
+                placeholder="Buscar por nome..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <ScrollArea className="mt-4 max-h-[300px]">
+                <div className="grid grid-cols-3 gap-3">
+                  {filteredTeachers.map((teacher) => {
+                    const isSelected = selectedTeacherIds.includes(teacher.id);
+                    return (
+                      <div
+                        key={teacher.id}
+                        onClick={() => handleToggle(teacher.id)}
+                        className={`cursor-pointer border rounded-md p-2 text-center transition ${
+                          isSelected ? "ring-2 ring-blue-500" : "hover:border-gray-300"
+                        }`}
+                      >
                         <img
                           src={teacher.image_url}
                           alt={teacher.name}
-                          className="w-8 h-8 rounded-full object-cover"
+                          className="w-full h-20 object-cover object-top rounded-md"
                         />
-                      )}
-                      <div className="flex flex-col">
-                        <span className="font-medium">{teacher.name}</span>                      
+                        <p className="text-sm mt-2 truncate">{teacher.name}</p>
                       </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-      )}
-
-      {selectedTeacherIds.length >= 3 && (
-        <p className="text-sm text-gray-500">
-          Máximo de 3 professores permitido
-        </p>
-      )}
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+              <div className="pt-2 text-right">
+                <Button variant="outline" onClick={() => setOpen(false)}>Fechar</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
     </div>
   );
 };
