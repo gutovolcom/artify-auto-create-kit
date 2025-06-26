@@ -1,95 +1,115 @@
-// src/components/sidebar/TeacherSection.tsx
-
+import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
+import { SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar";
 import { useSupabaseTeachers } from "@/hooks/useSupabaseTeachers";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
-import { cn } from "@/lib/utils";
 
 interface TeacherSectionProps {
   selectedTeacherIds: string[];
-  onSelectionChange: (ids: string[], photos: string[], names: string[]) => void;
+  onSelectionChange: (teacherIds: string[], teacherImages: string[], teacherNames: string[]) => void;
 }
 
-export const TeacherSection = ({
-  selectedTeacherIds,
-  onSelectionChange,
-}: TeacherSectionProps) => {
+export const TeacherSection = ({ selectedTeacherIds, onSelectionChange }: TeacherSectionProps) => {
   const { teachers } = useSupabaseTeachers();
+  const [selectedTeachers, setSelectedTeachers] = useState<any[]>([]);
 
-  const handleToggle = (teacherId: string) => {
-    const isSelected = selectedTeacherIds.includes(teacherId);
-    const newSelected = isSelected
-      ? selectedTeacherIds.filter(id => id !== teacherId)
-      : [...selectedTeacherIds, teacherId];
+  useEffect(() => {
+    if (teachers.length > 0 && selectedTeacherIds.length > 0) {
+      const matched = teachers.filter(t => selectedTeacherIds.includes(t.id));
+      setSelectedTeachers(matched);
+    }
+  }, [teachers, selectedTeacherIds]);
 
-    const selectedTeachers = teachers.filter(t => newSelected.includes(t.id));
-    const photos = selectedTeachers.map(t => t.image_url);
-    const names = selectedTeachers.map(t => t.name);
-
-    onSelectionChange(newSelected, photos, names);
+  const handleSelect = (teacher: any) => {
+    const alreadySelected = selectedTeachers.find(t => t.id === teacher.id);
+    let updatedTeachers;
+    if (alreadySelected) {
+      updatedTeachers = selectedTeachers.filter(t => t.id !== teacher.id);
+    } else {
+      updatedTeachers = [...selectedTeachers, teacher];
+    }
+    setSelectedTeachers(updatedTeachers);
+    onSelectionChange(
+      updatedTeachers.map(t => t.id),
+      updatedTeachers.map(t => t.photo_url),
+      updatedTeachers.map(t => t.name)
+    );
   };
 
-  const selectedTeachers = teachers.filter(t => selectedTeacherIds.includes(t.id));
+  const handleRemove = (id: string) => {
+    const updated = selectedTeachers.filter(t => t.id !== id);
+    setSelectedTeachers(updated);
+    onSelectionChange(
+      updated.map(t => t.id),
+      updated.map(t => t.photo_url),
+      updated.map(t => t.name)
+    );
+  };
 
   return (
-    <div className="space-y-2">
-      <Label className="text-sm text-gray-700 font-medium">Adicionar professor</Label>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className="w-full justify-between h-11 rounded-lg border-gray-300 text-gray-800 text-sm font-normal"
-          >
-            {selectedTeachers.length === 0 && <span>Selecionar professores</span>}
+    <SidebarGroup>
+      <SidebarGroupContent className="space-y-2">
+        <Label className="text-sm font-medium text-gray-700">Adicionar professor:</Label>
+
+        <div className="relative w-full">
+          <div className="border rounded-md px-3 py-2 bg-white min-h-[44px]">
             {selectedTeachers.length === 1 && (
               <div className="flex items-center space-x-2">
-                <img
-                  src={selectedTeachers[0].image_url}
-                  alt={selectedTeachers[0].name}
-                  className="w-6 h-6 rounded-full object-cover"
-                />
-                <span>{selectedTeachers[0].name}</span>
+                <div className="relative">
+                  <img
+                    src={selectedTeachers[0].photo_url}
+                    alt={selectedTeachers[0].name}
+                    className="h-10 w-10 rounded-full object-cover object-top"
+                  />
+                  <button
+                    onClick={() => handleRemove(selectedTeachers[0].id)}
+                    className="absolute top-[-6px] right-[-6px] bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                  >
+                    ×
+                  </button>
+                </div>
+                <span className="text-sm text-gray-700">{selectedTeachers[0].name}</span>
               </div>
             )}
+
             {selectedTeachers.length > 1 && (
               <div className="flex -space-x-2">
-                {selectedTeachers.slice(0, 3).map(teacher => (
-                  <img
-                    key={teacher.id}
-                    src={teacher.image_url}
-                    alt={teacher.name}
-                    className="w-6 h-6 rounded-full object-cover border-2 border-white"
-                  />
+                {selectedTeachers.map(t => (
+                  <div key={t.id} className="relative">
+                    <img
+                      src={t.photo_url}
+                      alt={t.name}
+                      className="h-9 w-9 rounded-full border-2 border-white object-cover object-top"
+                    />
+                    <button
+                      onClick={() => handleRemove(t.id)}
+                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs"
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-64 p-4 space-y-2">
-          <ScrollArea className="max-h-64">
-            {teachers.map(teacher => (
-              <div key={teacher.id} className="flex items-center space-x-3 py-1">
-                <Checkbox
-                  id={`teacher-${teacher.id}`}
-                  checked={selectedTeacherIds.includes(teacher.id)}
-                  onCheckedChange={() => handleToggle(teacher.id)}
-                />
-                <img
-                  src={teacher.image_url}
-                  alt={teacher.name}
-                  className="w-6 h-6 rounded-full object-cover"
-                />
-                <label htmlFor={`teacher-${teacher.id}`} className="text-sm">
-                  {teacher.name}
-                </label>
-              </div>
-            ))}
-          </ScrollArea>
-        </PopoverContent>
-      </Popover>
-    </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 pt-2">
+          {teachers.map((teacher: any) => (
+            <div
+              key={teacher.id}
+              className={`cursor-pointer border rounded-md p-1 text-center ${selectedTeacherIds.includes(teacher.id) ? 'ring-2 ring-blue-500' : 'hover:border-gray-400'}`}
+              onClick={() => handleSelect(teacher)}
+            >
+              <img
+                src={teacher.photo_url}
+                alt={teacher.name}
+                className="h-16 w-full object-cover object-top rounded"
+              />
+              <p className="text-xs mt-1 text-gray-700 truncate">{teacher.name}</p>
+            </div>
+          ))}
+        </div>
+      </SidebarGroupContent>
+    </SidebarGroup>
   );
 };
