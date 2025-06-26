@@ -51,9 +51,6 @@ export const MainLayout = ({
 
         {/* LAYOUT PRINCIPAL */}
         <div className="flex flex-1 overflow-hidden">
-          {/* REMOÇÃO DO GAP FILLER */}
-          <div className="hidden" />
-
           {/* SIDEBAR */}
           <AppSidebar
             userEmail={userEmail}
@@ -68,15 +65,17 @@ export const MainLayout = ({
           />
 
           {/* CONTEÚDO PRINCIPAL */}
-          <MainContent className="flex-1 min-w-0">
-            generatedImages={generatedImages}
-            eventData={eventData}
-            onExport={onExport}
-            hasStartedGeneration={hasStartedGeneration}
-            isGenerating={isGenerating}
-            generationProgress={generationProgress}
-            currentGeneratingFormat={currentGeneratingFormat}
-          </MainContent>
+          <div className="flex-1 min-w-0 p-8 space-y-8">
+            <MainContent
+              generatedImages={generatedImages}
+              eventData={eventData}
+              onExport={onExport}
+              hasStartedGeneration={hasStartedGeneration}
+              isGenerating={isGenerating}
+              generationProgress={generationProgress}
+              currentGeneratingFormat={currentGeneratingFormat}
+            />
+          </div>
         </div>
       </div>
     </SidebarProvider>
