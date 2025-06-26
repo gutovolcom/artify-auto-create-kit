@@ -40,7 +40,7 @@ const Index = () => {
     );
   }
 
-  const isAdmin = user.email === "henriquetocheto@gmail.com";
+  const isAdmin = user.email === import.meta.env.VITE_ADMIN_EMAIL;
 
   return (
     <AuthGuard>
