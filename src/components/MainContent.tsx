@@ -81,7 +81,7 @@ export const MainContent = ({
   }
 
   return (
-    <div className="flex-1 p-8 space-y-8 overflow-auto">
+    <div className="flex-1 p-8 space-y-8 overflow-x-auto overflow-y-hidden">
       {isGenerating && (
         <div className="w-[80%] mx-auto mb-6">
           <div className="space-y-3">
