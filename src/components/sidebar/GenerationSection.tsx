@@ -8,9 +8,8 @@ interface GenerationSectionProps {
   isGenerating: boolean;
   generationProgress: number;
   currentGeneratingFormat: string;
-  missingFields: string[];
   isFormReady: boolean;
-  missingFields: string[]; // 👈 requerido
+  missingFields: string[]; // ✅ apenas uma vez
   onGenerate: () => void;
 }
 
