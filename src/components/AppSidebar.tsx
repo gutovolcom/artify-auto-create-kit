@@ -98,70 +98,68 @@ export const AppSidebar = ({
     eventData.selectedTeacherIds && eventData.selectedTeacherIds.length > 0;
 
   return (
-    <Sidebar className="border-r w-96">
-      <SidebarHeader className="p-6 space-y-4">
-        <div className="flex items-center space-x-3">
-          <img
-            src="/logo-nova.svg"
-            alt="Logo GRAN"
-            className="h-6 w-auto"
-          />
-        </div>
-        
-        <UserDropdown
-          userEmail={userEmail}
-          isAdmin={isAdmin}
-          onAdminPanel={onAdminPanel}
-          onSettings={() => {}}
-          onSupport={() => {}}
-          onLogout={onLogout}
-        />
-        
-        <div className="pt-4">
-          <p className="text-sm text-gray-600 mb-4">Preencha os campos abaixo:</p>
-        </div>
-      </SidebarHeader>
-      
-      <SidebarContent className="px-6 pb-6 space-y-6 overflow-visible">
-        <TemplateSection
-          selectedTemplateId={eventData.kvImageId}
-          onTemplateSelect={(id) => updateEventData({ kvImageId: id })}
-        />
+    <Sidebar className="border-r w-[360px] bg-white">
+  <SidebarHeader className="p-4 space-y-3">
+    <div className="flex items-center space-x-3">
+      <img
+        src="/logo-nova.svg"
+        alt="Logo GRAN"
+        className="h-5 w-auto"
+      />
+    </div>
 
-        <EventDetailsSection
-          classTheme={eventData.classTheme || ""}
-          date={eventData.date}
-          time={eventData.time}
-          onUpdate={(data) => updateEventData(data)}
-        />
+    <UserDropdown
+      userEmail={userEmail}
+      isAdmin={isAdmin}
+      onAdminPanel={onAdminPanel}
+      onSettings={() => {}}
+      onSupport={() => {}}
+      onLogout={onLogout}
+    />
 
-        <StyleSection
-          lessonThemeBoxStyle={eventData.lessonThemeBoxStyle || "Transparent"}
-          textColor={eventData.textColor || "#FFFFFF"}
-          onStyleChange={handleLessonThemeStyleChange}
-          onTextColorChange={handleTextColorChange}
-        />
+    <p className="text-sm text-gray-600">Preencha os campos abaixo:</p>
+  </SidebarHeader>
 
-        <TeacherSection
-          selectedTeacherIds={eventData.selectedTeacherIds || []}
-          onSelectionChange={handleTeacherSelectionChange}
-        />
+  <SidebarContent className="px-4 pb-4 space-y-3">
+    <TemplateSection
+      selectedTemplateId={eventData.kvImageId}
+      onTemplateSelect={(id) => updateEventData({ kvImageId: id })}
+    />
 
-        <FormatsSection
-          availableFormats={availableFormats}
-          selectedPlatforms={eventData.platforms}
-          onPlatformChange={(platforms) => updateEventData({ platforms })}
-        />
+    <EventDetailsSection
+      classTheme={eventData.classTheme || ""}
+      date={eventData.date}
+      time={eventData.time}
+      onUpdate={(data) => updateEventData(data)}
+    />
 
-        <GenerationSection
-          isGenerating={isGenerating}
-          generationProgress={0}
-          currentGeneratingFormat=""
-          missingFields={missingFields}
-          isFormReady={isFormReady}
-          onGenerate={onGenerate}
-        />
-      </SidebarContent>
-    </Sidebar>
+    <StyleSection
+      lessonThemeBoxStyle={eventData.lessonThemeBoxStyle || "Transparent"}
+      textColor={eventData.textColor || "#FFFFFF"}
+      onStyleChange={handleLessonThemeStyleChange}
+      onTextColorChange={handleTextColorChange}
+    />
+
+    <TeacherSection
+      selectedTeacherIds={eventData.selectedTeacherIds || []}
+      onSelectionChange={handleTeacherSelectionChange}
+    />
+
+    <FormatsSection
+      availableFormats={availableFormats}
+      selectedPlatforms={eventData.platforms}
+      onPlatformChange={(platforms) => updateEventData({ platforms })}
+    />
+
+    <GenerationSection
+      isGenerating={isGenerating}
+      generationProgress={0}
+      currentGeneratingFormat=""
+      missingFields={missingFields}
+      isFormReady={isFormReady}
+      onGenerate={onGenerate}
+    />
+  </SidebarContent>
+</Sidebar>
   );
 };
