@@ -49,32 +49,35 @@ export const MainLayout = ({
           onLogout={onLogout}
         />
 
-        {/* LAYOUT PRINCIPAL */}
+        {/* CONTEÚDO COM LAYOUT FIXO */}
         <div className="flex flex-1 overflow-hidden">
-          {/* SIDEBAR */}
-          <AppSidebar
-            userEmail={userEmail}
-            isAdmin={isAdmin}
-            eventData={eventData}
-            updateEventData={updateEventData}
-            onGenerate={onGenerate}
-            isGenerating={isGenerating}
-            missingFields={missingFields}
-            onAdminPanel={onAdminPanel}
-            onLogout={onLogout}
-          />
+          {/* SIDEBAR FIXA */}
+          <div className="w-[360px] shrink-0 border-r bg-white">
+            <AppSidebar
+              userEmail={userEmail}
+              isAdmin={isAdmin}
+              eventData={eventData}
+              updateEventData={updateEventData}
+              onGenerate={onGenerate}
+              isGenerating={isGenerating}
+              missingFields={missingFields}
+              onAdminPanel={onAdminPanel}
+              onLogout={onLogout}
+            />
+          </div>
 
-          {/* CONTEÚDO PRINCIPAL */}
-          <MainContent
-            className="flex-1 min-w-0"
-            generatedImages={generatedImages}
-            eventData={eventData}
-            onExport={onExport}
-            hasStartedGeneration={hasStartedGeneration}
-            isGenerating={isGenerating}
-            generationProgress={generationProgress}
-            currentGeneratingFormat={currentGeneratingFormat}
-          />
+          {/* MAIN CONTENT ao lado da sidebar */}
+          <div className="flex-1 overflow-hidden">
+            <MainContent
+              generatedImages={generatedImages}
+              eventData={eventData}
+              onExport={onExport}
+              hasStartedGeneration={hasStartedGeneration}
+              isGenerating={isGenerating}
+              generationProgress={generationProgress}
+              currentGeneratingFormat={currentGeneratingFormat}
+            />
+          </div>
         </div>
       </div>
     </SidebarProvider>
