@@ -38,7 +38,7 @@ export const UserDropdown = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="w-full justify-between h-auto p-3 bg-white hover:bg-gray-50">
+        <Button variant="ghost" className="w-full justify-between h-auto p-3 hover:bg-gray-50">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarFallback className="bg-blue-600 text-white text-sm font-medium">
@@ -49,10 +49,6 @@ export const UserDropdown = ({
               <p className="text-sm font-medium text-gray-900">{getDisplayName(userEmail)}</p>
               <p className="text-xs text-gray-500">{userEmail}</p>
             </div>
-          </div>
-          <div className="flex items-center gap-1 text-gray-400">
-            <span className="text-xs">sair</span>
-            <ChevronDown className="h-3 w-3" />
           </div>
         </Button>
       </DropdownMenuTrigger>
