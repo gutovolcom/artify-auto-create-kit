@@ -50,7 +50,7 @@ export const MainLayout = ({
         />
 
         {/* LAYOUT PRINCIPAL */}
-        <div className="flex flex-1">
+        <div className="flex flex-1 overflow-hidden">
           {/* REMOÇÃO DO GAP FILLER */}
           <div className="hidden" />
 
@@ -68,7 +68,7 @@ export const MainLayout = ({
           />
 
           {/* CONTEÚDO PRINCIPAL */}
-          <MainContent
+          <MainContent className="flex-1 min-w-0">
             generatedImages={generatedImages}
             eventData={eventData}
             onExport={onExport}
@@ -76,7 +76,7 @@ export const MainLayout = ({
             isGenerating={isGenerating}
             generationProgress={generationProgress}
             currentGeneratingFormat={currentGeneratingFormat}
-          />
+          </MainContent>
         </div>
       </div>
     </SidebarProvider>
