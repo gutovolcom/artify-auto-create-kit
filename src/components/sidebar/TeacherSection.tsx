@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { Search } from "lucide-react";
 
 interface TeacherSectionProps {
   selectedTeacherIds: string[];
@@ -36,50 +37,47 @@ export const TeacherSection = ({
 
   return (
     <div className="space-y-2">
-      <Label className="text-sm text-gray-700 font-medium">Adicionar professor</Label>
+      <Label className="text-sm text-gray-700 font-medium">Foto do professor:</Label>
       <Popover>
         <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className="w-full justify-between h-11 rounded-lg border-gray-300 text-gray-800 text-sm font-normal"
-          >
-            {selectedTeachers.length === 0 && <span>Selecionar professores</span>}
-
+          <div className="w-full relative border rounded-full px-4 py-2 flex items-center justify-between bg-white shadow-sm cursor-pointer">
             {selectedTeachers.length === 1 && (
-              <div className="flex items-center space-x-2 relative">
-                <img
-                  src={selectedTeachers[0].image_url}
-                  alt={selectedTeachers[0].name}
-                  className="w-6 h-6 rounded-full object-cover"
-                />
-                <span>{selectedTeachers[0].name}</span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleToggle(selectedTeachers[0].id);
-                  }}
-                  className="absolute -top-2 -right-2 text-white bg-red-500 rounded-full w-4 h-4 text-xs flex items-center justify-center"
-                >
-                  ×
-                </button>
+              <div className="flex items-center space-x-2 bg-gray-100 rounded-full px-3 py-1">
+                <div className="relative">
+                  <img
+                    src={selectedTeachers[0].image_url}
+                    alt={selectedTeachers[0].name}
+                    className="w-10 h-10 rounded-full object-cover object-top"
+                  />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggle(selectedTeachers[0].id);
+                    }}
+                    className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
+                  >
+                    ×
+                  </button>
+                </div>
+                <span className="text-sm text-gray-700">{selectedTeachers[0].name}</span>
               </div>
             )}
 
             {selectedTeachers.length > 1 && (
-              <div className="flex -space-x-2 relative">
-                {selectedTeachers.slice(0, 3).map((teacher) => (
-                  <div key={teacher.id} className="relative">
+              <div className="flex -space-x-2">
+                {selectedTeachers.map((t) => (
+                  <div key={t.id} className="relative">
                     <img
-                      src={teacher.image_url}
-                      alt={teacher.name}
-                      className="w-6 h-6 rounded-full object-cover border-2 border-white"
+                      src={t.image_url}
+                      alt={t.name}
+                      className="w-9 h-9 rounded-full border-2 border-white object-cover object-top"
                     />
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleToggle(teacher.id);
+                        handleToggle(t.id);
                       }}
-                      className="absolute -top-1 -right-1 text-white bg-red-500 rounded-full w-4 h-4 text-xs flex items-center justify-center"
+                      className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
                     >
                       ×
                     </button>
@@ -87,7 +85,9 @@ export const TeacherSection = ({
                 ))}
               </div>
             )}
-          </Button>
+
+            <Search className="w-4 h-4 text-gray-500" />
+          </div>
         </PopoverTrigger>
         <PopoverContent className="w-64 p-4 space-y-2">
           <ScrollArea className="max-h-64">
