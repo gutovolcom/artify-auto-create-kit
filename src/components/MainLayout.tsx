@@ -65,17 +65,16 @@ export const MainLayout = ({
           />
 
           {/* CONTEÚDO PRINCIPAL */}
-          <div className="flex-1 min-w-0">
-            <MainContent
-              generatedImages={generatedImages}
-              eventData={eventData}
-              onExport={onExport}
-              hasStartedGeneration={hasStartedGeneration}
-              isGenerating={isGenerating}
-              generationProgress={generationProgress}
-              currentGeneratingFormat={currentGeneratingFormat}
-            />
-          </div>
+          <MainContent
+            className="flex-1 min-w-0"
+            generatedImages={generatedImages}
+            eventData={eventData}
+            onExport={onExport}
+            hasStartedGeneration={hasStartedGeneration}
+            isGenerating={isGenerating}
+            generationProgress={generationProgress}
+            currentGeneratingFormat={currentGeneratingFormat}
+          />
         </div>
       </div>
     </SidebarProvider>
