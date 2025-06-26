@@ -38,7 +38,7 @@ export const UserDropdown = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="w-full justify-between h-auto p-3 hover:bg-gray-50">
+        <Button variant="ghost" className="w-full justify-between h-auto p-3">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarFallback className="bg-blue-600 text-white text-sm font-medium">
