@@ -17,6 +17,7 @@ interface AppSidebarProps {
   eventData: EventData;
   updateEventData: (data: Partial<EventData>) => void;
   onGenerate: () => void;
+  missingFields: string[]; // ✅ Adicione essa linha aqui
   isGenerating: boolean;
   onAdminPanel: () => void;
   onLogout: () => void;
