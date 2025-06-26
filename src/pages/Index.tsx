@@ -1,22 +1,15 @@
-//src/pages/index.tsx
-
-
 
 import { useState } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Navbar } from "@/components/Navbar";
-import { EventForm } from "@/components/EventForm";
-import { ImageSelector } from "@/components/ImageSelector";
-import { GeneratedGallery } from "@/components/GeneratedGallery";
-import { ExportButton } from "@/components/ExportButton";
-import { GenerateButton } from "@/components/GenerateButton";
+import { AppSidebar } from "@/components/AppSidebar";
+import { MainContent } from "@/components/MainContent";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { useImageGenerator } from "@/hooks/useImageGenerator";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Navigate } from "react-router-dom";
-import { usePersistentState } from '@/hooks/usePersistentState'; // Importe o hook
-
+import { usePersistentState } from '@/hooks/usePersistentState';
 
 export interface EventData {
   subtitle: string;
@@ -41,6 +34,7 @@ export interface EventData {
 const Index = () => {
   const { user, loading, signOut } = useAuth();
   const [userType, setUserType] = useState<'user' | 'admin'>('user');
+  const [hasStartedGeneration, setHasStartedGeneration] = useState(false);
   
   const [eventData, setEventData] = usePersistentState('artGeneratorForm', {
     subtitle: "",
@@ -62,7 +56,6 @@ const Index = () => {
     professorPhotos: "",
   });
   
-  const [activeTab, setActiveTab] = useState("input");
   const { 
     generatedImages, 
     isGenerating, 
@@ -78,12 +71,12 @@ const Index = () => {
   
   const handleGenerate = async () => {
     console.log('Starting generation with event data:', eventData);
+    setHasStartedGeneration(true);
     
     try {
       const images = await generateImages(eventData);
       if (images.length > 0) {
         toast.success("Imagens geradas com sucesso!");
-        setActiveTab("export");
       } else {
         toast.error("Nenhuma imagem foi gerada. Verifique os dados e tente novamente.");
       }
@@ -96,8 +89,8 @@ const Index = () => {
   const handleExport = async () => {
     const success = await downloadZip(generatedImages, eventData.subtitle || "artes");
     if (success) {
-    toast.success("Arquivo ZIP baixado com sucesso!");
-   }
+      toast.success("Arquivo ZIP baixado com sucesso!");
+    }
   };
 
   const handleLogout = async () => {
@@ -105,13 +98,23 @@ const Index = () => {
     toast.success("Logout realizado com sucesso!");
   };
 
+  const handleAdminPanel = () => {
+    setUserType('admin');
+  };
+
   const handleSwitchToUser = () => {
     setUserType('user');
   };
 
-  // Check if form is ready for generation - removed title requirement
+  // Check if form is ready for generation
   const isFormReady = eventData.date && eventData.kvImageId && 
     eventData.selectedTeacherIds && eventData.selectedTeacherIds.length > 0;
+
+  const missingFields = [
+    !eventData.date && "Data",
+    !eventData.kvImageId && "Template de imagem",
+    !(eventData.selectedTeacherIds && eventData.selectedTeacherIds.length > 0) && "Professor selecionado"
+  ].filter(Boolean) as string[];
 
   // Show loading while checking auth
   if (loading) {
@@ -135,85 +138,43 @@ const Index = () => {
     return <AdminPanel onLogout={handleLogout} onSwitchToUser={handleSwitchToUser} />;
   }
 
-  // Show user interface for regular users
+  // Show user interface with new sidebar layout
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
-      
-      <div className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-2 flex justify-between items-center">
-          <div className="text-sm text-gray-600">
-            Bem-vindo, {user.email}
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <div className="flex flex-col w-full">
+          <Navbar 
+            userEmail={user.email} 
+            isAdmin={isAdmin}
+            onAdminPanel={handleAdminPanel}
+            onLogout={handleLogout}
+          />
+          
+          <div className="flex flex-1">
+            <AppSidebar
+              eventData={eventData}
+              updateEventData={updateEventData}
+              onGenerate={handleGenerate}
+              isGenerating={isGenerating}
+              generationProgress={generationProgress}
+              currentGeneratingFormat={currentGeneratingFormat}
+              missingFields={missingFields}
+            />
+            
+            <MainContent
+              generatedImages={generatedImages}
+              eventData={eventData}
+              onExport={handleExport}
+              hasStartedGeneration={hasStartedGeneration}
+            />
           </div>
-          <div className="flex gap-4">
-            {isAdmin && (
-              <button
-                onClick={() => setUserType(userType === 'admin' ? 'user' : 'admin')}
-                className="text-sm text-blue-600 hover:text-blue-800"
-              >
-                {userType === 'admin' ? 'Modo Usuário' : 'Painel Admin'}
-              </button>
-            )}
-            <button
-              onClick={handleLogout}
-              className="text-sm text-gray-600 hover:text-gray-800"
-            >
-              Sair
-            </button>
-          </div>
+          
+          <footer className="bg-blue-800 text-white py-4 text-center">
+            <p>© 2025 Gerador Automático de Artes</p>
+          </footer>
         </div>
       </div>
-      
-      <main className="flex-1 container mx-auto px-4 py-8">
-      
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="input">1. Informações do evento</TabsTrigger>
-            <TabsTrigger value="export">2. Artes criadas</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="input" className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <EventForm eventData={eventData} updateEventData={updateEventData} />
-              </div>
-              <div>
-                <ImageSelector
-                  selectedImageId={eventData.kvImageId}
-                  onSelect={(id) => updateEventData({ kvImageId: id })}
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-center pt-8">
-              <GenerateButton
-                onGenerate={handleGenerate}
-                isGenerating={isGenerating}
-                disabled={!isFormReady}
-                generationProgress={generationProgress}
-                currentGeneratingFormat={currentGeneratingFormat}
-                missingFields={[
-                  !eventData.date && "Data",
-                  !eventData.kvImageId && "Template de imagem",
-                  !(eventData.selectedTeacherIds && eventData.selectedTeacherIds.length > 0) && "Professor selecionado"
-                ].filter(Boolean) as string[]}
-              />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="export" className="space-y-8">
-            <GeneratedGallery images={generatedImages} eventData={eventData} />
-            <div className="flex justify-center">
-              <ExportButton onClick={handleExport} disabled={generatedImages.length === 0} />
-            </div>
-          </TabsContent>
-        </Tabs>
-      </main>
-      
-      <footer className="bg-blue-800 text-white py-4 text-center">
-        <p>© 2025 Gerador Automático de Artes</p>
-      </footer>
-    </div>
+    </SidebarProvider>
   );
 };
 
