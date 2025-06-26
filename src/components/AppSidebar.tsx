@@ -108,15 +108,6 @@ export const AppSidebar = ({
       />
     </div>
 
-    <UserDropdown
-      userEmail={userEmail}
-      isAdmin={isAdmin}
-      onAdminPanel={onAdminPanel}
-      onSettings={() => {}}
-      onSupport={() => {}}
-      onLogout={onLogout}
-    />
-
     <p className="text-sm text-gray-600">Preencha os campos abaixo:</p>
   </SidebarHeader>
 
