@@ -51,19 +51,20 @@ export const AppSidebar = ({
   const { templates } = useSupabaseTemplates();
 
   const form = useForm<EventFormValues>({
-    resolver: zodResolver(eventFormSchema),
-    mode: "onChange",
-    defaultValues: {
-      kvImageId: eventData.kvImageId ?? "",
-      classTheme: eventData.classTheme ?? "",
-      selectedTeacherIds: eventData.selectedTeacherIds ?? [],
-      date: eventData.date ?? "",
-      time: eventData.time ?? "",
-    }
-  });
+  resolver: zodResolver(eventFormSchema),
+  mode: "onChange",
+  defaultValues: {
+    kvImageId: eventData.kvImageId ?? "",
+    classTheme: eventData.classTheme ?? "",
+    selectedTeacherIds: eventData.selectedTeacherIds ?? [],
+    date: eventData.date ?? "",
+    time: eventData.time ?? "",
+  }
+});
 
   const { errors, isValid, trigger } = form.formState;
-
+  const { trigger } = form; // <- Correto
+  
   const availableFormats = eventData.kvImageId
     ? templates.find(t => t.id === eventData.kvImageId)?.formats?.map(f => ({
         id: f.format_name,
