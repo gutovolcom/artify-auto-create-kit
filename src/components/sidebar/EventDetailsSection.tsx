@@ -14,7 +14,7 @@ interface EventDetailsSectionProps {
 export const EventDetailsSection = ({ classTheme, date, time, onUpdate }: EventDetailsSectionProps) => {
   return (
     <SidebarGroup>
-      <SidebarGroupContent className="space-y-4">
+      <SidebarGroupContent className="space-y-2">
         <div className="space-y-2">
           <Label htmlFor="classTheme" className="text-sm font-medium text-gray-700">
             Tema da aula:
