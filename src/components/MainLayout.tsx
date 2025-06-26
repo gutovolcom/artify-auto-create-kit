@@ -65,7 +65,7 @@ export const MainLayout = ({
           />
 
           {/* CONTEÚDO PRINCIPAL */}
-          <div className="flex-1 min-w-0 p-8 space-y-8">
+          <div className="flex-1 min-w-0">
             <MainContent
               generatedImages={generatedImages}
               eventData={eventData}
