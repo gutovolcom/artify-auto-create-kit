@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel } from "@/components/ui/sidebar";
+import { SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar";
 import { Image as ImageIcon } from "lucide-react";
 import { KVSelectorModal } from "@/components/KVSelectorModal";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
@@ -20,24 +20,16 @@ export const TemplateSection = ({ selectedTemplateId, onTemplateSelect }: Templa
   return (
     <>
       <SidebarGroup>
-        <SidebarGroupLabel>Template</SidebarGroupLabel>
         <SidebarGroupContent>
           <Button
             variant="outline"
-            className="w-full justify-start h-auto p-3"
+            className="w-full h-24 justify-center p-4 bg-gray-50 border-2 border-dashed border-gray-300 hover:border-gray-400 hover:bg-gray-100"
             onClick={() => setIsKVModalOpen(true)}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-8 bg-gray-100 rounded border flex items-center justify-center">
-                <ImageIcon className={`h-4 w-4 ${selectedTemplate ? 'text-gray-600' : 'text-gray-400'}`} />
-              </div>
-              <div className="text-left">
-                <div className="font-medium text-sm">
-                  {selectedTemplate ? selectedTemplate.name : "Selecionar Template"}
-                </div>
-                <div className="text-xs text-gray-500">
-                  Clique para escolher
-                </div>
+            <div className="flex flex-col items-center gap-2 text-gray-500">
+              <ImageIcon className="h-8 w-8" />
+              <div className="text-center text-sm">
+                {selectedTemplate ? selectedTemplate.name : "Escolha a KV do evento"}
               </div>
             </div>
           </Button>

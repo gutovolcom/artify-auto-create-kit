@@ -31,28 +31,33 @@ export const UserDropdown = ({
     return email.substring(0, 2).toUpperCase();
   };
 
+  const getDisplayName = (email: string) => {
+    return email.split('@')[0];
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="flex items-center gap-2 h-10">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-blue-600 text-white text-sm">
-              {getInitials(userEmail)}
-            </AvatarFallback>
-          </Avatar>
-          <span className="text-sm font-medium hidden md:inline">
-            {userEmail.split('@')[0]}
-          </span>
-          <ChevronDown className="h-4 w-4" />
+        <Button variant="ghost" className="w-full justify-between h-auto p-3 bg-gray-50 hover:bg-gray-100">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarFallback className="bg-blue-600 text-white text-sm font-medium">
+                {getInitials(userEmail)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="text-left">
+              <p className="text-sm font-medium text-gray-900">{getDisplayName(userEmail)}</p>
+              <p className="text-xs text-gray-500">{userEmail}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1 text-gray-400">
+            <span className="text-xs">sair</span>
+            <ChevronDown className="h-3 w-3" />
+          </div>
         </Button>
       </DropdownMenuTrigger>
       
       <DropdownMenuContent align="end" className="w-56 bg-white">
-        <div className="px-3 py-2 border-b">
-          <p className="text-sm font-medium">{userEmail.split('@')[0]}</p>
-          <p className="text-xs text-gray-500">{userEmail}</p>
-        </div>
-        
         <DropdownMenuItem onClick={onSettings} className="cursor-pointer">
           <Settings className="mr-2 h-4 w-4" />
           <span>Configurações</span>

@@ -1,17 +1,18 @@
 
 import { EventData } from "@/pages/Index";
 import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
-import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
+import { UserDropdown } from "@/components/UserDropdown";
 import { TemplateSection } from "@/components/sidebar/TemplateSection";
 import { EventDetailsSection } from "@/components/sidebar/EventDetailsSection";
 import { StyleSection } from "@/components/sidebar/StyleSection";
 import { TeacherSection } from "@/components/sidebar/TeacherSection";
 import { FormatsSection } from "@/components/sidebar/FormatsSection";
 import { GenerationSection } from "@/components/sidebar/GenerationSection";
+import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
 
 const formatDisplayNames = {
   youtube: "YouTube",
-  feed: "Feed",
+  feed: "Feed", 
   stories: "Stories",
   bannerGCO: "Banner GCO",
   ledStudio: "LED Studio",
@@ -26,23 +27,27 @@ const lessonThemeStyleDefinition = {
 };
 
 interface AppSidebarProps {
+  userEmail: string;
+  isAdmin: boolean;
   eventData: EventData;
   updateEventData: (data: Partial<EventData>) => void;
   onGenerate: () => void;
   isGenerating: boolean;
-  generationProgress: number;
-  currentGeneratingFormat: string;
   missingFields: string[];
+  onAdminPanel: () => void;
+  onLogout: () => void;
 }
 
 export const AppSidebar = ({
+  userEmail,
+  isAdmin,
   eventData,
   updateEventData,
   onGenerate,
   isGenerating,
-  generationProgress,
-  currentGeneratingFormat,
   missingFields,
+  onAdminPanel,
+  onLogout,
 }: AppSidebarProps) => {
   const { templates } = useSupabaseTemplates();
 
@@ -93,52 +98,70 @@ export const AppSidebar = ({
     eventData.selectedTeacherIds && eventData.selectedTeacherIds.length > 0;
 
   return (
-    <Sidebar className="border-r">
-      <SidebarHeader className="border-b p-4">
-        <h2 className="text-lg font-semibold">Configurações do Evento</h2>
+    <Sidebar className="border-r w-96">
+      <SidebarHeader className="p-6 space-y-4">
+        <div className="flex items-center space-x-3">
+          <img
+            src="/logo-nova.svg"
+            alt="GRAN Logo"
+            className="h-8 w-auto"
+          />
+          <h1 className="text-xl font-bold text-gray-900">GRAN</h1>
+        </div>
+        
+        <UserDropdown
+          userEmail={userEmail}
+          isAdmin={isAdmin}
+          onAdminPanel={onAdminPanel}
+          onSettings={() => {}}
+          onSupport={() => {}}
+          onLogout={onLogout}
+        />
+        
+        <div className="pt-4">
+          <p className="text-sm text-gray-600 mb-4">Preencha os campos abaixo:</p>
+        </div>
       </SidebarHeader>
       
-      <SidebarContent className="p-4">
-        <div className="space-y-6">
-          <TemplateSection
-            selectedTemplateId={eventData.kvImageId}
-            onTemplateSelect={(id) => updateEventData({ kvImageId: id })}
-          />
+      <SidebarContent className="px-6 pb-6 space-y-6 overflow-visible">
+        <TemplateSection
+          selectedTemplateId={eventData.kvImageId}
+          onTemplateSelect={(id) => updateEventData({ kvImageId: id })}
+        />
 
-          <EventDetailsSection
-            classTheme={eventData.classTheme || ""}
-            date={eventData.date}
-            time={eventData.time}
-            onUpdate={(data) => updateEventData(data)}
-          />
+        <EventDetailsSection
+          classTheme={eventData.classTheme || ""}
+          date={eventData.date}
+          time={eventData.time}
+          onUpdate={(data) => updateEventData(data)}
+        />
 
-          <StyleSection
-            lessonThemeBoxStyle={eventData.lessonThemeBoxStyle || "Transparent"}
-            textColor={eventData.textColor || "#FFFFFF"}
-            onStyleChange={handleLessonThemeStyleChange}
-            onTextColorChange={handleTextColorChange}
-          />
+        <StyleSection
+          lessonThemeBoxStyle={eventData.lessonThemeBoxStyle || "Transparent"}
+          textColor={eventData.textColor || "#FFFFFF"}
+          onStyleChange={handleLessonThemeStyleChange}
+          onTextColorChange={handleTextColorChange}
+        />
 
-          <TeacherSection
-            selectedTeacherIds={eventData.selectedTeacherIds || []}
-            onSelectionChange={handleTeacherSelectionChange}
-          />
+        <TeacherSection
+          selectedTeacherIds={eventData.selectedTeacherIds || []}
+          onSelectionChange={handleTeacherSelectionChange}
+        />
 
-          <FormatsSection
-            availableFormats={availableFormats}
-            selectedPlatforms={eventData.platforms}
-            onPlatformChange={(platforms) => updateEventData({ platforms })}
-          />
+        <FormatsSection
+          availableFormats={availableFormats}
+          selectedPlatforms={eventData.platforms}
+          onPlatformChange={(platforms) => updateEventData({ platforms })}
+        />
 
-          <GenerationSection
-            isGenerating={isGenerating}
-            generationProgress={generationProgress}
-            currentGeneratingFormat={currentGeneratingFormat}
-            missingFields={missingFields}
-            isFormReady={isFormReady}
-            onGenerate={onGenerate}
-          />
-        </div>
+        <GenerationSection
+          isGenerating={isGenerating}
+          generationProgress={0}
+          currentGeneratingFormat=""
+          missingFields={missingFields}
+          isFormReady={isFormReady}
+          onGenerate={onGenerate}
+        />
       </SidebarContent>
     </Sidebar>
   );

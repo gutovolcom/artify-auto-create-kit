@@ -3,6 +3,7 @@ import { GeneratedImage } from "@/hooks/useImageGenerator/types";
 import { EventData } from "@/pages/Index";
 import { GeneratedGallery } from "@/components/GeneratedGallery";
 import { ExportButton } from "@/components/ExportButton";
+import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { Sparkles, Image as ImageIcon } from "lucide-react";
 
@@ -11,6 +12,9 @@ interface MainContentProps {
   eventData: EventData;
   onExport: () => void;
   hasStartedGeneration: boolean;
+  isGenerating?: boolean;
+  generationProgress?: number;
+  currentGeneratingFormat?: string;
 }
 
 export const MainContent = ({
@@ -18,59 +22,84 @@ export const MainContent = ({
   eventData,
   onExport,
   hasStartedGeneration,
+  isGenerating = false,
+  generationProgress = 0,
+  currentGeneratingFormat = "",
 }: MainContentProps) => {
   if (!hasStartedGeneration && generatedImages.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <Card className="max-w-md text-center">
-          <CardContent className="p-8">
-            <div className="rounded-full bg-gradient-to-r from-blue-100 to-purple-100 p-6 mx-auto mb-6 w-fit">
-              <Sparkles className="h-12 w-12 text-blue-600" />
-            </div>
-            <h3 className="text-xl font-semibold mb-3">
-              Bem-vindo ao Gerador de Artes
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Configure as informações do seu evento na barra lateral e clique em "Gerar Artes" para começar.
-            </p>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="font-medium mb-2">Para começar:</h4>
-              <ul className="text-sm text-gray-600 space-y-1 text-left">
-                <li>• Selecione um template</li>
-                <li>• Preencha o tema da aula</li>
-                <li>• Defina a data do evento</li>
-                <li>• Escolha os professores</li>
-                <li>• Selecione os formatos desejados</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex-1 flex flex-col items-center justify-center p-8">
+        <div className="flex items-center justify-center mb-8">
+          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+            <ImageIcon className="h-8 w-8 text-gray-400" />
+          </div>
+        </div>
+        
+        <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+          Nenhuma arte gerada
+        </h2>
+        
+        <p className="text-gray-600 text-center max-w-md">
+          Preencha os campos ao lado e clique em "Gerar Artes" para criar suas artes.
+        </p>
       </div>
     );
   }
 
-  if (generatedImages.length === 0) {
+  if (isGenerating && generatedImages.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
-        <Card className="max-w-md text-center">
-          <CardContent className="p-8">
-            <div className="rounded-full bg-gray-100 p-6 mx-auto mb-6 w-fit">
-              <ImageIcon className="h-12 w-12 text-gray-500" />
+      <div className="flex-1 flex flex-col items-center justify-center p-8">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="h-8 w-8 text-blue-600" />
             </div>
-            <h3 className="text-xl font-semibold mb-3">
-              Processando...
-            </h3>
-            <p className="text-gray-600">
-              Suas artes estão sendo geradas. Aguarde alguns instantes.
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              Gerando suas artes...
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Aguarde enquanto processamos suas imagens
             </p>
-          </CardContent>
-        </Card>
+          </div>
+          
+          <div className="space-y-3">
+            <Progress value={generationProgress} className="w-full h-3" />
+            <div className="text-center">
+              <p className="text-sm font-medium text-gray-700">
+                {generationProgress}% concluído
+              </p>
+              {currentGeneratingFormat && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Processando: {currentGeneratingFormat}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="flex-1 p-8 space-y-8 overflow-auto">
+      {isGenerating && (
+        <div className="w-[80%] mx-auto mb-6">
+          <div className="space-y-3">
+            <Progress value={generationProgress} className="w-full h-3" />
+            <div className="text-center">
+              <p className="text-sm font-medium text-gray-700">
+                Gerando artes... {generationProgress}%
+              </p>
+              {currentGeneratingFormat && (
+                <p className="text-xs text-gray-500">
+                  {currentGeneratingFormat}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Artes Geradas</h2>

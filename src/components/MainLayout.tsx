@@ -1,6 +1,5 @@
 
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { Navbar } from "@/components/Navbar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { MainContent } from "@/components/MainContent";
 import { EventData } from "@/pages/Index";
@@ -42,37 +41,27 @@ export const MainLayout = ({
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
-        <div className="flex flex-col w-full">
-          <Navbar 
-            userEmail={userEmail} 
-            isAdmin={isAdmin}
-            onAdminPanel={onAdminPanel}
-            onLogout={onLogout}
-          />
-          
-          <div className="flex flex-1">
-            <AppSidebar
-              eventData={eventData}
-              updateEventData={updateEventData}
-              onGenerate={onGenerate}
-              isGenerating={isGenerating}
-              generationProgress={generationProgress}
-              currentGeneratingFormat={currentGeneratingFormat}
-              missingFields={missingFields}
-            />
-            
-            <MainContent
-              generatedImages={generatedImages}
-              eventData={eventData}
-              onExport={onExport}
-              hasStartedGeneration={hasStartedGeneration}
-            />
-          </div>
-          
-          <footer className="bg-blue-800 text-white py-4 text-center">
-            <p>© 2025 Gerador Automático de Artes</p>
-          </footer>
-        </div>
+        <AppSidebar
+          userEmail={userEmail}
+          isAdmin={isAdmin}
+          eventData={eventData}
+          updateEventData={updateEventData}
+          onGenerate={onGenerate}
+          isGenerating={isGenerating}
+          missingFields={missingFields}
+          onAdminPanel={onAdminPanel}
+          onLogout={onLogout}
+        />
+        
+        <MainContent
+          generatedImages={generatedImages}
+          eventData={eventData}
+          onExport={onExport}
+          hasStartedGeneration={hasStartedGeneration}
+          isGenerating={isGenerating}
+          generationProgress={generationProgress}
+          currentGeneratingFormat={currentGeneratingFormat}
+        />
       </div>
     </SidebarProvider>
   );
