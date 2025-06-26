@@ -25,25 +25,33 @@ export interface EventData {
 }
 
 const Index = () => {
-  const auth = useAuth();
-  const { user, signOut } = auth;
+  const { user, signOut } = useAuth();
 
   const handleLogout = async () => {
     await signOut();
     toast.success("Logout realizado com sucesso!");
   };
 
-  const isAdmin = user?.email === "henriquetocheto@gmail.com";
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-600">Carregando usuário...</p>
+      </div>
+    );
+  }
+
+  const isAdmin = user.email === "henriquetocheto@gmail.com";
 
   return (
     <AuthGuard>
       <UserInterface
-        userEmail={user!.email}
+        userEmail={user.email}
         isAdmin={isAdmin}
         onLogout={handleLogout}
       />
     </AuthGuard>
   );
 };
+
 
 export default Index;
