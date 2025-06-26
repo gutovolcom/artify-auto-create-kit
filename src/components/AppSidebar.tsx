@@ -103,10 +103,9 @@ export const AppSidebar = ({
         <div className="flex items-center space-x-3">
           <img
             src="/logo-nova.svg"
-            alt="GRAN Logo"
-            className="h-8 w-auto"
+            alt="Logo GRAN"
+            className="h-6 w-auto"
           />
-          <h1 className="text-xl font-bold text-gray-900">GRAN</h1>
         </div>
         
         <UserDropdown
