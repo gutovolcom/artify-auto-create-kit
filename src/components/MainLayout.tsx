@@ -40,8 +40,8 @@ export const MainLayout = ({
 }: MainLayoutProps) => {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full">
-        {/* NAVBAR NO TOPO */}
+      <div className="min-h-screen flex flex-col w-full bg-white">
+        {/* NAVBAR */}
         <Navbar
           userEmail={userEmail}
           isAdmin={isAdmin}
@@ -49,33 +49,34 @@ export const MainLayout = ({
           onLogout={onLogout}
         />
 
-        {/* ÁREA PRINCIPAL: Sidebar + Conteúdo */}
-        <div className="flex flex-1 overflow-hidden">
-          <div className="w-96 shrink-0 border-r bg-white">
-            <AppSidebar
-              userEmail={userEmail}
-              isAdmin={isAdmin}
-              eventData={eventData}
-              updateEventData={updateEventData}
-              onGenerate={onGenerate}
-              isGenerating={isGenerating}
-              missingFields={missingFields}
-              onAdminPanel={onAdminPanel}
-              onLogout={onLogout}
-            />
-          </div>
+        {/* LAYOUT PRINCIPAL */}
+        <div className="flex flex-1">
+          {/* REMOÇÃO DO GAP FILLER */}
+          <div className="hidden" />
 
-          <div className="flex-1 overflow-auto">
-            <MainContent
-              generatedImages={generatedImages}
-              eventData={eventData}
-              onExport={onExport}
-              hasStartedGeneration={hasStartedGeneration}
-              isGenerating={isGenerating}
-              generationProgress={generationProgress}
-              currentGeneratingFormat={currentGeneratingFormat}
-            />
-          </div>
+          {/* SIDEBAR */}
+          <AppSidebar
+            userEmail={userEmail}
+            isAdmin={isAdmin}
+            eventData={eventData}
+            updateEventData={updateEventData}
+            onGenerate={onGenerate}
+            isGenerating={isGenerating}
+            missingFields={missingFields}
+            onAdminPanel={onAdminPanel}
+            onLogout={onLogout}
+          />
+
+          {/* CONTEÚDO PRINCIPAL */}
+          <MainContent
+            generatedImages={generatedImages}
+            eventData={eventData}
+            onExport={onExport}
+            hasStartedGeneration={hasStartedGeneration}
+            isGenerating={isGenerating}
+            generationProgress={generationProgress}
+            currentGeneratingFormat={currentGeneratingFormat}
+          />
         </div>
       </div>
     </SidebarProvider>
