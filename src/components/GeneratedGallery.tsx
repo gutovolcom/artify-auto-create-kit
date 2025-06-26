@@ -83,7 +83,6 @@ export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) =
   return (
     <div className="space-y-8">
       <div className="space-y-4">
-        <h3 className="text-xl font-semibold">Artes Geradas</h3>
         <ScrollArea className="w-full whitespace-nowrap rounded-md border">
           <div className="flex w-max space-x-6 p-4">
             {images.map((generatedImage, index) => {
