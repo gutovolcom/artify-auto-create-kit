@@ -25,15 +25,14 @@ export interface EventData {
 }
 
 const Index = () => {
-  const { user } = useAuth();
+  const auth = useAuth();
+  const { user, signOut } = auth;
 
   const handleLogout = async () => {
-    const { signOut } = await import("@/hooks/useAuth");
     await signOut();
     toast.success("Logout realizado com sucesso!");
   };
 
-  // Check if user is admin
   const isAdmin = user?.email === "henriquetocheto@gmail.com";
 
   return (
