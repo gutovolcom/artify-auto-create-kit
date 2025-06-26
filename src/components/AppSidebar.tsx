@@ -98,7 +98,7 @@ export const AppSidebar = ({
     eventData.selectedTeacherIds && eventData.selectedTeacherIds.length > 0;
 
   return (
-    <Sidebar className="border-r w-[360px] bg-white">
+    <Sidebar className="border-r w-[360px] bg-white overflow-hidden h-full">
   <SidebarHeader className="p-4 space-y-3">
     <div className="flex items-center space-x-3">
       <img
@@ -111,7 +111,7 @@ export const AppSidebar = ({
     <p className="text-sm text-gray-600">Preencha os campos abaixo:</p>
   </SidebarHeader>
 
-  <SidebarContent className="px-4 pb-4 space-y-3">
+  <SidebarContent className="px-4 pb-4 space-y-3 overflow-hidden">
     <TemplateSection
       selectedTemplateId={eventData.kvImageId}
       onTemplateSelect={(id) => updateEventData({ kvImageId: id })}
