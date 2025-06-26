@@ -1,5 +1,3 @@
-// src/components/sidebar/TeacherSection.tsx
-
 import { Label } from "@/components/ui/label";
 import { useSupabaseTeachers } from "@/hooks/useSupabaseTeachers";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -33,63 +31,79 @@ export const TeacherSection = ({
     onSelectionChange(newSelected, photos, names);
   };
 
+  const handleRemove = (id: string) => {
+    const newSelected = selectedTeacherIds.filter(tid => tid !== id);
+    const updated = teachers.filter(t => newSelected.includes(t.id));
+    onSelectionChange(
+      updated.map(t => t.id),
+      updated.map(t => t.image_url),
+      updated.map(t => t.name)
+    );
+  };
+
   const selectedTeachers = teachers.filter(t => selectedTeacherIds.includes(t.id));
 
   return (
     <div className="space-y-2">
       <Label className="text-sm text-gray-700 font-medium">Foto do professor:</Label>
+
       <Popover>
         <PopoverTrigger asChild>
-          <div className="w-full relative border rounded-full px-4 py-2 flex items-center justify-between bg-white shadow-sm cursor-pointer">
-            {selectedTeachers.length === 1 && (
-              <div className="flex items-center space-x-2 bg-gray-100 rounded-full px-3 py-1">
-                <div className="relative">
+          <div className="border border-gray-300 rounded-md flex items-center justify-between px-3 py-2 h-11 bg-white w-full cursor-pointer">
+            <div className="flex items-center gap-2 overflow-hidden">
+              {selectedTeachers.length === 1 && (
+                <div className="flex items-center bg-gray-100 rounded-full pl-1 pr-2 py-1 relative">
                   <img
                     src={selectedTeachers[0].image_url}
                     alt={selectedTeachers[0].name}
-                    className="w-10 h-10 rounded-full object-cover object-top"
+                    className="w-8 h-8 rounded-full object-cover object-top"
                   />
+                  <span className="ml-2 text-sm text-gray-800 whitespace-nowrap">{selectedTeachers[0].name}</span>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleToggle(selectedTeachers[0].id);
+                      handleRemove(selectedTeachers[0].id);
                     }}
-                    className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
+                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center"
                   >
                     ×
                   </button>
                 </div>
-                <span className="text-sm text-gray-700">{selectedTeachers[0].name}</span>
-              </div>
-            )}
+              )}
 
-            {selectedTeachers.length > 1 && (
-              <div className="flex -space-x-2">
-                {selectedTeachers.map((t) => (
-                  <div key={t.id} className="relative">
-                    <img
-                      src={t.image_url}
-                      alt={t.name}
-                      className="w-9 h-9 rounded-full border-2 border-white object-cover object-top"
-                    />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggle(t.id);
-                      }}
-                      className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+              {selectedTeachers.length > 1 && (
+                <div className="flex items-center gap-2">
+                  {selectedTeachers.map((teacher) => (
+                    <div key={teacher.id} className="relative">
+                      <img
+                        src={teacher.image_url}
+                        alt={teacher.name}
+                        className="w-8 h-8 rounded-full object-cover object-top"
+                      />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemove(teacher.id);
+                        }}
+                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {selectedTeachers.length === 0 && (
+                <span className="text-sm text-gray-500">Adicionar professor</span>
+              )}
+            </div>
 
             <Search className="w-4 h-4 text-gray-500" />
           </div>
         </PopoverTrigger>
-        <PopoverContent className="w-64 p-4 space-y-2">
+
+        <PopoverContent className="w-64 p-4 space-y-2 z-50">
           <ScrollArea className="max-h-64">
             {teachers.map(teacher => (
               <div key={teacher.id} className="flex items-center space-x-3 py-1">
