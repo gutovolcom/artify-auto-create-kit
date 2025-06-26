@@ -108,11 +108,11 @@ export const TeacherSection = ({ selectedTeacherIds, onSelectionChange }: Teache
               onClick={() => handleSelect(teacher)}
             >
               <img
-                src={teacher.photo_url || "/placeholder.jpg"}
-                alt={teacher.name}
-                className="h-16 w-full object-cover object-top rounded"
-                onError={(e) => (e.currentTarget.src = "/placeholder.jpg")}
-              />
+  src={teacher.photo_url || "/placeholder.png"}
+  onError={(e) => e.currentTarget.src = "/placeholder.png"}
+  alt={teacher.name}
+  className="..."
+/>
               <p className="text-xs mt-1 text-gray-700 truncate">{teacher.name}</p>
             </div>
           ))}
