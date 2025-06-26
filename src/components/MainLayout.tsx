@@ -40,28 +40,39 @@ export const MainLayout = ({
 }: MainLayoutProps) => {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar
+      <div className="min-h-screen flex flex-col w-full">
+        {/* NAVBAR FIXA NO TOPO */}
+        <Navbar
           userEmail={userEmail}
           isAdmin={isAdmin}
-          eventData={eventData}
-          updateEventData={updateEventData}
-          onGenerate={onGenerate}
-          isGenerating={isGenerating}
-          missingFields={missingFields}
           onAdminPanel={onAdminPanel}
           onLogout={onLogout}
         />
-        
-        <MainContent
-          generatedImages={generatedImages}
-          eventData={eventData}
-          onExport={onExport}
-          hasStartedGeneration={hasStartedGeneration}
-          isGenerating={isGenerating}
-          generationProgress={generationProgress}
-          currentGeneratingFormat={currentGeneratingFormat}
-        />
+
+        {/* ÁREA PRINCIPAL */}
+        <div className="flex flex-1">
+          <AppSidebar
+            userEmail={userEmail}
+            isAdmin={isAdmin}
+            eventData={eventData}
+            updateEventData={updateEventData}
+            onGenerate={onGenerate}
+            isGenerating={isGenerating}
+            missingFields={missingFields}
+            onAdminPanel={onAdminPanel}
+            onLogout={onLogout}
+          />
+
+          <MainContent
+            generatedImages={generatedImages}
+            eventData={eventData}
+            onExport={onExport}
+            hasStartedGeneration={hasStartedGeneration}
+            isGenerating={isGenerating}
+            generationProgress={generationProgress}
+            currentGeneratingFormat={currentGeneratingFormat}
+          />
+        </div>
       </div>
     </SidebarProvider>
   );
