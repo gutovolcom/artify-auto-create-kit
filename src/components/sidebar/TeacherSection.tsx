@@ -10,6 +10,7 @@ import { Search } from "lucide-react";
 interface TeacherSectionProps {
   selectedTeacherIds: string[];
   onSelectionChange: (ids: string[], photos: string[], names: string[]) => void;
+  error?: string; // 👈 adicionado
 }
 
 export const TeacherSection = ({
