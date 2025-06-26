@@ -10,6 +10,7 @@ interface GenerationSectionProps {
   currentGeneratingFormat: string;
   missingFields: string[];
   isFormReady: boolean;
+  missingFields: string[]; // 👈 requerido
   onGenerate: () => void;
 }
 
