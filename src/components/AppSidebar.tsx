@@ -18,7 +18,6 @@ interface AppSidebarProps {
   updateEventData: (data: Partial<EventData>) => void;
   onGenerate: () => void;
   isGenerating: boolean;
-  missingFields: string[];
   onAdminPanel: () => void;
   onLogout: () => void;
 }
@@ -45,7 +44,6 @@ export const AppSidebar = ({
   eventData,
   updateEventData,
   onGenerate,
-  missingFields,
   isGenerating,
   onAdminPanel,
   onLogout,
@@ -54,6 +52,7 @@ export const AppSidebar = ({
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
+    mode: "onChange",
     defaultValues: {
       kvImageId: eventData.kvImageId ?? "",
       classTheme: eventData.classTheme ?? "",
@@ -63,7 +62,7 @@ export const AppSidebar = ({
     }
   });
 
-  const { errors } = form.formState;
+  const { errors, isValid, trigger } = form.formState;
 
   const availableFormats = eventData.kvImageId
     ? templates.find(t => t.id === eventData.kvImageId)?.formats?.map(f => ({
@@ -98,8 +97,6 @@ export const AppSidebar = ({
       teacherNames: teacherNames
     });
   };
-
-  const isFormReady = !Object.keys(errors).length;
 
   return (
     <Sidebar className="border-r w-[360px] flex-shrink-0 bg-white overflow-hidden">
@@ -152,11 +149,11 @@ export const AppSidebar = ({
           isGenerating={isGenerating}
           generationProgress={0}
           currentGeneratingFormat=""
-          isFormReady={isFormReady}
-          missingFields={missingFields}
-          onGenerate={() => {
-            const isValid = form.trigger(); // validate all
-            if (isValid) onGenerate();
+          isFormReady={isValid}
+          missingFields={Object.keys(errors)}
+          onGenerate={async () => {
+            const valid = await trigger();
+            if (valid) onGenerate();
           }}
         />
       </SidebarContent>
