@@ -44,25 +44,46 @@ export const TeacherSection = ({
             className="w-full justify-between h-11 rounded-lg border-gray-300 text-gray-800 text-sm font-normal"
           >
             {selectedTeachers.length === 0 && <span>Selecionar professores</span>}
+
             {selectedTeachers.length === 1 && (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 relative">
                 <img
                   src={selectedTeachers[0].image_url}
                   alt={selectedTeachers[0].name}
                   className="w-6 h-6 rounded-full object-cover"
                 />
                 <span>{selectedTeachers[0].name}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggle(selectedTeachers[0].id);
+                  }}
+                  className="absolute -top-2 -right-2 text-white bg-red-500 rounded-full w-4 h-4 text-xs flex items-center justify-center"
+                >
+                  ×
+                </button>
               </div>
             )}
+
             {selectedTeachers.length > 1 && (
-              <div className="flex -space-x-2">
-                {selectedTeachers.slice(0, 3).map(teacher => (
-                  <img
-                    key={teacher.id}
-                    src={teacher.image_url}
-                    alt={teacher.name}
-                    className="w-6 h-6 rounded-full object-cover border-2 border-white"
-                  />
+              <div className="flex -space-x-2 relative">
+                {selectedTeachers.slice(0, 3).map((teacher) => (
+                  <div key={teacher.id} className="relative">
+                    <img
+                      src={teacher.image_url}
+                      alt={teacher.name}
+                      className="w-6 h-6 rounded-full object-cover border-2 border-white"
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggle(teacher.id);
+                      }}
+                      className="absolute -top-1 -right-1 text-white bg-red-500 rounded-full w-4 h-4 text-xs flex items-center justify-center"
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
