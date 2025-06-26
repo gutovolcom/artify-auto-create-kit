@@ -148,15 +148,17 @@ export const AppSidebar = ({
         />
 
         <GenerationSection
-          isGenerating={isGenerating}
-          generationProgress={0}
-          currentGeneratingFormat=""
-          isFormReady={isFormReady}
-          onGenerate={() => {
-            const isValid = form.trigger(); // validate all
-            if (isValid) onGenerate();
-          }}
-        />
+  isGenerating={isGenerating}
+  generationProgress={0}
+  currentGeneratingFormat=""
+  isFormReady={isFormReady}
+  missingFields={missingFields} // ✅ necessário para satisfazer a tipagem
+  onGenerate={() => {
+    const isValid = form.trigger(); // validate all
+    if (isValid) onGenerate();
+  }}
+/>
+
       </SidebarContent>
     </Sidebar>
   );
