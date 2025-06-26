@@ -62,7 +62,7 @@ export const AppSidebar = ({
   }
 });
 
-  const { errors, isValid, trigger } = form.formState;
+  const { errors, isValid } = form.formState;
   const { trigger } = form; // <- Correto
   
   const availableFormats = eventData.kvImageId
