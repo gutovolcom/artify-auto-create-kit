@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { MainContent } from "@/components/MainContent";
 import { EventData } from "@/pages/Index";
 import { GeneratedImage } from "@/hooks/useImageGenerator/types";
+import { Navbar } from "@/components/Navbar";
 
 interface MainLayoutProps {
   userEmail: string;
