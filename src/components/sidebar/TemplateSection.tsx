@@ -1,11 +1,13 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar";
 import { Label } from "@/components/ui/label";
-import { Image as ImageIcon, AlertCircle } from "lucide-react";
+import { Image as ImageIcon } from "lucide-react";
 import { KVSelectorModal } from "@/components/KVSelectorModal";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
 import { cn } from "@/lib/utils";
+import { ErrorBadge } from "@/components/ui/error-badge";
 
 interface TemplateSectionProps {
   selectedTemplateId: string | null;
@@ -60,12 +62,7 @@ export const TemplateSection = ({
               )}
             </Button>
 
-            {error && (
-              <div className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full text-xs px-2 py-0.5 flex items-center gap-1 shadow z-10">
-                <AlertCircle className="w-3 h-3" />
-                {error}
-              </div>
-            )}
+            <ErrorBadge error={error} />
           </div>
         </SidebarGroupContent>
       </SidebarGroup>

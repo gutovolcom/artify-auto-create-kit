@@ -1,3 +1,4 @@
+
 import { EventData } from "@/pages/Index";
 import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
 import { TemplateSection } from "@/components/sidebar/TemplateSection";
@@ -7,9 +8,8 @@ import { TeacherSection } from "@/components/sidebar/TeacherSection";
 import { FormatsSection } from "@/components/sidebar/FormatsSection";
 import { GenerationSection } from "@/components/sidebar/GenerationSection";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { eventFormSchema, EventFormValues } from "@/lib/validators";
+import { UseFormReturn } from "react-hook-form";
+import { EventFormValues } from "@/lib/validators";
 
 interface AppSidebarProps {
   userEmail: string;
@@ -17,10 +17,12 @@ interface AppSidebarProps {
   eventData: EventData;
   updateEventData: (data: Partial<EventData>) => void;
   onGenerate: () => void;
-  missingFields: string[]; // ✅ Adicione essa linha aqui
   isGenerating: boolean;
   onAdminPanel: () => void;
   onLogout: () => void;
+  form: UseFormReturn<EventFormValues>;
+  isFormValid: boolean;
+  formErrors: any;
 }
 
 const formatDisplayNames = {
@@ -48,23 +50,11 @@ export const AppSidebar = ({
   isGenerating,
   onAdminPanel,
   onLogout,
+  form,
+  isFormValid,
+  formErrors,
 }: AppSidebarProps) => {
   const { templates } = useSupabaseTemplates();
-
-  const form = useForm<EventFormValues>({
-  resolver: zodResolver(eventFormSchema),
-  mode: "onChange",
-  defaultValues: {
-    kvImageId: eventData.kvImageId ?? "",
-    classTheme: eventData.classTheme ?? "",
-    selectedTeacherIds: eventData.selectedTeacherIds ?? [],
-    date: eventData.date ?? "",
-    time: eventData.time ?? "",
-  }
-});
-
-  const { errors, isValid } = form.formState;
-  const { trigger } = form; // <- Correto
   
   const availableFormats = eventData.kvImageId
     ? templates.find(t => t.id === eventData.kvImageId)?.formats?.map(f => ({
@@ -93,11 +83,42 @@ export const AppSidebar = ({
   };
 
   const handleTeacherSelectionChange = (teacherIds: string[], teacherImages: string[], teacherNames: string[]) => {
+    console.log('Teacher selection changed:', { teacherIds, teacherImages, teacherNames });
     updateEventData({
       selectedTeacherIds: teacherIds,
       teacherImages: teacherImages,
       teacherNames: teacherNames
     });
+    
+    // Update form field to trigger validation
+    form.setValue('selectedTeacherIds', teacherIds);
+    form.trigger('selectedTeacherIds');
+  };
+
+  const handleTemplateSelect = (id: string) => {
+    console.log('Template selected:', id);
+    updateEventData({ kvImageId: id });
+    form.setValue('kvImageId', id);
+    form.trigger('kvImageId');
+  };
+
+  const handleEventDetailsUpdate = (data: { classTheme?: string; date?: string; time?: string }) => {
+    console.log('Event details updated:', data);
+    updateEventData(data);
+    
+    // Update form fields
+    if (data.classTheme !== undefined) {
+      form.setValue('classTheme', data.classTheme);
+      form.trigger('classTheme');
+    }
+    if (data.date !== undefined) {
+      form.setValue('date', data.date);
+      form.trigger('date');
+    }
+    if (data.time !== undefined) {
+      form.setValue('time', data.time);
+      form.trigger('time');
+    }
   };
 
   return (
@@ -112,19 +133,19 @@ export const AppSidebar = ({
       <SidebarContent className="px-4 pb-4 space-y-3 overflow-hidden">
         <TemplateSection
           selectedTemplateId={eventData.kvImageId}
-          onTemplateSelect={(id) => updateEventData({ kvImageId: id })}
-          error={errors.kvImageId?.message}
+          onTemplateSelect={handleTemplateSelect}
+          error={formErrors.kvImageId?.message}
         />
 
         <EventDetailsSection
           classTheme={eventData.classTheme || ""}
           date={eventData.date}
           time={eventData.time}
-          onUpdate={(data) => updateEventData(data)}
+          onUpdate={handleEventDetailsUpdate}
           errors={{
-            classTheme: errors.classTheme?.message,
-            date: errors.date?.message,
-            time: errors.time?.message,
+            classTheme: formErrors.classTheme?.message,
+            date: formErrors.date?.message,
+            time: formErrors.time?.message,
           }}
         />
 
@@ -138,7 +159,7 @@ export const AppSidebar = ({
         <TeacherSection
           selectedTeacherIds={eventData.selectedTeacherIds || []}
           onSelectionChange={handleTeacherSelectionChange}
-          error={errors.selectedTeacherIds?.message}
+          error={formErrors.selectedTeacherIds?.message}
         />
 
         <FormatsSection
@@ -149,14 +170,8 @@ export const AppSidebar = ({
 
         <GenerationSection
           isGenerating={isGenerating}
-          isFormReady={isValid}
-          missingFields={Object.keys(errors)}
-          onGenerate={async () => {
-           const isValid = await form.trigger(); // ✅ aguarda a Promise
-           if (isValid) {
-            onGenerate();
-           }
-          }}
+          isFormValid={isFormValid}
+          onGenerate={onGenerate}
         />
       </SidebarContent>
     </Sidebar>

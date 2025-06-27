@@ -1,9 +1,12 @@
+
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { MainContent } from "@/components/MainContent";
 import { EventData } from "@/pages/Index";
 import { GeneratedImage } from "@/hooks/useImageGenerator/types";
 import { Navbar } from "@/components/Navbar";
+import { UseFormReturn } from "react-hook-form";
+import { EventFormValues } from "@/lib/validators";
 
 interface MainLayoutProps {
   userEmail: string;
@@ -14,12 +17,14 @@ interface MainLayoutProps {
   isGenerating: boolean;
   generationProgress: number;
   currentGeneratingFormat: string;
-  missingFields: string[];
   generatedImages: GeneratedImage[];
   onExport: () => void;
   hasStartedGeneration: boolean;
   onAdminPanel: () => void;
   onLogout: () => void;
+  form: UseFormReturn<EventFormValues>;
+  isFormValid: boolean;
+  formErrors: any;
 }
 
 export const MainLayout = ({
@@ -31,12 +36,14 @@ export const MainLayout = ({
   isGenerating,
   generationProgress,
   currentGeneratingFormat,
-  missingFields,
   generatedImages,
   onExport,
   hasStartedGeneration,
   onAdminPanel,
   onLogout,
+  form,
+  isFormValid,
+  formErrors,
 }: MainLayoutProps) => {
   return (
     <SidebarProvider>
@@ -60,9 +67,11 @@ export const MainLayout = ({
               updateEventData={updateEventData}
               onGenerate={onGenerate}
               isGenerating={isGenerating}
-              missingFields={missingFields}
               onAdminPanel={onAdminPanel}
               onLogout={onLogout}
+              form={form}
+              isFormValid={isFormValid}
+              formErrors={formErrors}
             />
           </div>
 

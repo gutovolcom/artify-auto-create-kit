@@ -1,8 +1,9 @@
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar";
-import { AlertCircle } from "lucide-react";
+import { ErrorBadge } from "@/components/ui/error-badge";
 
 interface EventDetailsSectionProps {
   classTheme: string;
@@ -44,12 +45,7 @@ export const EventDetailsSection = ({
             {(classTheme || "").length}/44
           </div>
 
-          {errors?.classTheme && (
-            <div className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full text-xs px-2 py-0.5 flex items-center gap-1 shadow z-10">
-              <AlertCircle className="w-3 h-3" />
-              {errors.classTheme}
-            </div>
-          )}
+          <ErrorBadge error={errors?.classTheme} />
         </div>
 
         {/* DATA E HORÁRIO */}
@@ -68,12 +64,7 @@ export const EventDetailsSection = ({
               className={errors?.date ? "border-red-500" : ""}
             />
 
-            {errors?.date && (
-              <div className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full text-xs px-2 py-0.5 flex items-center gap-1 shadow z-10">
-                <AlertCircle className="w-3 h-3" />
-                {errors.date}
-              </div>
-            )}
+            <ErrorBadge error={errors?.date} />
           </div>
 
           {/* HORÁRIO */}
@@ -89,12 +80,7 @@ export const EventDetailsSection = ({
               className={errors?.time ? "border-red-500" : ""}
             />
 
-            {errors?.time && (
-              <div className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full text-xs px-2 py-0.5 flex items-center gap-1 shadow z-10">
-                <AlertCircle className="w-3 h-3" />
-                {errors.time}
-              </div>
-            )}
+            <ErrorBadge error={errors?.time} />
           </div>
         </div>
       </SidebarGroupContent>

@@ -1,11 +1,14 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminPanel } from "@/components/AdminPanel";
 import { MainLayout } from "@/components/MainLayout";
 import { useImageGenerator } from "@/hooks/useImageGenerator";
 import { usePersistentState } from "@/hooks/usePersistentState";
 import { EventData } from "@/pages/Index";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { eventFormSchema, EventFormValues } from "@/lib/validators";
 
 interface UserInterfaceProps {
   userEmail: string;
@@ -36,6 +39,37 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
     teacherName: "",
     professorPhotos: "",
   });
+
+  // Centralized form management
+  const form = useForm<EventFormValues>({
+    resolver: zodResolver(eventFormSchema),
+    mode: "onChange",
+    defaultValues: {
+      kvImageId: eventData.kvImageId ?? "",
+      classTheme: eventData.classTheme ?? "",
+      selectedTeacherIds: eventData.selectedTeacherIds ?? [],
+      date: eventData.date ?? "",
+      time: eventData.time ?? "",
+    }
+  });
+
+  const { setValue, watch, trigger, formState: { errors, isValid } } = form;
+
+  // Sync eventData changes with form state
+  useEffect(() => {
+    console.log('Syncing eventData with form state:', eventData);
+    setValue('kvImageId', eventData.kvImageId ?? "");
+    setValue('classTheme', eventData.classTheme ?? "");
+    setValue('selectedTeacherIds', eventData.selectedTeacherIds ?? []);
+    setValue('date', eventData.date ?? "");
+    setValue('time', eventData.time ?? "");
+  }, [eventData, setValue]);
+
+  // Watch form changes and update eventData
+  const watchedValues = watch();
+  useEffect(() => {
+    console.log('Form values changed:', watchedValues);
+  }, [watchedValues]);
   
   const { 
     generatedImages, 
@@ -47,10 +81,24 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
   } = useImageGenerator();
   
   const updateEventData = (data: Partial<EventData>) => {
+    console.log('Updating eventData:', data);
     setEventData((prev) => ({ ...prev, ...data }));
   };
   
   const handleGenerate = async () => {
+    console.log('Generate button clicked - validating form...');
+    console.log('Current form state:', { isValid, errors });
+    
+    // Trigger validation for all fields
+    const isFormValid = await trigger();
+    console.log('Form validation result:', isFormValid);
+    
+    if (!isFormValid) {
+      console.log('Form validation failed:', errors);
+      toast.error("Por favor, preencha todos os campos obrigatórios.");
+      return;
+    }
+
     console.log('Starting generation with event data:', eventData);
     setHasStartedGeneration(true);
     
@@ -82,16 +130,6 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
     setUserType('user');
   };
 
-  // Check if form is ready for generation
-  const isFormReady = eventData.date && eventData.kvImageId && 
-    eventData.selectedTeacherIds && eventData.selectedTeacherIds.length > 0;
-
-  const missingFields = [
-    !eventData.date && "Data",
-    !eventData.kvImageId && "Template de imagem",
-    !(eventData.selectedTeacherIds && eventData.selectedTeacherIds.length > 0) && "Professor selecionado"
-  ].filter(Boolean) as string[];
-
   // Show admin panel for admin users
   if (isAdmin && userType === 'admin') {
     return <AdminPanel onLogout={onLogout} onSwitchToUser={handleSwitchToUser} />;
@@ -108,12 +146,14 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
       isGenerating={isGenerating}
       generationProgress={generationProgress}
       currentGeneratingFormat={currentGeneratingFormat}
-      missingFields={missingFields}
       generatedImages={generatedImages}
       onExport={handleExport}
       hasStartedGeneration={hasStartedGeneration}
       onAdminPanel={handleAdminPanel}
       onLogout={onLogout}
+      form={form}
+      isFormValid={isValid}
+      formErrors={errors}
     />
   );
 };
