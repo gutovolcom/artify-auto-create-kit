@@ -55,9 +55,12 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
 
   const { setValue, watch, trigger, formState: { errors, isValid } } = form;
 
-  // Sync eventData changes with form state
+  // Watch form values for real-time sync
+  const watchedValues = watch();
+
+  // Sync eventData changes with form state (one-way: eventData -> form)
   useEffect(() => {
-    console.log('Syncing eventData with form state:', eventData);
+    console.log('🔄 Syncing eventData to form state:', eventData);
     setValue('kvImageId', eventData.kvImageId ?? "");
     setValue('classTheme', eventData.classTheme ?? "");
     setValue('selectedTeacherIds', eventData.selectedTeacherIds ?? []);
@@ -65,11 +68,35 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
     setValue('time', eventData.time ?? "");
   }, [eventData, setValue]);
 
-  // Watch form changes and update eventData
-  const watchedValues = watch();
+  // NEW: Sync form values back to eventData in real-time (two-way sync)
   useEffect(() => {
-    console.log('Form values changed:', watchedValues);
-  }, [watchedValues]);
+    console.log('🔄 Syncing form values back to eventData:', watchedValues);
+    
+    // Create updated eventData from current form values
+    const syncedEventData: Partial<EventData> = {};
+    
+    if (watchedValues.kvImageId !== eventData.kvImageId) {
+      syncedEventData.kvImageId = watchedValues.kvImageId || null;
+    }
+    if (watchedValues.classTheme !== eventData.classTheme) {
+      syncedEventData.classTheme = watchedValues.classTheme || "";
+    }
+    if (JSON.stringify(watchedValues.selectedTeacherIds) !== JSON.stringify(eventData.selectedTeacherIds)) {
+      syncedEventData.selectedTeacherIds = watchedValues.selectedTeacherIds || [];
+    }
+    if (watchedValues.date !== eventData.date) {
+      syncedEventData.date = watchedValues.date || "";
+    }
+    if (watchedValues.time !== eventData.time) {
+      syncedEventData.time = watchedValues.time || "";
+    }
+
+    // Only update if there are actual changes to prevent infinite loops
+    if (Object.keys(syncedEventData).length > 0) {
+      console.log('📝 Updating eventData with form changes:', syncedEventData);
+      setEventData((prev) => ({ ...prev, ...syncedEventData }));
+    }
+  }, [watchedValues, eventData, setEventData]);
   
   const { 
     generatedImages, 
@@ -81,36 +108,64 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
   } = useImageGenerator();
   
   const updateEventData = (data: Partial<EventData>) => {
-    console.log('Updating eventData:', data);
+    console.log('🔧 Updating eventData:', data);
     setEventData((prev) => ({ ...prev, ...data }));
   };
   
   const handleGenerate = async () => {
-    console.log('Generate button clicked - validating form...');
-    console.log('Current form state:', { isValid, errors });
+    console.log('🚀 Generate button clicked - starting validation...');
+    console.log('📋 Current form state:', { isValid, errors });
+    console.log('📊 Current eventData before sync:', eventData);
+    console.log('📝 Current form values before sync:', watchedValues);
     
     // Trigger validation for all fields
     const isFormValid = await trigger();
-    console.log('Form validation result:', isFormValid);
+    console.log('✅ Form validation result:', isFormValid);
     
     if (!isFormValid) {
-      console.log('Form validation failed:', errors);
+      console.log('❌ Form validation failed:', errors);
       toast.error("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
 
-    console.log('Starting generation with event data:', eventData);
+    // CRITICAL FIX: Pre-generation state sync to ensure eventData is current
+    const preGenerationEventData: EventData = {
+      ...eventData,
+      // Explicitly sync form values to ensure they're current
+      kvImageId: watchedValues.kvImageId || eventData.kvImageId,
+      classTheme: watchedValues.classTheme || eventData.classTheme,
+      selectedTeacherIds: watchedValues.selectedTeacherIds || eventData.selectedTeacherIds,
+      date: watchedValues.date || eventData.date,
+      time: watchedValues.time || eventData.time,
+    };
+
+    console.log('🔄 Pre-generation sync completed:', preGenerationEventData);
+    console.log('🎯 Text content check before generation:', {
+      classTheme: preGenerationEventData.classTheme,
+      date: preGenerationEventData.date,
+      time: preGenerationEventData.time,
+      teacherName: preGenerationEventData.teacherName,
+      kvImageId: preGenerationEventData.kvImageId,
+      selectedTeacherIds: preGenerationEventData.selectedTeacherIds
+    });
+
+    // Update eventData with synced values before generation
+    setEventData(preGenerationEventData);
+    
     setHasStartedGeneration(true);
     
     try {
-      const images = await generateImages(eventData);
+      console.log('🚀 Starting generation with synced event data:', preGenerationEventData);
+      const images = await generateImages(preGenerationEventData);
       if (images.length > 0) {
+        console.log('✅ Images generated successfully:', images.length);
         toast.success("Imagens geradas com sucesso!");
       } else {
+        console.log('❌ No images generated');
         toast.error("Nenhuma imagem foi gerada. Verifique os dados e tente novamente.");
       }
     } catch (error) {
-      console.error('Generation error:', error);
+      console.error('💥 Generation error:', error);
       toast.error("Erro durante a geração das imagens. Tente novamente.");
     }
   };

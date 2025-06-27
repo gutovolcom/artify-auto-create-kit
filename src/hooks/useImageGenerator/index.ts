@@ -1,4 +1,5 @@
-// src/hooks/useImageGenerator/index.ts (CORRIGIDO E COMPLETO)
+
+// src/hooks/useImageGenerator/index.ts (ENHANCED WITH STATE VALIDATION)
 
 import { useState } from "react";
 import { EventData } from "@/pages/Index";
@@ -22,10 +23,41 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
   const { getLayout, refreshAllLayouts } = useLayoutEditor();
 
   const generateImages = async (eventData: EventData): Promise<GeneratedImage[]> => {
+    console.log('🎯 generateImages called with eventData:', eventData);
+    console.log('🔍 Text content validation:', {
+      classTheme: eventData.classTheme,
+      classThemeLength: eventData.classTheme?.length || 0,
+      date: eventData.date,
+      time: eventData.time,
+      teacherName: eventData.teacherName,
+      kvImageId: eventData.kvImageId,
+      selectedTeacherIds: eventData.selectedTeacherIds?.length || 0
+    });
+    
     const validation = validateEventData(eventData);
     if (!validation.isValid) {
+      console.log('❌ Event data validation failed:', validation.error);
       setError(validation.error!);
       toast.error(validation.error!);
+      return [];
+    }
+
+    // Additional state validation check
+    if (!eventData.classTheme || eventData.classTheme.trim() === '') {
+      console.log('❌ Missing classTheme in eventData');
+      toast.error("Tema da aula é obrigatório para geração.");
+      return [];
+    }
+
+    if (!eventData.date || eventData.date.trim() === '') {
+      console.log('❌ Missing date in eventData');
+      toast.error("Data é obrigatória para geração.");
+      return [];
+    }
+
+    if (!eventData.time || eventData.time.trim() === '') {
+      console.log('❌ Missing time in eventData');
+      toast.error("Horário é obrigatório para geração.");
       return [];
     }
 
@@ -36,9 +68,9 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
     setCurrentGeneratingFormat("");
 
     try {
-      console.log('Starting image generation for event:', eventData);
+      console.log('🚀 Starting image generation for event:', eventData);
       
-      console.log('Refreshing templates and layouts before generation...');
+      console.log('🔄 Refreshing templates and layouts before generation...');
       await refetchTemplates();
       await refreshAllLayouts();
       
@@ -55,7 +87,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
       }
       
       const templateToUse = selectedTemplate || templates.find(t => t.id === eventData.kvImageId);
-      console.log('Using template for generation with fresh data:', templateToUse);
+      console.log('📋 Using template for generation with fresh data:', templateToUse);
       
       const allGeneratedImages = await generateImagesForFormats(
         eventData,
@@ -68,7 +100,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
       setGenerationProgress(100);
       setCurrentGeneratingFormat("Finalizando...");
       
-      console.log('All images generated with fresh layout data:', allGeneratedImages.length);
+      console.log('✅ All images generated with fresh layout data:', allGeneratedImages.length);
       
       await new Promise(resolve => setTimeout(resolve, 500));
       
@@ -78,7 +110,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
         try {
           await logActivity(eventData, allGeneratedImages.map(img => img.platform));
         } catch (logError) {
-          console.warn('Failed to log activity:', logError);
+          console.warn('⚠️ Failed to log activity:', logError);
         }
         
         toast.success(`${allGeneratedImages.length} imagens geradas com layouts atualizados!`);
@@ -88,7 +120,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
       
       return allGeneratedImages;
     } catch (err) {
-      console.error('Image generation error:', err);
+      console.error('💥 Image generation error:', err);
       const errorMessage = err instanceof Error ? err.message : "Erro ao gerar imagens. Tente novamente.";
       setError(errorMessage);
       toast.error(errorMessage);
