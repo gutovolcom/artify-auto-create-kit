@@ -68,12 +68,12 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
     setValue('time', eventData.time ?? "");
   }, [eventData, setValue]);
 
-  // NEW: Sync form values back to eventData in real-time (two-way sync)
+  // Bidirectional sync: form values -> eventData
   useEffect(() => {
     console.log('🔄 Syncing form values back to eventData:', watchedValues);
     
     // Create updated eventData from current form values
-    const syncedEventData: Partial<EventData> = {};
+    const syncedEventData: Partial<typeof eventData> = {};
     
     if (watchedValues.kvImageId !== eventData.kvImageId) {
       syncedEventData.kvImageId = watchedValues.kvImageId || null;
@@ -129,7 +129,7 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
     }
 
     // CRITICAL FIX: Pre-generation state sync to ensure eventData is current
-    const preGenerationEventData: EventData = {
+    const preGenerationEventData = {
       ...eventData,
       // Explicitly sync form values to ensure they're current
       kvImageId: watchedValues.kvImageId || eventData.kvImageId,
@@ -137,6 +137,10 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
       selectedTeacherIds: watchedValues.selectedTeacherIds || eventData.selectedTeacherIds,
       date: watchedValues.date || eventData.date,
       time: watchedValues.time || eventData.time,
+      // Ensure all required properties are provided with defaults
+      teacherNames: eventData.teacherNames || [],
+      platforms: eventData.platforms || [],
+      teacherImages: eventData.teacherImages || [],
     };
 
     console.log('🔄 Pre-generation sync completed:', preGenerationEventData);
