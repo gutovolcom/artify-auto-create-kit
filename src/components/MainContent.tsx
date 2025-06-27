@@ -28,24 +28,24 @@ export const MainContent = ({
   className, // ✅ Recebido aqui
 }: MainContentProps) => {
   if (!hasStartedGeneration && generatedImages.length === 0) {
-    return (
-      <div className={cn("flex-1 flex flex-col items-center justify-center p-8", className)}>
-        <div className="flex items-center justify-center mb-8">
-          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-            <ImageIcon className="h-8 w-8 text-gray-400" />
-          </div>
+  return (
+    <div className={cn("h-full w-full flex flex-col items-center justify-center", className)}>
+      <div className="flex items-center justify-center mb-8">
+        <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+          <ImageIcon className="h-8 w-8 text-gray-400" />
         </div>
-        
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-          Nenhuma arte gerada
-        </h2>
-        
-        <p className="text-gray-600 text-center max-w-md">
-          Preencha os campos ao lado e clique em "Gerar Artes" para criar suas artes.
-        </p>
       </div>
-    );
-  }
+
+      <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+        Nenhuma arte gerada
+      </h2>
+
+      <p className="text-gray-600 text-center max-w-md">
+        Preencha os campos ao lado e clique em "Gerar Artes" para criar suas artes.
+      </p>
+    </div>
+  );
+}
 
   if (isGenerating && generatedImages.length === 0) {
     return (
