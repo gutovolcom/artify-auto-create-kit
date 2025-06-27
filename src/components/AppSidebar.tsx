@@ -62,6 +62,7 @@ export const AppSidebar = ({
     time: eventData.time ?? "",
   }
 });
+
   const { errors, isValid } = form.formState;
   const { trigger } = form; // <- Correto
   
@@ -148,8 +149,6 @@ export const AppSidebar = ({
 
         <GenerationSection
           isGenerating={isGenerating}
-          generationProgress={0}
-          currentGeneratingFormat=""
           isFormReady={isValid}
           missingFields={Object.keys(errors)}
           onGenerate={async () => {
