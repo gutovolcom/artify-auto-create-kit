@@ -62,7 +62,6 @@ export const AppSidebar = ({
     time: eventData.time ?? "",
   }
 });
-
   const { errors, isValid } = form.formState;
   const { trigger } = form; // <- Correto
   
