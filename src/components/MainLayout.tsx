@@ -76,7 +76,7 @@ export const MainLayout = ({
           </div>
 
           {/* MAIN CONTENT ao lado da sidebar */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden flex flex-col">
             <MainContent
               generatedImages={generatedImages}
               eventData={eventData}

@@ -49,7 +49,7 @@ export const MainContent = ({
 
   if (isGenerating && generatedImages.length === 0) {
     return (
-      <div className={cn("flex-1 flex flex-col items-center justify-center p-8", className)}>
+      <div className={cn("h-full w-full flex flex-col items-center justify-center", className)}>
         <div className="w-full max-w-md space-y-6">
           <div className="text-center">
             <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
