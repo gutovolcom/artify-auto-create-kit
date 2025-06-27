@@ -32,26 +32,18 @@ const Index = () => {
     toast.success("Logout realizado com sucesso!");
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Carregando usuário...</p>
-      </div>
-    );
-  }
-
-  const isAdmin = user.email === import.meta.env.VITE_ADMIN_EMAIL;
+  // Remove the manual user check - let AuthGuard handle authentication
+  const isAdmin = user?.email === import.meta.env.VITE_ADMIN_EMAIL;
 
   return (
     <AuthGuard>
       <UserInterface
-        userEmail={user.email}
+        userEmail={user?.email || ""}
         isAdmin={isAdmin}
         onLogout={handleLogout}
       />
     </AuthGuard>
   );
 };
-
 
 export default Index;
