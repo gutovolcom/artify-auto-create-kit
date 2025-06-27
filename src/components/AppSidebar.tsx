@@ -154,8 +154,10 @@ export const AppSidebar = ({
           isFormReady={isValid}
           missingFields={Object.keys(errors)}
           onGenerate={async () => {
-            const valid = await trigger();
-            if (valid) onGenerate();
+           const isValid = await form.trigger(); // ✅ aguarda a Promise
+           if (isValid) {
+            onGenerate();
+           }
           }}
         />
       </SidebarContent>
