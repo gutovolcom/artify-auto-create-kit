@@ -163,13 +163,23 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
       const images = await generateImages(preGenerationEventData);
       if (images.length > 0) {
         console.log('✅ Images generated successfully:', images.length);
-        // TYPE FIX: Only update persistent state AFTER successful generation with proper type conversion
+        // TYPE FIX: Only update persistent state AFTER successful generation with complete type conversion
         const stateCompatibleData = {
           ...preGenerationEventData,
-          // Ensure all properties match the expected state type
+          // Ensure ALL properties match the expected state type with proper defaults
           teacherNames: preGenerationEventData.teacherNames || [],
           platforms: preGenerationEventData.platforms || [],
           teacherImages: preGenerationEventData.teacherImages || [],
+          classTheme: preGenerationEventData.classTheme || "",
+          boxColor: preGenerationEventData.boxColor || "#dd303e",
+          boxFontColor: preGenerationEventData.boxFontColor || "#FFFFFF",
+          fontColor: preGenerationEventData.fontColor || "#000000",
+          textColor: preGenerationEventData.textColor || "#FFFFFF",
+          backgroundColorType: preGenerationEventData.backgroundColorType || "red",
+          lessonThemeBoxStyle: preGenerationEventData.lessonThemeBoxStyle || "Transparent",
+          selectedTeacherIds: preGenerationEventData.selectedTeacherIds || [],
+          teacherName: preGenerationEventData.teacherName || "",
+          professorPhotos: preGenerationEventData.professorPhotos || "",
         };
         setEventData(stateCompatibleData);
         toast.success("Imagens geradas com sucesso!");
@@ -200,7 +210,7 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
 
   // Show admin panel for admin users
   if (isAdmin && userType === 'admin') {
-    return <AdminPanel onLogout={onLogout} onSwitchToUser={handleSwitchToUser} />;
+    return <AdminPanel onLogout={onLogout} onSwitchToUser={handleSwitchToUser} />;  
   }
 
   // Show user interface with sidebar layout
