@@ -163,8 +163,15 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
       const images = await generateImages(preGenerationEventData);
       if (images.length > 0) {
         console.log('✅ Images generated successfully:', images.length);
-        // Only update persistent state AFTER successful generation
-        setEventData(preGenerationEventData);
+        // TYPE FIX: Only update persistent state AFTER successful generation with proper type conversion
+        const stateCompatibleData = {
+          ...preGenerationEventData,
+          // Ensure all properties match the expected state type
+          teacherNames: preGenerationEventData.teacherNames || [],
+          platforms: preGenerationEventData.platforms || [],
+          teacherImages: preGenerationEventData.teacherImages || [],
+        };
+        setEventData(stateCompatibleData);
         toast.success("Imagens geradas com sucesso!");
       } else {
         console.log('❌ No images generated');
