@@ -4,10 +4,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, FileImage, Loader2, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
-import { useLayoutEditor } from "@/hooks/useLayoutEditor";
-import { useState } from "react";
+import { useDataRefresh } from "@/hooks/useDataRefresh";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface ImageSelectorProps {
   selectedImageId: string | null;
@@ -15,32 +14,16 @@ interface ImageSelectorProps {
 }
 
 export const ImageSelector = ({ selectedImageId, onSelect }: ImageSelectorProps) => {
-  const { templates, loading, refetch } = useSupabaseTemplates();
-  const { refreshAllLayouts } = useLayoutEditor();
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { templates, loading } = useSupabaseTemplates();
+  const { refreshAll, isRefreshing } = useDataRefresh();
+  const notifications = useNotifications();
 
   const handleAddTemplate = () => {
-    toast.info("Para adicionar templates, use o painel administrativo");
+    notifications.info.addTemplateInfo();
   };
 
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      console.log('Starting complete refresh: templates + layouts');
-      
-      // Refresh templates first
-      await refetch();
-      
-      // Then refresh all layout caches
-      await refreshAllLayouts();
-      
-      toast.success("Templates e layouts atualizados!");
-    } catch (error) {
-      console.error('Error during refresh:', error);
-      toast.error("Erro ao atualizar dados");
-    } finally {
-      setIsRefreshing(false);
-    }
+    await refreshAll();
   };
 
   if (loading) {

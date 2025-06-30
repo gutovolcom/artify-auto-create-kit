@@ -12,8 +12,7 @@ import { Input } from "@/components/ui/input";
 import { RefreshCw, Search, FileImage, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
-import { useLayoutEditor } from "@/hooks/useLayoutEditor";
-import { toast } from "sonner";
+import { useDataRefresh } from "@/hooks/useDataRefresh";
 
 interface KVSelectorModalProps {
   isOpen: boolean;
@@ -28,30 +27,16 @@ export const KVSelectorModal = ({
   selectedImageId,
   onSelect,
 }: KVSelectorModalProps) => {
-  const { templates, loading, refetch } = useSupabaseTemplates();
-  const { refreshAllLayouts } = useLayoutEditor();
+  const { templates, loading } = useSupabaseTemplates();
+  const { refreshAll, isRefreshing } = useDataRefresh();
   const [searchTerm, setSearchTerm] = useState("");
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const filteredTemplates = templates.filter((template) =>
     template.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      console.log('Starting complete refresh: templates + layouts');
-      
-      await refetch();
-      await refreshAllLayouts();
-      
-      toast.success("Templates e layouts atualizados!");
-    } catch (error) {
-      console.error('Error during refresh:', error);
-      toast.error("Erro ao atualizar dados");
-    } finally {
-      setIsRefreshing(false);
-    }
+    await refreshAll();
   };
 
   const handleSelect = (templateId: string) => {

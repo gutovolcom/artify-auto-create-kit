@@ -1,15 +1,14 @@
 
-// src/hooks/useImageGenerator/index.ts (ENHANCED WITH DIRECT DATA PASSING)
-
 import { useState } from "react";
 import { EventData } from "@/pages/Index";
-import { toast } from "sonner";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
 import { useActivityLog } from "@/hooks/useActivityLog";
 import { useLayoutEditor } from "@/hooks/useLayoutEditor";
+import { useNotifications } from "@/hooks/useNotifications";
 import { validateEventData } from "./helpers";
 import { generateImagesForFormats } from "./imageGeneration";
 import { GeneratedImage, UseImageGeneratorReturn } from "./types";
+import { logger } from "@/utils/logger";
 import JSZip from "jszip";
 
 export const useImageGenerator = (): UseImageGeneratorReturn => {
@@ -21,43 +20,35 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
   const { templates, refetch: refetchTemplates } = useSupabaseTemplates();
   const { logActivity } = useActivityLog();
   const { getLayout, refreshAllLayouts } = useLayoutEditor();
+  const notifications = useNotifications();
 
   const generateImages = async (eventData: EventData): Promise<GeneratedImage[]> => {
-    console.log('🎯 generateImages called with DIRECT eventData (no state dependency):', eventData);
-    console.log('🔍 FIRST GENERATION - Text content validation:', {
-      classTheme: eventData.classTheme,
-      classThemeLength: eventData.classTheme?.length || 0,
-      date: eventData.date,
-      time: eventData.time,
-      teacherName: eventData.teacherName,
-      kvImageId: eventData.kvImageId,
-      selectedTeacherIds: eventData.selectedTeacherIds?.length || 0
-    });
+    logger.info('generateImages called with DIRECT eventData (no state dependency)', { eventData });
     
     const validation = validateEventData(eventData);
     if (!validation.isValid) {
-      console.log('❌ Event data validation failed:', validation.error);
+      logger.error('Event data validation failed', { error: validation.error });
       setError(validation.error!);
-      toast.error(validation.error!);
+      notifications.error.requiredFields();
       return [];
     }
 
     // CRITICAL: Additional state validation check with direct eventData parameter
     if (!eventData.classTheme || eventData.classTheme.trim() === '') {
-      console.log('❌ Missing classTheme in DIRECT eventData parameter');
-      toast.error("Tema da aula é obrigatório para geração.");
+      logger.error('Missing classTheme in DIRECT eventData parameter');
+      notifications.error.requiredFields();
       return [];
     }
 
     if (!eventData.date || eventData.date.trim() === '') {
-      console.log('❌ Missing date in DIRECT eventData parameter');
-      toast.error("Data é obrigatória para geração.");
+      logger.error('Missing date in DIRECT eventData parameter');
+      notifications.error.requiredFields();
       return [];
     }
 
     if (!eventData.time || eventData.time.trim() === '') {
-      console.log('❌ Missing time in DIRECT eventData parameter');
-      toast.error("Horário é obrigatório para geração.");
+      logger.error('Missing time in DIRECT eventData parameter');
+      notifications.error.requiredFields();
       return [];
     }
 
@@ -68,9 +59,9 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
     setCurrentGeneratingFormat("");
 
     try {
-      console.log('🚀 Starting image generation with DIRECT eventData (first generation fix):', eventData);
+      logger.info('Starting image generation with DIRECT eventData (first generation fix)', { eventData });
       
-      console.log('🔄 Refreshing templates and layouts before generation...');
+      logger.info('Refreshing templates and layouts before generation...');
       await refetchTemplates();
       await refreshAllLayouts();
       
@@ -82,12 +73,13 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
         await new Promise(r => setTimeout(r, 200));
         const updatedTemplate = templates.find(t => t.id === eventData.kvImageId);
         if (!updatedTemplate) {
+          notifications.error.templateNotFound();
           throw new Error("Template não encontrado. Tente atualizar a página.");
         }
       }
       
       const templateToUse = selectedTemplate || templates.find(t => t.id === eventData.kvImageId);
-      console.log('📋 Using template for generation with fresh data:', templateToUse);
+      logger.info('Using template for generation with fresh data', { template: templateToUse });
       
       const allGeneratedImages = await generateImagesForFormats(
         eventData, // Pass the direct eventData parameter
@@ -100,7 +92,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
       setGenerationProgress(100);
       setCurrentGeneratingFormat("Finalizando...");
       
-      console.log('✅ All images generated with direct eventData and fresh layout data:', allGeneratedImages.length);
+      logger.info('All images generated with direct eventData and fresh layout data', { count: allGeneratedImages.length });
       
       await new Promise(resolve => setTimeout(resolve, 500));
       
@@ -110,20 +102,20 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
         try {
           await logActivity(eventData, allGeneratedImages.map(img => img.platform));
         } catch (logError) {
-          console.warn('⚠️ Failed to log activity:', logError);
+          logger.warn('Failed to log activity', { error: logError });
         }
         
-        toast.success(`${allGeneratedImages.length} imagens geradas com layouts atualizados!`);
+        notifications.success.imagesGenerated(allGeneratedImages.length);
       } else {
-        toast.error("Nenhuma imagem foi gerada. Verifique os templates e tente novamente.");
+        notifications.error.noImagesGenerated();
       }
       
       return allGeneratedImages;
     } catch (err) {
-      console.error('💥 Image generation error:', err);
+      logger.error('Image generation error', { error: err });
       const errorMessage = err instanceof Error ? err.message : "Erro ao gerar imagens. Tente novamente.";
       setError(errorMessage);
-      toast.error(errorMessage);
+      notifications.error.generationFailed();
       setGeneratedImages([]);
       return [];
     } finally {
@@ -133,63 +125,61 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
     }
   };
 
-  // CORREÇÃO: A assinatura da função foi atualizada para corresponder aos tipos
   const downloadZip = async (imagesToZip: GeneratedImage[], zipName: string): Promise<boolean> => {
-  if (imagesToZip.length === 0) {
-    toast.error("Nenhuma imagem para exportar.");
-    return false;
-  }
-
-  setIsGenerating(true);
-  
-  try {
-    const zip = new JSZip();
-    
-    const sanitizedTitle = zipName.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 50) || "Event";
-    
-    for (let i = 0; i < imagesToZip.length; i++) {
-      const image = imagesToZip[i];
-
-      try {
-        const response = await fetch(image.url);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch image for ${image.platform}`);
-        }
-        const blob = await response.blob();
-        const filename = `${sanitizedTitle}_${image.platform}.png`;
-        zip.file(filename, blob);
-      } catch (imageError) {
-        console.warn(`Failed to add ${image.platform} to ZIP:`, imageError);
-      }
+    if (imagesToZip.length === 0) {
+      notifications.error.noImagesToExport();
+      return false;
     }
-    
-    const zipBlob = await zip.generateAsync({ 
-      type: "blob",
-      compression: "DEFLATE",
-      compressionOptions: { level: 6 }
-    });
-    
-    const url = URL.createObjectURL(zipBlob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${sanitizedTitle}_images.zip`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    URL.revokeObjectURL(url);
-    
-    toast.success("Arquivo ZIP baixado com sucesso!");
-    return true;
 
-  } catch (err) {
-    console.error("ZIP creation error:", err);
-    toast.error("Erro ao criar arquivo ZIP. Tente novamente.");
-    return false;
-  } finally {
-    setIsGenerating(false);
-  }
-};
+    setIsGenerating(true);
+    
+    try {
+      const zip = new JSZip();
+      
+      const sanitizedTitle = zipName.replace(/[^a-zA-Z0-9]/g, "_").substring(0, 50) || "Event";
+      
+      for (let i = 0; i < imagesToZip.length; i++) {
+        const image = imagesToZip[i];
+
+        try {
+          const response = await fetch(image.url);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image for ${image.platform}`);
+          }
+          const blob = await response.blob();
+          const filename = `${sanitizedTitle}_${image.platform}.png`;
+          zip.file(filename, blob);
+        } catch (imageError) {
+          logger.warn(`Failed to add ${image.platform} to ZIP`, { error: imageError });
+        }
+      }
+      
+      const zipBlob = await zip.generateAsync({ 
+        type: "blob",
+        compression: "DEFLATE",
+        compressionOptions: { level: 6 }
+      });
+      
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${sanitizedTitle}_images.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      URL.revokeObjectURL(url);
+      
+      return true;
+
+    } catch (err) {
+      logger.error("ZIP creation error", { error: err });
+      notifications.error.zipCreationFailed();
+      return false;
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return {
     generatedImages,

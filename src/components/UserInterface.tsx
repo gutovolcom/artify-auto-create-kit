@@ -4,11 +4,12 @@ import { AdminPanel } from "@/components/AdminPanel";
 import { MainLayout } from "@/components/MainLayout";
 import { useImageGenerator } from "@/hooks/useImageGenerator";
 import { usePersistentState } from "@/hooks/usePersistentState";
+import { useNotifications } from "@/hooks/useNotifications";
 import { EventData } from "@/pages/Index";
-import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { eventFormSchema, EventFormValues } from "@/lib/validators";
+import { logger } from "@/utils/logger";
 
 interface UserInterfaceProps {
   userEmail: string;
@@ -19,6 +20,7 @@ interface UserInterfaceProps {
 export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfaceProps) => {
   const [userType, setUserType] = useState<'user' | 'admin'>('user');
   const [hasStartedGeneration, setHasStartedGeneration] = useState(false);
+  const notifications = useNotifications();
   
   const [eventData, setEventData] = usePersistentState('artGeneratorForm', {
     subtitle: "",
@@ -60,7 +62,7 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
 
   // Sync eventData changes with form state (one-way: eventData -> form)
   useEffect(() => {
-    console.log('🔄 Syncing eventData to form state:', eventData);
+    logger.stateUpdate('UserInterface', 'eventData->form', eventData);
     setValue('kvImageId', eventData.kvImageId ?? "");
     setValue('classTheme', eventData.classTheme ?? "");
     setValue('selectedTeacherIds', eventData.selectedTeacherIds ?? []);
@@ -70,7 +72,7 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
 
   // Bidirectional sync: form values -> eventData
   useEffect(() => {
-    console.log('🔄 Syncing form values back to eventData:', watchedValues);
+    logger.stateUpdate('UserInterface', 'form->eventData', watchedValues);
     
     // Create updated eventData from current form values
     const syncedEventData: Partial<typeof eventData> = {};
@@ -93,7 +95,7 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
 
     // Only update if there are actual changes to prevent infinite loops
     if (Object.keys(syncedEventData).length > 0) {
-      console.log('📝 Updating eventData with form changes:', syncedEventData);
+      logger.stateUpdate('UserInterface', 'eventData', syncedEventData);
       setEventData((prev) => ({ ...prev, ...syncedEventData }));
     }
   }, [watchedValues, eventData, setEventData]);
@@ -108,23 +110,23 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
   } = useImageGenerator();
   
   const updateEventData = (data: Partial<EventData>) => {
-    console.log('🔧 Updating eventData:', data);
+    logger.stateUpdate('UserInterface', 'eventData', data);
     setEventData((prev) => ({ ...prev, ...data }));
   };
   
   const handleGenerate = async () => {
-    console.log('🚀 Generate button clicked - starting validation...');
-    console.log('📋 Current form state:', { isValid, errors });
-    console.log('📊 Current eventData before sync:', eventData);
-    console.log('📝 Current form values before sync:', watchedValues);
+    logger.info('Generate button clicked - starting validation');
+    logger.formValidation('form', isValid, errors);
+    logger.stateUpdate('UserInterface', 'eventData before sync', eventData);
+    logger.stateUpdate('UserInterface', 'form values before sync', watchedValues);
     
     // Trigger validation for all fields
     const isFormValid = await trigger();
-    console.log('✅ Form validation result:', isFormValid);
+    logger.formValidation('complete form', isFormValid, errors);
     
     if (!isFormValid) {
-      console.log('❌ Form validation failed:', errors);
-      toast.error("Por favor, preencha todos os campos obrigatórios.");
+      logger.warn('Form validation failed', { errors });
+      notifications.error.requiredFields();
       return;
     }
 
@@ -143,26 +145,15 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
       teacherImages: eventData.teacherImages || [],
     };
 
-    console.log('🔄 Pre-generation sync completed:', preGenerationEventData);
-    console.log('🎯 Text content check before generation:', {
-      classTheme: preGenerationEventData.classTheme,
-      date: preGenerationEventData.date,
-      time: preGenerationEventData.time,
-      teacherName: preGenerationEventData.teacherName,
-      kvImageId: preGenerationEventData.kvImageId,
-      selectedTeacherIds: preGenerationEventData.selectedTeacherIds
-    });
+    logger.info('Pre-generation sync completed', { preGenerationEventData });
 
-    // RACE CONDITION FIX: Don't update state here, pass data directly to generateImages
-    // This eliminates the async race condition that caused first-generation failures
-    
     setHasStartedGeneration(true);
     
     try {
-      console.log('🚀 Starting generation with directly passed event data (no state dependency):', preGenerationEventData);
+      logger.info('Starting generation with directly passed event data', { preGenerationEventData });
       const images = await generateImages(preGenerationEventData);
       if (images.length > 0) {
-        console.log('✅ Images generated successfully:', images.length);
+        logger.info('Images generated successfully', { count: images.length });
         // TYPE FIX: Only update persistent state AFTER successful generation with complete type conversion
         const stateCompatibleData = {
           ...preGenerationEventData,
@@ -182,21 +173,21 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
           professorPhotos: preGenerationEventData.professorPhotos || "",
         };
         setEventData(stateCompatibleData);
-        toast.success("Imagens geradas com sucesso!");
+        notifications.success.imagesGenerated(images.length);
       } else {
-        console.log('❌ No images generated');
-        toast.error("Nenhuma imagem foi gerada. Verifique os dados e tente novamente.");
+        logger.warn('No images generated');
+        notifications.error.noImagesGenerated();
       }
     } catch (error) {
-      console.error('💥 Generation error:', error);
-      toast.error("Erro durante a geração das imagens. Tente novamente.");
+      logger.error('Generation error', { error });
+      notifications.error.generationFailed();
     }
   };
 
   const handleExport = async () => {
     const success = await downloadZip(generatedImages, eventData.subtitle || "artes");
     if (success) {
-      toast.success("Arquivo ZIP baixado com sucesso!");
+      notifications.success.zipDownloaded();
     }
   };
 
