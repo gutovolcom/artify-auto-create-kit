@@ -1,10 +1,98 @@
-
 import { EventData } from "@/pages/Index";
 import { createFabricCanvas, loadBackgroundImageToCanvas, setupCanvasContainer, cleanupCanvas } from './canvas/fabricCanvasSetup';
 import { exportCanvasToDataURL } from './canvas/canvasExporter';
 import { addElementToCanvas, resetPositionAdjustments } from './canvas/elementRenderer';
 import { addTeacherPhotosToCanvas } from './canvas/addTeacherPhotosToCanvas';
 import { addDefaultElements } from './canvas/defaultLayoutRenderer';
+import { batchLoadFonts, FontConfig } from './canvas/fontLoader';
+import { getStyleForField, getUserColors } from './formatStyleRules';
+
+// Types for better type safety
+interface LayoutElement {
+  field: string;
+  type: string;
+  position: { x: number; y: number };
+  size?: { width: number; height: number };
+}
+
+interface LayoutConfig {
+  elements: LayoutElement[];
+}
+
+// Font preloading cache to avoid reloading fonts
+const fontPreloadCache = new Set<string>();
+
+const preloadAllFonts = async (eventData: EventData, format: string, layoutConfig?: LayoutConfig): Promise<void> => {
+  const fontConfigs: FontConfig[] = [];
+  const userColors = getUserColors(eventData);
+  const cacheKey = `${format}-${JSON.stringify(layoutConfig?.elements?.map(e => e.field) || [])}`;
+
+  // Skip if fonts already preloaded for this configuration
+  if (fontPreloadCache.has(cacheKey)) {
+    console.log('🔤 Fonts already preloaded for configuration');
+    return;
+  }
+
+  try {
+    // Collect all fonts that will be used
+    if (layoutConfig?.elements) {
+      for (const element of layoutConfig.elements) {
+        if (element.type === 'text' || element.type === 'text_box') {
+          const formatStyle = getStyleForField(format, element.field, userColors);
+          fontConfigs.push({
+            family: formatStyle.fontFamily,
+            size: formatStyle.fontSize,
+            weight: 'normal'
+          });
+        }
+      }
+    } else {
+      // Default fonts for fallback layout
+      const fields = ['classTheme', 'teacherName', 'date'];
+      for (const field of fields) {
+        const formatStyle = getStyleForField(format, field, userColors);
+        fontConfigs.push({
+          family: formatStyle.fontFamily,
+          size: formatStyle.fontSize,
+          weight: 'normal'
+        });
+      }
+    }
+
+    // Remove duplicates
+    const uniqueFonts = fontConfigs.filter((font, index, self) => 
+      index === self.findIndex(f => 
+        f.family === font.family && 
+        f.size === font.size && 
+        f.weight === font.weight
+      )
+    );
+
+    if (uniqueFonts.length === 0) return;
+
+    console.log(`🔤 Preloading ${uniqueFonts.length} fonts for first generation fix`);
+    
+    // Load all fonts in parallel with timeout
+    const loadResults = await Promise.race([
+      batchLoadFonts(uniqueFonts),
+      new Promise<boolean[]>((_, reject) => 
+        setTimeout(() => reject(new Error('Font loading timeout')), 3000)
+      )
+    ]);
+    
+    const loadedCount = loadResults.filter(Boolean).length;
+    
+    if (loadedCount > 0) {
+      fontPreloadCache.add(cacheKey);
+      console.log(`✅ Font preloading completed: ${loadedCount}/${uniqueFonts.length} fonts loaded`);
+    }
+    
+    // Small delay to ensure fonts are fully available
+    await new Promise(resolve => setTimeout(resolve, 50));
+  } catch (error) {
+    console.warn('⚠️ Font preloading failed, continuing with fallback fonts:', error);
+  }
+};
 
 export const renderCanvasWithTemplate = async (
   backgroundImageUrl: string,
@@ -12,109 +100,89 @@ export const renderCanvasWithTemplate = async (
   width: number,
   height: number,
   format: string,
-  layoutConfig?: any
+  layoutConfig?: LayoutConfig
 ): Promise<string> => {
-  console.log("🎨 [DEBUG] renderCanvasWithTemplate called with:");
-  console.log("🖼️ [DEBUG] backgroundImageUrl:", backgroundImageUrl);
-  console.log("📊 [DEBUG] eventData:", eventData);
-  console.log("📐 [DEBUG] Canvas dimensions:", width, "x", height);
-  console.log("🎯 [DEBUG] Format:", format);
-  console.log("⚙️ [DEBUG] layoutConfig:", layoutConfig);
-  
-  // CRITICAL VALIDATION: Enhanced text content validation before rendering (first generation fix)
-  console.log("📝 [DEBUG] FIRST GENERATION FIX - Text content validation before rendering:");
-  console.log("  - classTheme:", eventData.classTheme, "(length:", eventData.classTheme?.length || 0, ")");
-  console.log("  - date:", eventData.date);
-  console.log("  - time:", eventData.time);
-  console.log("  - teacherName:", eventData.teacherName);
-  console.log("  - teacherImages:", eventData.teacherImages?.length || 0, "images");
-
-  // STATE VALIDATION GUARDS: Ensure critical text fields have content
-  if (!eventData.classTheme || eventData.classTheme.trim() === '') {
-    console.error("🚨 CRITICAL: classTheme is missing or empty in renderCanvasWithTemplate");
-    throw new Error("Tema da aula é obrigatório para renderização");
+  // Input validation
+  if (!backgroundImageUrl || !eventData || !width || !height || !format) {
+    throw new Error("Missing required parameters for canvas rendering");
   }
 
-  if (!eventData.date || eventData.date.trim() === '') {
-    console.error("🚨 CRITICAL: date is missing or empty in renderCanvasWithTemplate");
-    throw new Error("Data é obrigatória para renderização");
+  // Validate critical fields
+  const missingFields: string[] = [];
+  if (!eventData.classTheme?.trim()) missingFields.push('classTheme');
+  if (!eventData.date?.trim()) missingFields.push('date');
+  if (!eventData.time?.trim()) missingFields.push('time');
+
+  if (missingFields.length > 0) {
+    throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
   }
 
-  if (!eventData.time || eventData.time.trim() === '') {
-    console.error("🚨 CRITICAL: time is missing or empty in renderCanvasWithTemplate");
-    throw new Error("Horário é obrigatório para renderização");
-  }
-
-  // Passo 1: O canvas e seu container são criados no início.
   const tempCanvas = setupCanvasContainer(width, height);
   const fabricCanvas = createFabricCanvas(tempCanvas, width, height);
 
   try {
-    console.log('🚀 Rendering canvas with template (FIRST GENERATION FIX):', {
-      backgroundImageUrl,
-      format,
-      width,
-      height,
-      layoutConfig,
-      eventData: {
-        classTheme: eventData.classTheme,
-        date: eventData.date,
-        time: eventData.time,
-        teacherName: eventData.teacherName
-      }
-    });
-
-    // Reset position adjustments for this rendering session
+    // Preload fonts before rendering
+    await preloadAllFonts(eventData, format, layoutConfig);
+    
+    // Reset position adjustments
     resetPositionAdjustments();
 
+    // Load background image
     await loadBackgroundImageToCanvas(fabricCanvas, backgroundImageUrl, width, height);
 
+    // Process elements
     if (layoutConfig?.elements && layoutConfig.elements.length > 0) {
-      console.log('🎯 Using layout configuration with smart text breaking (FIRST GENERATION FIX)');
-      console.log('🔍 Layout elements to process:', layoutConfig.elements.length);
+      console.log(`🎯 Processing ${layoutConfig.elements.length} layout elements`);
       
-      layoutConfig.elements.forEach((element: any, index: number) => {
-        console.log(`📍 Processing element ${index + 1}/${layoutConfig.elements.length} (FIRST GENERATION):`, {
-          field: element.field,
-          type: element.type,
-          position: element.position,
-          size: element.size
-        });
+      // Process elements sequentially to avoid race conditions
+      for (const [index, element] of layoutConfig.elements.entries()) {
+        console.log(`📍 Processing element ${index + 1}/${layoutConfig.elements.length}: ${element.field}`);
         
-        // Skip teacher image elements - they're handled by placement rules
+        // Skip teacher image elements - handled by placement rules
         if (element.type === 'image' && (element.field === 'teacherImages' || element.field === 'professorPhotos')) {
           console.log('🖼️ Skipping teacher image element - handled by placement rules');
-          return;
+          continue;
         }
         
-        console.log('📝 Adding element with smart text handling for field (FIRST GENERATION FIX):', element.field);
-        addElementToCanvas(fabricCanvas, element, eventData, width, height, format, layoutConfig.elements);
-      });
+        try {
+          await addElementToCanvas(fabricCanvas, element, eventData, width, height, format, layoutConfig.elements);
+        } catch (elementError) {
+          console.error(`Error processing element ${element.field}:`, elementError);
+          // Continue with other elements
+        }
+      }
 
-      // Always add teacher photos using placement rules after processing layout elements
-      console.log('🖼️ Adding teacher photos using smart placement rules for format (FIRST GENERATION FIX):', format);
-      await addTeacherPhotosToCanvas(fabricCanvas, eventData.teacherImages || [], format, width, height, eventData);
+      // Add teacher photos after layout elements
+      try {
+        await addTeacherPhotosToCanvas(fabricCanvas, eventData.teacherImages || [], format, width, height, eventData);
+      } catch (photoError) {
+        console.error('Error adding teacher photos:', photoError);
+      }
       
     } else {
-      console.log('⚠️ No layout configuration found, using default layout for format (FIRST GENERATION FIX):', format);
+      console.log('⚠️ No layout configuration found, using default layout');
       await addDefaultElements(fabricCanvas, eventData, format, width, height);
     }
 
-    console.log('✅ Canvas rendering completed (FIRST GENERATION FIX), calling renderAll()');
+    // Final render
     fabricCanvas.renderAll();
 
-    // Passo 2: O exportador agora SÓ exporta a imagem, sem tentar fazer a limpeza.
+    // Export canvas
     const dataURL = await exportCanvasToDataURL(fabricCanvas);
-    console.log('📤 Canvas exported to dataURL successfully (FIRST GENERATION FIX)');
+    console.log(`✅ Canvas exported successfully for format: ${format}`);
     return dataURL;
     
   } catch (error) {
-    console.error('💥 Error in renderCanvasWithTemplate (FIRST GENERATION FIX):', error);
-    // Rejeita a promessa em caso de erro. O 'finally' ainda será executado.
+    console.error(`💥 Error rendering canvas for format ${format}:`, error);
     throw error;
   } finally {
-    // Passo 3: A limpeza ocorre aqui, no final, garantindo que o canvas e seu container sejam sempre removidos.
-    console.log(`🧹 Cleaning up canvas for format (FIRST GENERATION FIX): ${format}`);
+    // Always cleanup
     cleanupCanvas(fabricCanvas, tempCanvas);
   }
+};
+
+// Clear font cache when needed (e.g., on app restart)
+export const clearFontPreloadCache = () => {
+  fontPreloadCache.clear();
+  console.log('🧹 Font preload cache cleared');
 };
