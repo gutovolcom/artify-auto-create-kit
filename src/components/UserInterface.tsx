@@ -129,7 +129,7 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
     }
 
     // CRITICAL FIX: Pre-generation state sync to ensure eventData is current
-    const preGenerationEventData = {
+    const preGenerationEventData: EventData = {
       ...eventData,
       // Explicitly sync form values to ensure they're current
       kvImageId: watchedValues.kvImageId || eventData.kvImageId,
@@ -153,16 +153,18 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
       selectedTeacherIds: preGenerationEventData.selectedTeacherIds
     });
 
-    // Update eventData with synced values before generation
-    setEventData(preGenerationEventData);
+    // RACE CONDITION FIX: Don't update state here, pass data directly to generateImages
+    // This eliminates the async race condition that caused first-generation failures
     
     setHasStartedGeneration(true);
     
     try {
-      console.log('🚀 Starting generation with synced event data:', preGenerationEventData);
+      console.log('🚀 Starting generation with directly passed event data (no state dependency):', preGenerationEventData);
       const images = await generateImages(preGenerationEventData);
       if (images.length > 0) {
         console.log('✅ Images generated successfully:', images.length);
+        // Only update persistent state AFTER successful generation
+        setEventData(preGenerationEventData);
         toast.success("Imagens geradas com sucesso!");
       } else {
         console.log('❌ No images generated');

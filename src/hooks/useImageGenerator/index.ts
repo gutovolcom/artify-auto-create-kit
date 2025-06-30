@@ -1,5 +1,5 @@
 
-// src/hooks/useImageGenerator/index.ts (ENHANCED WITH STATE VALIDATION)
+// src/hooks/useImageGenerator/index.ts (ENHANCED WITH DIRECT DATA PASSING)
 
 import { useState } from "react";
 import { EventData } from "@/pages/Index";
@@ -23,8 +23,8 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
   const { getLayout, refreshAllLayouts } = useLayoutEditor();
 
   const generateImages = async (eventData: EventData): Promise<GeneratedImage[]> => {
-    console.log('🎯 generateImages called with eventData:', eventData);
-    console.log('🔍 Text content validation:', {
+    console.log('🎯 generateImages called with DIRECT eventData (no state dependency):', eventData);
+    console.log('🔍 FIRST GENERATION - Text content validation:', {
       classTheme: eventData.classTheme,
       classThemeLength: eventData.classTheme?.length || 0,
       date: eventData.date,
@@ -42,21 +42,21 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
       return [];
     }
 
-    // Additional state validation check
+    // CRITICAL: Additional state validation check with direct eventData parameter
     if (!eventData.classTheme || eventData.classTheme.trim() === '') {
-      console.log('❌ Missing classTheme in eventData');
+      console.log('❌ Missing classTheme in DIRECT eventData parameter');
       toast.error("Tema da aula é obrigatório para geração.");
       return [];
     }
 
     if (!eventData.date || eventData.date.trim() === '') {
-      console.log('❌ Missing date in eventData');
+      console.log('❌ Missing date in DIRECT eventData parameter');
       toast.error("Data é obrigatória para geração.");
       return [];
     }
 
     if (!eventData.time || eventData.time.trim() === '') {
-      console.log('❌ Missing time in eventData');
+      console.log('❌ Missing time in DIRECT eventData parameter');
       toast.error("Horário é obrigatório para geração.");
       return [];
     }
@@ -68,7 +68,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
     setCurrentGeneratingFormat("");
 
     try {
-      console.log('🚀 Starting image generation for event:', eventData);
+      console.log('🚀 Starting image generation with DIRECT eventData (first generation fix):', eventData);
       
       console.log('🔄 Refreshing templates and layouts before generation...');
       await refetchTemplates();
@@ -90,7 +90,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
       console.log('📋 Using template for generation with fresh data:', templateToUse);
       
       const allGeneratedImages = await generateImagesForFormats(
-        eventData,
+        eventData, // Pass the direct eventData parameter
         templateToUse,
         getLayout,
         setGenerationProgress,
@@ -100,7 +100,7 @@ export const useImageGenerator = (): UseImageGeneratorReturn => {
       setGenerationProgress(100);
       setCurrentGeneratingFormat("Finalizando...");
       
-      console.log('✅ All images generated with fresh layout data:', allGeneratedImages.length);
+      console.log('✅ All images generated with direct eventData and fresh layout data:', allGeneratedImages.length);
       
       await new Promise(resolve => setTimeout(resolve, 500));
       
