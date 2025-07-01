@@ -8,7 +8,7 @@ export const getDefaultPositions = (format: string, width: number, height: numbe
         title: { x: 100, y: 100, fontSize: 48 },
         date: { x: 100, y: 200, fontSize: 24 },
         time: { x: 100, y: 250, fontSize: 24 },
-        teacherName: { x: 100, y: 300, fontSize: 32 },
+        teacherName: { x: 100, y: 300, fontSize: 30 },
         classTheme: { x: 100, y: 400, fontSize: 28 }
       };
     case 'feed':
