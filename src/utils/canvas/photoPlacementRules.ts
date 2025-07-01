@@ -9,23 +9,23 @@ export const teacherImageRules: Record<string, Record<number, PhotoRule>> = {
   youtube: {
     1: { width: 703, height: 1000, xOffset: 0 },
     2: { width: 492, height: 700, xOffset: 380 },
-    3: { width: 387, height: 550, xOffset: 400 },
+    3: { width: 407, height: 570, xOffset: 290 },
   },
   // Add identical rules for new YouTube formats
   youtube_ao_vivo: {
     1: { width: 703, height: 1000, xOffset: 0 },
     2: { width: 492, height: 700, xOffset: 380 },
-    3: { width: 387, height: 550, xOffset: 400 },
+    3: { width: 407, height: 570, xOffset: 290 },
   },
   youtube_pos_evento: {
     1: { width: 703, height: 1000, xOffset: 0 },
     2: { width: 492, height: 700, xOffset: 380 },
-    3: { width: 387, height: 550, xOffset: 400 },
+    3: { width: 407, height: 570, xOffset: 290 },
   },
   feed: {
     1: { width: 385, height: 550, xOffset: 0 },
-    2: { width: 350, height: 500, xOffset: 320 },
-    3: { width: 280, height: 400, xOffset: 305 }
+    2: { width: 350, height: 500, xOffset: 224 },
+    3: { width: 280, height: 400, xOffset: 204 }
   },
   stories: {
     1: { width: 630, height: 900, xOffset: 0 },
@@ -41,9 +41,9 @@ export const teacherImageRules: Record<string, Record<number, PhotoRule>> = {
   // },
   ledStudio: {
     // Reduced photo sizes to fit within 1024x256 canvas dimensions
-    1: { width: 180, height: 230, xOffset: 0 }, // Reduced from 400x500
-    2: { width: 160, height: 200, xOffset: 170 }, // Reduced from 350x450
-    3: { width: 140, height: 180, xOffset: 150 } // Reduced from 300x400
+    1: { width: 194, height: 234, xOffset: 0 }, // Reduced from 400x500
+    2: { width: 194, height: 234, xOffset: 134 }, // Reduced from 350x450
+    3: { width: 194, height: 234, xOffset: 124 } // Reduced from 300x400
   },
   lp: {
     1: { width: 500, height: 650, xOffset: 0 },
