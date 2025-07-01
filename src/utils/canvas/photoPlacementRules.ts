@@ -24,12 +24,12 @@ export const teacherImageRules: Record<string, Record<number, PhotoRule>> = {
   },
   feed: {
     1: { width: 385, height: 550, xOffset: 0 },
-    2: { width: 350, height: 500, xOffset: 224 },
+    2: { width: 350, height: 500, xOffset: 244 },
     3: { width: 280, height: 400, xOffset: 204 }
   },
   stories: {
     1: { width: 630, height: 900, xOffset: 0 },
-    2: { width: 490, height: 700, xOffset: 330 },
+    2: { width: 490, height: 700, xOffset: 346 },
     3: { width: 420, height: 600, xOffset: 340 }
   },
   // bannerGCO: Teacher photos removed as requested since canvas is too small (255x192)
