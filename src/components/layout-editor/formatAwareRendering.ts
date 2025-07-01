@@ -107,9 +107,9 @@ export const getClassThemeBoxConfig = (
     'youtube_pos_evento': 320,
     'feed': 300,
     'stories': 280,
-    'ledStudio': 300, // Reduced from 350 to 300 for better proportion
+    'ledStudio': 286, // Reduced from 350 to 300 for better proportion
     'bannerGCO': 200,
-    'destaque': 150, // Reduced from 200 to 150 for better proportion with smaller text
+    'destaque': 100, // Reduced from 200 to 150 for better proportion with smaller text
     'LP': 300
   };
   
