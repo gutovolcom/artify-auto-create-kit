@@ -79,9 +79,25 @@ export const renderTextBoxElement = async (
       });
 
       // Fixed box width calculation - use maxLineWidth for multi-line text
-      const boxWidth = textBreakResult.needsLineBreak ? 
-        Math.max(textBreakResult.maxLineWidth + (horizontalPadding * 2), 140) :
-        Math.max(measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily) + (horizontalPadding * 2), 140);
+      //const boxWidth = textBreakResult.needsLineBreak ? 
+        //Math.max(textBreakResult.maxLineWidth + (horizontalPadding * 2), 140) :
+        //Math.max(measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily) + (horizontalPadding * 2), 140);
+      let boxWidth;
+      if (format === 'destaque') {
+        // Special handling for destaque format - much tighter sizing
+        const textWidth = textBreakResult.needsLineBreak ? 
+          textBreakResult.maxLineWidth : 
+          measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily);
+        
+        // Minimal padding for destaque format (2px each side = 4px total)
+        const destaqueHorizontalPadding = 4;
+        boxWidth = Math.max(textWidth + destaqueHorizontalPadding, 50); // Much lower minimum width
+      } else {
+        // Original logic for other formats
+        boxWidth = textBreakResult.needsLineBreak ? 
+          Math.max(textBreakResult.maxLineWidth + (horizontalPadding * 2), 140) :
+          Math.max(measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily) + (horizontalPadding * 2), 140);
+      }
       
       // Fixed box height calculation - use consistent vertical padding
       const boxHeight = textBreakResult.totalHeight + (verticalPadding * 2);
@@ -106,8 +122,9 @@ export const renderTextBoxElement = async (
         });
       } else {
         // Left alignment with exact horizontal padding
+        const actualHorizontalPadding = format === 'destaque' ? 2 : horizontalPadding;
         text.set({
-          left: horizontalPadding,
+          left: actualHorizontalPadding,
           top: verticalPadding
         });
       }
@@ -182,9 +199,20 @@ export const renderTextBoxElement = async (
       const borderRadius = 10;
 
       // Fixed box width calculation for fallback
-      const boxWidth = textBreakResult.needsLineBreak ? 
-        Math.max(textBreakResult.maxLineWidth + (horizontalPadding * 2), 140) :
-        Math.max(measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily) + (horizontalPadding * 2), 140);
+      let boxWidth;
+      if (format === 'destaque') {
+        // Special handling for destaque format in fallback
+        const textWidth = textBreakResult.needsLineBreak ? 
+          textBreakResult.maxLineWidth : 
+          measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily);
+        
+        boxWidth = Math.max(textWidth + 4, 50); // Minimal padding and minimum width
+      } else {
+        // Original logic for other formats
+        boxWidth = textBreakResult.needsLineBreak ? 
+          Math.max(textBreakResult.maxLineWidth + (horizontalPadding * 2), 140) :
+          Math.max(measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily) + (horizontalPadding * 2), 140);
+      }
 
       const background = new Rect({
         width: boxWidth,
