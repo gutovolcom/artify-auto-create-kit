@@ -9,6 +9,18 @@ import { measureTextWidthSync } from './textMeasurement';
 import { ensureFontLoaded, FontConfig } from './fontLoader';
 import { getMaxTextWidthForFormat, getTextAlignmentForFormat, getFormatSpecificPadding, getVerticalPadding } from './renderingUtils';
 
+// Format-specific border radius
+const getBorderRadius = (format: string): number => {
+  const radiusMap = {
+    'destaque': 3,     // Much smaller radius for tiny format
+    'bannerGCO': 6,    // Smaller radius for banner
+    'ledStudio': 8,    // Medium radius
+    'default': 10      // Standard radius for other formats
+  };
+  
+  return radiusMap[format as keyof typeof radiusMap] || radiusMap.default;
+};
+
 export const renderTextBoxElement = async (
   canvas: FabricCanvas,
   element: any,
@@ -101,15 +113,17 @@ export const renderTextBoxElement = async (
       
       // Fixed box height calculation - use consistent vertical padding
       const boxHeight = textBreakResult.totalHeight + (verticalPadding * 2);
+      const borderRadius = getBorderRadius(format);
 
+      
       const background = new Rect({
         left: 0,
         top: 0,
         width: boxWidth,
         height: boxHeight,
         fill: themeStyle.boxColor,
-        rx: 10,
-        ry: 10,
+        rx: borderRadius,
+        ry: borderRadius,
         originX: 'left',
         originY: 'top'
       });
@@ -196,7 +210,7 @@ export const renderTextBoxElement = async (
       });
 
       const backgroundColor = eventData.boxColor || '#dd303e';
-      const borderRadius = 10;
+      const borderRadius = getBorderRadius(format);
 
       // Fixed box width calculation for fallback
       let boxWidth;
