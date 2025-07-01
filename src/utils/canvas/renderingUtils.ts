@@ -35,7 +35,7 @@ export const getFormatSpecificPadding = (format: string): number => {
 
 // Get vertical padding for consistent box sizing
 export const getVerticalPadding = (): number => {
-  return 16; // Consistent vertical padding
+  return 4; // Consistent vertical padding
 };
 
 // Improved format-specific max width calculation with accurate text measurement
