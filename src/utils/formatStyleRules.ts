@@ -20,35 +20,35 @@ const styleMap = {
     classTheme: { fontFamily: 'Margem-Bold', fontSize: 68 },
     date: { fontFamily: 'Toroka Wide Regular', fontSize: 66 },
     time: { fontFamily: 'Toroka Wide Regular', fontSize: 66 },
-    teacherName: { fontFamily: 'Margem-Medium', fontSize: 66 }
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 52 } // Reduced from 66 to 52
   },
   youtube_ao_vivo: {
     title: { fontFamily: 'Margem-Black', fontSize: 140 },
     classTheme: { fontFamily: 'Margem-Bold', fontSize: 68 },
     date: { fontFamily: 'Toroka Wide Regular', fontSize: 66 },
     time: { fontFamily: 'Toroka Wide Regular', fontSize: 66 },
-    teacherName: { fontFamily: 'Margem-Medium', fontSize: 66 }
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 52 } // Reduced from 66 to 52
   },
   youtube_pos_evento: {
     title: { fontFamily: 'Margem-Black', fontSize: 140 },
     classTheme: { fontFamily: 'Margem-Bold', fontSize: 68 },
     date: { fontFamily: 'Toroka Wide Regular', fontSize: 66 },
     time: { fontFamily: 'Toroka Wide Regular', fontSize: 66 },
-    teacherName: { fontFamily: 'Margem-Medium', fontSize: 66 }
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 52 } // Reduced from 66 to 52
   },
   feed: {
     title: { fontFamily: 'Margem-Black', fontSize: 118 },
     classTheme: { fontFamily: 'Margem-Bold', fontSize: 52 },
     date: { fontFamily: 'Toroka Wide Regular', fontSize: 46 },
     time: { fontFamily: 'Toroka Wide Regular', fontSize: 46 },
-    teacherName: { fontFamily: 'Margem-Medium', fontSize: 46 }
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 36 } // Reduced from 46 to 36
   },
   stories: {
     title: { fontFamily: 'Margem-Black', fontSize: 132 },
     classTheme: { fontFamily: 'Margem-Bold', fontSize: 62 },
     date: { fontFamily: 'Toroka Wide Regular', fontSize: 62 },
     time: { fontFamily: 'Toroka Wide Regular', fontSize: 62 },
-    teacherName: { fontFamily: 'Margem-Medium', fontSize: 62 }
+    teacherName: { fontFamily: 'Margem-Medium', fontSize: 48 } // Reduced from 62 to 48
   },
   bannerGCO: {
     title: { fontFamily: 'Margem-Black', fontSize: 72 },

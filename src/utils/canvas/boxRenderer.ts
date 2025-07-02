@@ -90,10 +90,7 @@ export const renderTextBoxElement = async (
         originY: 'top'
       });
 
-      // Fixed box width calculation - use maxLineWidth for multi-line text
-      //const boxWidth = textBreakResult.needsLineBreak ? 
-        //Math.max(textBreakResult.maxLineWidth + (horizontalPadding * 2), 140) :
-        //Math.max(measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily) + (horizontalPadding * 2), 140);
+      // Fixed box width calculation - use consistent text measurement for all formats
       let boxWidth;
       if (format === 'destaque') {
         // Special handling for destaque format - much tighter sizing
@@ -105,10 +102,12 @@ export const renderTextBoxElement = async (
         const destaqueHorizontalPadding = 4;
         boxWidth = Math.max(textWidth + destaqueHorizontalPadding, 50); // Much lower minimum width
       } else {
-        // Original logic for other formats
-        boxWidth = textBreakResult.needsLineBreak ? 
-          Math.max(textBreakResult.maxLineWidth + (horizontalPadding * 2), 140) :
-          Math.max(measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily) + (horizontalPadding * 2), 140);
+        // Improved logic for other formats - use actual text width for accurate sizing
+        const actualTextWidth = textBreakResult.needsLineBreak ? 
+          textBreakResult.maxLineWidth : 
+          measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily);
+        
+        boxWidth = Math.max(actualTextWidth + (horizontalPadding * 2), 140);
       }
       
       // Fixed box height calculation - use consistent vertical padding
@@ -130,16 +129,21 @@ export const renderTextBoxElement = async (
 
       // Position text within the box based on alignment with precise centering
       if (textAlignment === 'center') {
+        // For center alignment, position text exactly in the center of the box
         text.set({
-          left: (boxWidth - (textBreakResult.needsLineBreak ? textBreakResult.maxLineWidth : text.width!)) / 2,
-          top: verticalPadding
+          left: boxWidth / 2,
+          top: verticalPadding,
+          originX: 'center',
+          originY: 'top'
         });
       } else {
         // Left alignment with exact horizontal padding
         const actualHorizontalPadding = format === 'destaque' ? 2 : horizontalPadding;
         text.set({
           left: actualHorizontalPadding,
-          top: verticalPadding
+          top: verticalPadding,
+          originX: 'left',
+          originY: 'top'
         });
       }
 
@@ -206,13 +210,15 @@ export const renderTextBoxElement = async (
         fontSize: formatStyle.fontSize,
         fontFamily: formatStyle.fontFamily,
         fill: formatStyle.color,
-        textAlign: textAlignment
+        textAlign: textAlignment,
+        originX: textAlignment === 'center' ? 'center' : 'left',
+        originY: 'top'
       });
 
       const backgroundColor = eventData.boxColor || '#dd303e';
       const borderRadius = getBorderRadius(format);
 
-      // Fixed box width calculation for fallback
+      // Fixed box width calculation for fallback - use consistent logic
       let boxWidth;
       if (format === 'destaque') {
         // Special handling for destaque format in fallback
@@ -222,19 +228,39 @@ export const renderTextBoxElement = async (
         
         boxWidth = Math.max(textWidth + 4, 50); // Minimal padding and minimum width
       } else {
-        // Original logic for other formats
-        boxWidth = textBreakResult.needsLineBreak ? 
-          Math.max(textBreakResult.maxLineWidth + (horizontalPadding * 2), 140) :
-          Math.max(measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily) + (horizontalPadding * 2), 140);
+        // Improved logic for other formats
+        const actualTextWidth = textBreakResult.needsLineBreak ? 
+          textBreakResult.maxLineWidth : 
+          measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily);
+        
+        boxWidth = Math.max(actualTextWidth + (horizontalPadding * 2), 140);
       }
 
       const background = new Rect({
+        left: 0,
+        top: 0,
         width: boxWidth,
         height: textBreakResult.totalHeight + (verticalPadding * 2),
         fill: backgroundColor,
         rx: borderRadius,
-        ry: borderRadius
+        ry: borderRadius,
+        originX: 'left',
+        originY: 'top'
       });
+
+      // Position text correctly in fallback scenario
+      if (textAlignment === 'center') {
+        text.set({
+          left: boxWidth / 2,
+          top: verticalPadding
+        });
+      } else {
+        const actualHorizontalPadding = format === 'destaque' ? 2 : horizontalPadding;
+        text.set({
+          left: actualHorizontalPadding,
+          top: verticalPadding
+        });
+      }
 
       const group = new Group([background, text], {
         left: elementX,

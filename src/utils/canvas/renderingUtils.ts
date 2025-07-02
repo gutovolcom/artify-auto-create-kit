@@ -3,8 +3,8 @@ import { getDynamicSafetyMargin, getAlignmentPadding } from './textMeasurement';
 
 // Helper function to get text alignment based on format
 export const getTextAlignmentForFormat = (format: string): 'left' | 'center' => {
-  const leftAlignedFormats = ['youtube', 'youtube_ao_vivo', 'youtube_pos_evento', 'feed', 'stories', 'ledStudio', 'LP']; // Added LP to left-aligned
-  const centerAlignedFormats = ['bannerGCO', 'destaque'];
+  const leftAlignedFormats = ['youtube', 'youtube_ao_vivo', 'youtube_pos_evento', 'feed', 'stories', 'ledStudio']; // Removed LP from left-aligned
+  const centerAlignedFormats = ['bannerGCO', 'destaque', 'LP']; // Added LP to center-aligned
   
   if (leftAlignedFormats.includes(format)) {
     return 'left';

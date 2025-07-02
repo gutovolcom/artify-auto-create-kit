@@ -45,6 +45,7 @@ export const renderTextElement = async (
   
   const needsTextBreaking = shouldApplyTextBreaking(field, eventData);
   let finalText = textContent;
+  let needsLineBreak = false;
   const textAlignment = getTextAlignmentForFormat(format);
   
   if (needsTextBreaking) {
@@ -59,6 +60,7 @@ export const renderTextElement = async (
     );
 
     finalText = textBreakResult.lines.join('\n');
+    needsLineBreak = textBreakResult.needsLineBreak;
     
     console.log('📝 Smart text breaking applied for regular text:', {
       field,
@@ -86,7 +88,8 @@ export const renderTextElement = async (
     });
   }
   
-  const text = new FabricText(finalText, {
+  // Create text properties with conditional line height for multi-line teacher names
+  const textProperties: any = {
     left: elementX,
     top: elementY,
     fontSize: formatStyle.fontSize,
@@ -95,7 +98,15 @@ export const renderTextElement = async (
     textAlign: textAlignment,
     selectable: false,
     evented: false
-  });
+  };
+
+  // Add line height rule for multi-line teacher names
+  if (field === 'teacherName' && needsLineBreak) {
+    textProperties.lineHeight = 0.8;
+    console.log('📏 Applied line height 0.8 to multi-line teacher name');
+  }
+
+  const text = new FabricText(finalText, textProperties);
 
   console.log('📝 Regular text element added:', {
     field,
@@ -103,6 +114,7 @@ export const renderTextElement = async (
     fontFamily: formatStyle.fontFamily,
     text: finalText,
     smartBreakingApplied: needsTextBreaking,
+    lineHeight: textProperties.lineHeight || 'default',
     position: { x: elementX, y: elementY }
   });
 
