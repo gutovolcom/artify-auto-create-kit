@@ -1,4 +1,3 @@
-
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
@@ -100,10 +99,10 @@ export const renderTextElement = async (
     evented: false
   };
 
-  // Add line height rule for multi-line teacher names
+  // Add line height rule for multi-line teacher names - Updated to use lineHeight 1
   if (field === 'teacherName' && needsLineBreak) {
-    textProperties.lineHeight = 0.8;
-    console.log('📏 Applied line height 0.8 to multi-line teacher name');
+    textProperties.lineHeight = 1; // Changed from 0.8 to 1
+    console.log('📏 Applied line height 1 to multi-line teacher name');
   }
 
   const text = new FabricText(finalText, textProperties);

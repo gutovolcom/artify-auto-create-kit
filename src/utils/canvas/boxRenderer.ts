@@ -90,7 +90,7 @@ export const renderTextBoxElement = async (
         originY: 'top'
       });
 
-      // Fixed box width calculation - use consistent text measurement for all formats
+      // Improved box width calculation - fix right padding issue
       let boxWidth;
       if (format === 'destaque') {
         // Special handling for destaque format - much tighter sizing
@@ -100,21 +100,30 @@ export const renderTextBoxElement = async (
         
         // Minimal padding for destaque format (2px each side = 4px total)
         const destaqueHorizontalPadding = 4;
-        boxWidth = Math.max(textWidth + destaqueHorizontalPadding, 50); // Much lower minimum width
+        boxWidth = textWidth + destaqueHorizontalPadding;
       } else {
-        // Improved logic for other formats - use actual text width for accurate sizing
+        // Improved logic for other formats - ensure consistent left/right padding
         const actualTextWidth = textBreakResult.needsLineBreak ? 
           textBreakResult.maxLineWidth : 
           measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily);
         
-        boxWidth = Math.max(actualTextWidth + (horizontalPadding * 2), 140);
+        // Use consistent padding calculation to fix right padding issue
+        boxWidth = actualTextWidth + (horizontalPadding * 2);
+        
+        // Add debug logging for padding calculation
+        console.log('📏 Box width calculation:', {
+          format,
+          actualTextWidth,
+          horizontalPadding,
+          totalPadding: horizontalPadding * 2,
+          finalBoxWidth: boxWidth
+        });
       }
       
       // Fixed box height calculation - use consistent vertical padding
       const boxHeight = textBreakResult.totalHeight + (verticalPadding * 2);
       const borderRadius = getBorderRadius(format);
 
-      
       const background = new Rect({
         left: 0,
         top: 0,
@@ -127,7 +136,7 @@ export const renderTextBoxElement = async (
         originY: 'top'
       });
 
-      // Position text within the box based on alignment with precise centering
+      // Improved text positioning within the box - fix centering and padding
       if (textAlignment === 'center') {
         // For center alignment, position text exactly in the center of the box
         text.set({
@@ -226,14 +235,14 @@ export const renderTextBoxElement = async (
           textBreakResult.maxLineWidth : 
           measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily);
         
-        boxWidth = Math.max(textWidth + 4, 50); // Minimal padding and minimum width
+        boxWidth = textWidth + 4; // Minimal padding
       } else {
-        // Improved logic for other formats
+        // Improved logic for other formats - consistent padding
         const actualTextWidth = textBreakResult.needsLineBreak ? 
           textBreakResult.maxLineWidth : 
           measureTextWidthSync(finalText, formatStyle.fontSize, formatStyle.fontFamily);
         
-        boxWidth = Math.max(actualTextWidth + (horizontalPadding * 2), 140);
+        boxWidth = actualTextWidth + (horizontalPadding * 2);
       }
 
       const background = new Rect({
