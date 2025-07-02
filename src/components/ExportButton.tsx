@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 
@@ -10,7 +9,7 @@ interface ExportButtonProps {
 export const ExportButton = ({ disabled, onClick }: ExportButtonProps) => {
   return (
     <Button
-      className="bg-blue-600 hover:bg-blue-700"
+      className="bg-primary hover:bg-primary/90"
       size="lg"
       disabled={disabled}
       onClick={onClick}

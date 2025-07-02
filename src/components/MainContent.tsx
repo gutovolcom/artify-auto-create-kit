@@ -29,18 +29,18 @@ export const MainContent = ({
 }: MainContentProps) => {
   if (!hasStartedGeneration && generatedImages.length === 0) {
     return (
-      <div className={cn("h-full w-full flex flex-col items-center justify-center", className)}>
+      <div className={cn("h-full w-full flex flex-col items-center justify-center bg-background", className)}>
         <div className="flex items-center justify-center mb-8">
-          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-            <ImageIcon className="h-8 w-8 text-gray-400" />
+          <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+            <ImageIcon className="h-8 w-8 text-muted-foreground" />
           </div>
         </div>
 
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+        <h2 className="text-2xl font-semibold text-foreground mb-4">
           Nenhuma arte gerada
         </h2>
 
-        <p className="text-gray-600 text-center max-w-md">
+        <p className="text-muted-foreground text-center max-w-md">
           Preencha os campos ao lado e clique em "Gerar Artes" para criar suas artes.
         </p>
       </div>
@@ -49,16 +49,16 @@ export const MainContent = ({
 
   if (isGenerating && generatedImages.length === 0) {
     return (
-      <div className={cn("h-full w-full flex flex-col items-center justify-center", className)}>
+      <div className={cn("h-full w-full flex flex-col items-center justify-center bg-background", className)}>
         <div className="w-full max-w-md space-y-6">
           <div className="text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="h-8 w-8 text-blue-600" />
+            <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <Sparkles className="h-8 w-8 text-primary" />
             </div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+            <h2 className="text-2xl font-semibold text-foreground mb-2">
               Gerando suas artes...
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-muted-foreground mb-6">
               Aguarde enquanto processamos suas imagens
             </p>
           </div>
@@ -66,11 +66,11 @@ export const MainContent = ({
           <div className="space-y-3">
             <Progress value={generationProgress} className="w-full h-3" />
             <div className="text-center">
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-foreground">
                 {generationProgress}% concluído
               </p>
               {currentGeneratingFormat && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Processando: {currentGeneratingFormat}
                 </p>
               )}
@@ -82,7 +82,7 @@ export const MainContent = ({
   }
 
   return (
-    <div className={cn("h-full w-full p-8 space-y-8", className)}>
+    <div className={cn("h-full w-full p-8 space-y-8 bg-background", className)}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Artes Geradas</h2>

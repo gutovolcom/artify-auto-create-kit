@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Loader2, Sparkles, AlertCircle } from "lucide-react";
@@ -43,11 +42,11 @@ export const GenerateButton = ({
       {isGenerating && (
         <div className="space-y-3 max-w-md">
           <div className="text-center">
-            <p className="text-sm font-medium text-gray-700">
+            <p className="text-sm font-medium text-foreground">
               Gerando artes... {generationProgress}%
             </p>
             {currentGeneratingFormat && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 {currentGeneratingFormat}
               </p>
             )}
@@ -60,7 +59,7 @@ export const GenerateButton = ({
         onClick={onGenerate}
         disabled={disabled || isGenerating}
         size="lg"
-        className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 text-lg font-semibold"
+        className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700 text-primary-foreground px-8 py-3 text-lg font-semibold"
       >
         {isGenerating ? (
           <>
@@ -76,7 +75,7 @@ export const GenerateButton = ({
       </Button>
       
       {!disabled && !isGenerating && (
-        <p className="text-sm text-gray-600 text-center max-w-md">
+        <p className="text-sm text-muted-foreground text-center max-w-md">
           Clique para gerar suas artes automaticamente. Você será redirecionado para a aba de exportação quando as imagens estiverem prontas.
         </p>
       )}

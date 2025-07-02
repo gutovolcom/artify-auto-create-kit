@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar";
@@ -30,14 +29,14 @@ export const TemplateSection = ({
     <>
       <SidebarGroup>
         <SidebarGroupContent className="space-y-2 relative">
-          <Label className="text-sm font-medium text-gray-700">Selecione o KV:</Label>
+          <Label className="text-sm font-medium text-foreground">Selecione o KV:</Label>
 
           <div className="relative">
             <Button
               variant="outline"
               className={cn(
-                "w-full h-16 px-4 justify-start bg-white border border-dashed",
-                error ? "border-red-500" : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                "w-full h-16 px-4 justify-start bg-background border border-dashed",
+                error ? "border-destructive" : "border-border hover:border-border hover:bg-accent"
               )}
               onClick={() => setIsKVModalOpen(true)}
             >
@@ -50,12 +49,12 @@ export const TemplateSection = ({
                       className="w-10 h-10 rounded-full object-cover object-center"
                     />
                   )}
-                  <span className="text-sm text-gray-700 font-medium text-left line-clamp-1">
+                  <span className="text-sm text-foreground font-medium text-left line-clamp-1">
                     {selectedTemplate.name}
                   </span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-gray-500">
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <ImageIcon className="h-5 w-5" />
                   <span className="text-sm">Escolha o KV do evento</span>
                 </div>

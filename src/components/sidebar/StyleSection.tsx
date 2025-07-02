@@ -1,4 +1,3 @@
-
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar";
@@ -36,22 +35,22 @@ export const StyleSection = ({
       <SidebarGroupContent className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">
+            <Label className="text-sm font-medium text-foreground">
               Cor de fundo (tema):
             </Label>
             <Select value={lessonThemeBoxStyle} onValueChange={onStyleChange}>
               <SelectTrigger className="h-10">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-white">
+              <SelectContent>
                 {backgroundOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     <div className="flex items-center gap-2">
                       <div 
-                        className="w-4 h-4 rounded border border-gray-300"
+                        className="w-4 h-4 rounded border border-border"
                         style={{ 
-                          backgroundColor: option.color === "transparent" ? "#f8f9fa" : option.color,
-                          backgroundImage: option.color === "transparent" ? "repeating-conic-gradient(#ccc 0% 25%, transparent 0% 50%)" : "none",
+                          backgroundColor: option.color === "transparent" ? "hsl(var(--muted))" : option.color,
+                          backgroundImage: option.color === "transparent" ? "repeating-conic-gradient(hsl(var(--border)) 0% 25%, transparent 0% 50%)" : "none",
                           backgroundSize: "8px 8px"
                         }}
                       />
@@ -64,19 +63,19 @@ export const StyleSection = ({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">
+            <Label className="text-sm font-medium text-foreground">
               Cor do texto:
             </Label>
             <Select value={textColor} onValueChange={onTextColorChange}>
               <SelectTrigger className="h-10">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-white">
+              <SelectContent>
                 {textColorOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     <div className="flex items-center gap-2">
                       <div 
-                        className="w-4 h-4 rounded border border-gray-300"
+                        className="w-4 h-4 rounded border border-border"
                         style={{ backgroundColor: option.color }}
                       />
                       {option.label}

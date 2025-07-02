@@ -1,4 +1,3 @@
-
 import { Label } from "@/components/ui/label";
 import { useSupabaseTeachers } from "@/hooks/useSupabaseTeachers";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -48,7 +47,7 @@ export const TeacherSection = ({
 
   return (
     <div className="space-y-2 relative">
-      <Label className="text-sm text-gray-700 font-medium">
+      <Label className="text-sm text-foreground font-medium">
         Foto do professor:
       </Label>
 
@@ -57,25 +56,25 @@ export const TeacherSection = ({
           <PopoverTrigger asChild>
             <div
               className={cn(
-                "border rounded-md flex items-center justify-between px-3 py-2 h-11 bg-white w-full cursor-pointer",
-                error ? "border-red-500" : "border-gray-300"
+                "border rounded-md flex items-center justify-between px-3 py-2 h-11 bg-background w-full cursor-pointer",
+                error ? "border-destructive" : "border-border"
               )}
             >
               <div className="flex items-center gap-2 overflow-hidden">
                 {selectedTeachers.length === 1 && (
-                  <div className="flex items-center bg-gray-100 rounded-full pl-1 pr-2 py-1 relative">
+                  <div className="flex items-center bg-muted rounded-full pl-1 pr-2 py-1 relative">
                     <img
                       src={selectedTeachers[0].image_url}
                       alt={selectedTeachers[0].name}
                       className="w-8 h-8 rounded-full object-cover object-top"
                     />
-                    <span className="ml-2 text-sm text-gray-800 whitespace-nowrap">{selectedTeachers[0].name}</span>
+                    <span className="ml-2 text-sm text-foreground whitespace-nowrap">{selectedTeachers[0].name}</span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         handleRemove(selectedTeachers[0].id);
                       }}
-                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center"
+                      className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-4 h-4 text-xs flex items-center justify-center"
                     >
                       ×
                     </button>
@@ -96,7 +95,7 @@ export const TeacherSection = ({
                             e.stopPropagation();
                             handleRemove(teacher.id);
                           }}
-                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 text-xs flex items-center justify-center"
+                          className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-4 h-4 text-xs flex items-center justify-center"
                         >
                           ×
                         </button>
@@ -106,11 +105,11 @@ export const TeacherSection = ({
                 )}
 
                 {selectedTeachers.length === 0 && (
-                  <span className="text-sm text-gray-500">Adicionar professor</span>
+                  <span className="text-sm text-muted-foreground">Adicionar professor</span>
                 )}
               </div>
 
-              <Search className="w-4 h-4 text-gray-500" />
+              <Search className="w-4 h-4 text-muted-foreground" />
             </div>
           </PopoverTrigger>
 

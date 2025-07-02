@@ -136,12 +136,13 @@ export const AppSidebar = ({
   };
 
   return (
-    <Sidebar className="border-r w-[360px] flex-shrink-0 bg-white overflow-hidden">
+    <Sidebar className="border-r w-[360px] flex-shrink-0 bg-sidebar overflow-hidden">
       <SidebarHeader className="p-4 space-y-3">
         <div className="flex items-center space-x-3">
-          <img src="/logo-nova.svg" alt="Logo GRAN" className="h-5 w-auto" />
+          <img src="/logo-nova.svg" alt="Logo GRAN" className="h-5 w-20 logo-light object-contain" />
+          <img src="/logo-nova-white.svg" alt="Logo GRAN" className="h-5 w-20 logo-dark object-contain" />
         </div>
-        <p className="text-sm text-gray-600">Preencha os campos abaixo:</p>
+        <p className="text-sm text-muted-foreground">Preencha os campos abaixo:</p>
       </SidebarHeader>
 
       <SidebarContent className="px-4 pb-4 space-y-3 overflow-hidden">

@@ -1,4 +1,3 @@
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,19 +40,19 @@ export const UserDropdown = ({
         <Button variant="ghost" className="w-full justify-between h-auto p-3">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarFallback className="bg-blue-600 text-white text-sm font-medium">
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
                 {getInitials(userEmail)}
               </AvatarFallback>
             </Avatar>
             <div className="text-left">
-              <p className="text-sm font-medium text-gray-900">{getDisplayName(userEmail)}</p>
-              <p className="text-xs text-gray-500">{userEmail}</p>
+              <p className="text-sm font-medium text-foreground">{getDisplayName(userEmail)}</p>
+              <p className="text-xs text-muted-foreground">{userEmail}</p>
             </div>
           </div>
         </Button>
       </DropdownMenuTrigger>
       
-      <DropdownMenuContent align="end" className="w-56 bg-white">
+      <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuItem onClick={onSettings} className="cursor-pointer">
           <Settings className="mr-2 h-4 w-4" />
           <span>Configurações</span>
@@ -75,7 +74,7 @@ export const UserDropdown = ({
         )}
         
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onLogout} className="cursor-pointer text-red-600">
+        <DropdownMenuItem onClick={onLogout} className="cursor-pointer text-destructive">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Sair</span>
         </DropdownMenuItem>
