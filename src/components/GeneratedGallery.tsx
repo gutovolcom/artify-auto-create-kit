@@ -1,4 +1,3 @@
-
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Download, Image } from "lucide-react";
@@ -45,6 +44,26 @@ export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) =
     LP: "LP",
   };
 
+  // CORRECTED: Using actual platform IDs from platformConfigs
+  const displayOrder = [
+    'youtube',
+    'youtube_ao_vivo', 
+    'youtube_pos_evento',
+    'feed',
+    'stories',
+    'LP',
+    'destaque',         // Correct: destaque (not highlight)
+    'ledStudio',        // Correct: ledStudio (not LED Studio)
+    'bannerGCO'
+  ];
+
+  // Sort images according to the defined display order
+  const sortedImages = [...images].sort((a, b) => {
+    const indexA = displayOrder.indexOf(a.platform);
+    const indexB = displayOrder.indexOf(b.platform);
+    return indexA - indexB;
+  });
+
   const handleDownload = (imageUrl: string, platformName: string, platformId: string) => {
     // Create download link - use classTheme or date as filename base
     const baseFilename = eventData.classTheme || eventData.date || 'Event';
@@ -80,12 +99,17 @@ export const GeneratedGallery = ({ images, eventData }: GeneratedGalleryProps) =
     }
   };
 
+  // After: Only generates selected formats  
+  const selectedFormats = eventData.platforms.length > 0 
+    ? eventData.platforms 
+    : Object.keys(platforms);
+
   return (
     <div className="space-y-8">
       <div className="space-y-4">
         <ScrollArea className="w-full whitespace-nowrap rounded-md border">
           <div className="flex w-max space-x-6 p-4">
-            {images.map((generatedImage, index) => {
+            {sortedImages.map((generatedImage, index) => {
               const platformName = platforms[generatedImage.platform as keyof typeof platforms] || generatedImage.format;
               const aspectRatio = getAspectRatio(generatedImage.platform);
               

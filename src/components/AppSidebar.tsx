@@ -1,4 +1,3 @@
-
 import { EventData } from "@/pages/Index";
 import { Sidebar, SidebarContent, SidebarHeader } from "@/components/ui/sidebar";
 import { TemplateSection } from "@/components/sidebar/TemplateSection";
@@ -97,7 +96,22 @@ export const AppSidebar = ({
 
   const handleTemplateSelect = (id: string) => {
     console.log('Template selected:', id);
-    updateEventData({ kvImageId: id });
+    
+    // Find the selected template
+    const selectedTemplate = templates.find(t => t.id === id);
+    
+    // SMART FIX: Auto-populate platforms with all available formats when template is selected
+    // Only do this if no formats are currently selected (to respect user preferences)
+    if (selectedTemplate && eventData.platforms.length === 0) {
+      const availableFormatIds = selectedTemplate.formats?.map(f => f.format_name) || [];
+      updateEventData({ 
+        kvImageId: id, 
+        platforms: availableFormatIds // Auto-select all available formats
+      });
+    } else {
+      updateEventData({ kvImageId: id });
+    }
+    
     form.setValue('kvImageId', id);
     form.trigger('kvImageId');
   };

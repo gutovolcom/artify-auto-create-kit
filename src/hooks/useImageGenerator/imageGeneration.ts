@@ -17,7 +17,15 @@ export const generateImagesForFormats = async (
   const teacherPhotos = normalizeTeacherPhotos(eventData);
   const warningsShown = new Set<string>();
 
-  const formats = Object.keys(platformConfigs) as (keyof typeof platformConfigs)[];
+  // SMART FIX: Use selected formats from eventData instead of all formats
+  const selectedFormats = eventData.platforms.length > 0 
+    ? eventData.platforms 
+    : Object.keys(platformConfigs); // Fallback to all formats if none selected
+  
+  const formats = selectedFormats.filter(formatId => 
+    formatId in platformConfigs
+  ) as (keyof typeof platformConfigs)[];
+  
   const totalFormats = formats.length;
   let generatedCount = 0;
 
@@ -79,7 +87,6 @@ export const generateImagesForFormats = async (
 
   const results = await Promise.all(generationPromises);
   
-  // O predicado de tipo agora funciona perfeitamente
   const allGeneratedImages = results.filter((img): img is GeneratedImage => img !== null);
 
   if (warningsShown.size > 0) {
