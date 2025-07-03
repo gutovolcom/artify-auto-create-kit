@@ -1,4 +1,3 @@
-
 import { EventData } from "@/pages/Index";
 
 // Helper function to format teacher names in Portuguese
@@ -52,13 +51,16 @@ export function formatDateTime(dateString: string, timeString?: string): string 
     const h = hour.padStart(2, "0");
     const min = minute.padStart(2, "0");
     
-    // Always use consistent format with proper spacing
-    // This ensures consistent text width regardless of time values
-    result += ` às ${h}h${min}`;
+    // Apply the same logic as PlatformPreviews: only show minutes if not '00'
+    if (min === '00') {
+      result += ` às ${h}h`;
+    } else {
+      result += ` às ${h}h${min}`;
+    }
     
     console.log('📅 Time formatted:', {
       original: timeString,
-      formatted: `${h}h${min}`,
+      formatted: min === '00' ? `${h}h` : `${h}h${min}`,
       fullResult: result,
       characterCount: result.length
     });
