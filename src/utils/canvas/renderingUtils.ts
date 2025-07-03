@@ -1,4 +1,3 @@
-
 import { getDynamicSafetyMargin, getAlignmentPadding } from './textMeasurement';
 
 // Helper function to get text alignment based on format
@@ -20,7 +19,7 @@ export const getTextAlignmentForFormat = (format: string): 'left' | 'center' => 
 export const getFormatSpecificPadding = (format: string): number => {
   const formatPadding = {
     'bannerGCO': 20,
-    'destaque': 4,
+    'destaque': 8,
     'ledStudio': 18,
     'youtube': 20,
     'youtube_ao_vivo': 20,
@@ -33,9 +32,22 @@ export const getFormatSpecificPadding = (format: string): number => {
   return formatPadding[format as keyof typeof formatPadding] || 20;
 };
 
-// Get vertical padding for consistent box sizing
-export const getVerticalPadding = (): number => {
-  return 4; // Consistent vertical padding
+// Get vertical padding for consistent box sizing with format-specific values
+export const getVerticalPadding = (format?: string): number => {
+  // Increased vertical padding for specific formats that need more breathing room
+  const formatVerticalPadding = {
+    'youtube': 12,              // Increased from 4 to 8 for better visual balance
+    'youtube_ao_vivo': 12,      // Increased from 4 to 8  
+    'youtube_pos_evento': 12,   // Increased from 4 to 8
+    'feed': 8,                 // Increased from 4 to 8 for better readability
+    'stories': 14,              // Increased from 4 to 8 for better mobile appearance
+    'ledStudio': 4,            // Keep original - compact display
+    'bannerGCO': 4,            // Keep original - banner format
+    'destaque': 4,             // Keep original - minimal highlight
+    'LP': 6                    // Keep original - landing page format
+  };
+  
+  return format ? (formatVerticalPadding[format as keyof typeof formatVerticalPadding] || 4) : 4;
 };
 
 // Improved format-specific max width calculation with accurate text measurement
@@ -53,7 +65,7 @@ export const getMaxTextWidthForFormat = (format: string, canvasWidth: number, el
       'youtube': Math.min(canvasWidth - elementX - dynamicMargin, 700),
       'youtube_ao_vivo': Math.min(canvasWidth - elementX - dynamicMargin, 700),
       'youtube_pos_evento': Math.min(canvasWidth - elementX - dynamicMargin, 700),
-      'feed': Math.min(canvasWidth - elementX - dynamicMargin, 650),
+      'feed': Math.min(canvasWidth - elementX - dynamicMargin, 580),
       'stories': Math.min(canvasWidth - elementX - dynamicMargin, 600),
       'ledStudio': Math.min(canvasWidth - elementX - dynamicMargin, 600),
       'bannerGCO': Math.min(canvasWidth - elementX - dynamicMargin, 800),
