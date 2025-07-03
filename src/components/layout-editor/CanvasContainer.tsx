@@ -1,8 +1,9 @@
+// src/components/layout-editor/CanvasContainer.tsx (ATUALIZADO)
 
 import React from 'react';
 import * as fabric from 'fabric';
 import { useCanvasSetup } from '@/hooks/useCanvasSetup';
-import './CanvasContainer.css';
+import './CanvasContainer.css'; // O CSS também será simplificado
 
 type FabricCanvas = fabric.Canvas;
 
@@ -15,7 +16,6 @@ interface CanvasContainerProps {
   onSelectionChange: (object: any) => void;
   onDeleteSelected: () => void;
   onBackgroundLoaded?: () => void;
-  setupEventHandlers?: (canvas: FabricCanvas, format?: string) => void;
 }
 
 export const CanvasContainer: React.FC<CanvasContainerProps> = ({
@@ -26,8 +26,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   onCanvasReady,
   onSelectionChange,
   onDeleteSelected,
-  onBackgroundLoaded,
-  setupEventHandlers
+  onBackgroundLoaded
 }) => {
   const { canvasRef } = useCanvasSetup({
     displayWidth,
@@ -37,8 +36,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
     onCanvasReady,
     onSelectionChange,
     onDeleteSelected,
-    onBackgroundLoaded,
-    setupEventHandlers
+    onBackgroundLoaded
   });
 
   return (

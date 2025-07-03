@@ -1,8 +1,9 @@
+// src/components/layout-editor/CanvasArea.tsx (ATUALIZADO)
 
 import React from 'react';
 import * as fabric from 'fabric';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CanvasContainer } from './CanvasContainer';
+import { CanvasContainer } from './CanvasContainer'; // Este componente também será atualizado
 import { Ruler } from 'lucide-react';
 
 type FabricCanvas = fabric.Canvas;
@@ -18,8 +19,7 @@ interface CanvasAreaProps {
   onSelectionChange: (object: any) => void;
   onDeleteSelected: () => void;
   onBackgroundLoaded?: () => void;
-  onSaveLayout?: () => void;
-  setupEventHandlers?: (canvas: FabricCanvas, format?: string) => void;
+  onSaveLayout?: () => void; // ✅ ADICIONE ESTA LINHA
 }
 
 export const CanvasArea: React.FC<CanvasAreaProps> = ({
@@ -33,8 +33,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
   onSelectionChange,
   onDeleteSelected,
   onBackgroundLoaded,
-  onSaveLayout,
-  setupEventHandlers
+  onSaveLayout
 }) => {
   return (
     <div className="flex-1">
@@ -53,6 +52,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
         </CardHeader>
         
         <CardContent className="p-4 sm:p-6 flex items-center justify-center">
+          {/* O CanvasContainer agora é um wrapper simples */}
           <CanvasContainer
             displayWidth={displayWidth}
             displayHeight={displayHeight}
@@ -62,7 +62,6 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
             onSelectionChange={onSelectionChange}
             onDeleteSelected={onDeleteSelected}
             onBackgroundLoaded={onBackgroundLoaded}
-            setupEventHandlers={setupEventHandlers}
           />
         </CardContent>
       </Card>
