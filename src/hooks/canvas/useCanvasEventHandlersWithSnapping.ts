@@ -12,7 +12,6 @@ interface UseCanvasEventHandlersWithSnappingProps {
   setLayoutDraft: (draft: any[]) => void;
 }
 
-// Format-specific margin calculation based on canvas dimensions
 const getConstraintMargin = (format: string): number => {
   const dimensions = getFormatDimensions(format);
   const area = dimensions.width * dimensions.height;
@@ -28,7 +27,6 @@ const getConstraintMargin = (format: string): number => {
   return 10;
 };
 
-// Check if format should skip real-time constraining
 const shouldSkipRealTimeConstraining = (format: string): boolean => {
   return format === 'bannerGCO';
 };
@@ -57,9 +55,12 @@ export const useCanvasEventHandlersWithSnapping = ({
       return;
     }
 
+    console.log('✅ Setting up enhanced canvas event listeners with snapping for', format);
+
     // Initialize snapping guides
     initializeGuides(fabricCanvas);
 
+    // Clear existing listeners to avoid conflicts
     fabricCanvas.off('object:modified');
     fabricCanvas.off('object:moving');
     fabricCanvas.off('object:scaling');
@@ -73,10 +74,12 @@ export const useCanvasEventHandlersWithSnapping = ({
         const currentPointer = { x: obj.left || 0, y: obj.top || 0 };
         const snappedPosition = applySnapping(fabricCanvas, obj, currentPointer);
         
-        obj.set({
-          left: snappedPosition.x,
-          top: snappedPosition.y
-        });
+        if (snappedPosition.x !== currentPointer.x || snappedPosition.y !== currentPointer.y) {
+          obj.set({
+            left: snappedPosition.x,
+            top: snappedPosition.y
+          });
+        }
       }
 
       // Apply boundary constraints (existing logic)

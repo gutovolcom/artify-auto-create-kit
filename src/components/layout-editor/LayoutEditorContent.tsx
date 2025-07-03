@@ -1,10 +1,8 @@
-// src/components/layout-editor/LayoutEditorContent.tsx (CORRIGIDO)
 
 import React from 'react';
 import { CanvasArea } from './CanvasArea';
 import { ElementToolbar } from './ElementToolbar';
 
-// A interface foi simplificada pois a lógica foi movida para o Container
 interface LayoutEditorContentProps {
   formatName: string;
   formatDimensions: { width: number; height: number };
@@ -18,7 +16,8 @@ interface LayoutEditorContentProps {
   onDeleteSelected: () => void;
   onBackgroundLoaded: () => void;
   onAddElement: (elementType: string) => void;
-  onSaveLayout?: () => void; // ✅ ADICIONE ESTA LINHA
+  onSaveLayout?: () => void;
+  setupEventHandlers?: (canvas: any, format?: string) => void;
 }
 
 export const LayoutEditorContent: React.FC<LayoutEditorContentProps> = ({
@@ -34,7 +33,8 @@ export const LayoutEditorContent: React.FC<LayoutEditorContentProps> = ({
   onDeleteSelected,
   onBackgroundLoaded,
   onAddElement,
-  onSaveLayout
+  onSaveLayout,
+  setupEventHandlers
 }) => {
   return (
     <>
@@ -50,21 +50,23 @@ export const LayoutEditorContent: React.FC<LayoutEditorContentProps> = ({
         onDeleteSelected={onDeleteSelected}
         onBackgroundLoaded={onBackgroundLoaded}
         onSaveLayout={onSaveLayout}
+        setupEventHandlers={setupEventHandlers}
       />
       <ElementToolbar
         layoutElements={layoutElements}
         onAddElement={onAddElement}
       />
     
-  {onSaveLayout && (
-      <div className="fixed bottom-6 right-6 z-50">
-        <button
-          onClick={onSaveLayout}
-          className="bg-primary text-white px-4 py-2 rounded-lg shadow hover:bg-primary/90 transition"
-        >
-          Salvar Layout
-        </button>
-      </div>
-    )}
-  </>
-)};  
+    {onSaveLayout && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <button
+            onClick={onSaveLayout}
+            className="bg-primary text-white px-4 py-2 rounded-lg shadow hover:bg-primary/90 transition"
+          >
+            Salvar Layout
+          </button>
+        </div>
+      )}
+    </>
+  );
+};

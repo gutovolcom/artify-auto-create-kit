@@ -1,4 +1,3 @@
-// src/components/layout-editor/LayoutEditorContainer.tsx (CORRIGIDO)
 
 import React from 'react';
 import { LayoutEditorProps } from './types';
@@ -8,7 +7,6 @@ import { PropertiesPanel } from './PropertiesPanel';
 import { SnappingControls } from './SnappingControls';
 import { DebugPanel } from './DebugPanel';
 
-// Seus hooks existentes
 import { useLayoutEditor } from '@/hooks/useLayoutEditor';
 import { useLayoutEditorState } from '@/hooks/useLayoutEditorState';
 import { useCanvasManager } from '@/hooks/useCanvasManager';
@@ -55,10 +53,10 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = (props) => {
           onBackgroundLoaded={() => manager.handleBackgroundLoaded(templateId, formatName)}
           onAddElement={operations.handleAddElement}
           onSaveLayout={operations.handleSaveLayout}
+          setupEventHandlers={(canvas) => manager.setupCanvasEventHandlers(canvas, formatName)}
         />
       </div>
       <div className="w-full lg:w-72 space-y-4">
-        {/* Snapping Controls - Always visible */}
         <SnappingControls />
         
         {selectedObject && (

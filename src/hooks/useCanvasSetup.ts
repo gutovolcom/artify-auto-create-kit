@@ -15,6 +15,7 @@ interface UseCanvasSetupProps {
   onSelectionChange: (object: any) => void;
   onDeleteSelected: () => void;
   onBackgroundLoaded?: () => void;
+  setupEventHandlers?: (canvas: FabricCanvas, format?: string) => void;
 }
 
 export const useCanvasSetup = ({
@@ -25,7 +26,8 @@ export const useCanvasSetup = ({
   onCanvasReady,
   onSelectionChange,
   onDeleteSelected,
-  onBackgroundLoaded
+  onBackgroundLoaded,
+  setupEventHandlers
 }: UseCanvasSetupProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
@@ -36,11 +38,13 @@ export const useCanvasSetup = ({
   const onSelectionChangeRef = useRef(onSelectionChange);
   const onDeleteSelectedRef = useRef(onDeleteSelected);
   const onBackgroundLoadedRef = useRef(onBackgroundLoaded);
+  const setupEventHandlersRef = useRef(setupEventHandlers);
   
   // Update refs when callbacks change
   onSelectionChangeRef.current = onSelectionChange;
   onDeleteSelectedRef.current = onDeleteSelected;
   onBackgroundLoadedRef.current = onBackgroundLoaded;
+  setupEventHandlersRef.current = setupEventHandlers;
 
   // Preload essential fonts
   const preloadFonts = async () => {
@@ -149,7 +153,7 @@ export const useCanvasSetup = ({
         backgroundColor: '#f5f5f5'
       });
 
-      // Set up event listeners
+      // Set up basic event listeners for selection
       fabricCanvas.on('selection:created', (e) => {
         onSelectionChangeRef.current(e.selected?.[0]);
       });
@@ -162,13 +166,10 @@ export const useCanvasSetup = ({
         onSelectionChangeRef.current(null);
       });
 
-      fabricCanvas.on('object:modified', (e) => {
-        console.log('Object modified:', {
-          target: e.target,
-          left: e.target?.left,
-          top: e.target?.top
-        });
-      });
+      // Set up enhanced event handlers if provided
+      if (setupEventHandlersRef.current) {
+        setupEventHandlersRef.current(fabricCanvas);
+      }
 
       document.addEventListener('keydown', handleKeyDown);
       fabricCanvasRef.current = fabricCanvas;

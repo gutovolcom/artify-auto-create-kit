@@ -116,6 +116,8 @@ export const useCanvasManager = (props: UseCanvasManagerProps) => {
     handleManualReload: (templateId: string, formatName: string) => 
       handleManualReload(templateId, formatName, loadLayoutElementsWithListeners, clearEventListeners),
     loadLayoutIfReady: loadLayoutIfReadyWrapper,
-    updateLayoutDraft
+    updateLayoutDraft,
+    // Expose the event handler setup function for canvas initialization
+    setupCanvasEventHandlers: setupCanvasEventListeners
   };
 };
