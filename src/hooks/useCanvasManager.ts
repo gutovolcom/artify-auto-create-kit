@@ -1,7 +1,7 @@
 
 import { useEffect } from 'react';
 import * as fabric from 'fabric';
-import { useCanvasEventHandlers } from './canvas/useCanvasEventHandlers';
+import { useCanvasEventHandlersWithSnapping } from './canvas/useCanvasEventHandlersWithSnapping';
 import { useCanvasElementLoader } from './canvas/useCanvasElementLoader';
 import { useCanvasLayoutManager } from './canvas/useCanvasLayoutManager';
 
@@ -37,7 +37,8 @@ export const useCanvasManager = (props: UseCanvasManagerProps) => {
     loadingTimeoutRef
   } = props;
 
-  const { setupCanvasEventListeners, updateLayoutDraft, clearEventListeners } = useCanvasEventHandlers({
+  // Use enhanced event handlers with snapping
+  const { setupCanvasEventListeners, updateLayoutDraft, clearEventListeners } = useCanvasEventHandlersWithSnapping({
     scale: props.scale,
     setLayoutDraft: props.setLayoutDraft
   });
@@ -70,7 +71,7 @@ export const useCanvasManager = (props: UseCanvasManagerProps) => {
     loadingTimeoutRef: props.loadingTimeoutRef
   });
 
-  // Enhanced loadLayoutElements wrapper that includes event listeners
+  // Enhanced loadLayoutElements wrapper that includes event listeners with snapping
   const loadLayoutElementsWithListeners = async (fabricCanvas: FabricCanvas, templateId: string, formatName: string) => {
     return loadLayoutElements(
       fabricCanvas, 

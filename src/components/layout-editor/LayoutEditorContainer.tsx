@@ -4,7 +4,8 @@ import React from 'react';
 import { LayoutEditorProps } from './types';
 import { LayoutEditorLoadingStates } from './LayoutEditorLoadingStates';
 import { LayoutEditorContent } from './LayoutEditorContent';
-import { PropertiesPanel } from './PropertiesPanel'; // CORREÇÃO: Importação adicionada
+import { PropertiesPanel } from './PropertiesPanel';
+import { SnappingControls } from './SnappingControls';
 import { DebugPanel } from './DebugPanel';
 
 // Seus hooks existentes
@@ -57,6 +58,9 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = (props) => {
         />
       </div>
       <div className="w-full lg:w-72 space-y-4">
+        {/* Snapping Controls - Always visible */}
+        <SnappingControls />
+        
         {selectedObject && (
           <PropertiesPanel
             selectedObject={selectedObject}
