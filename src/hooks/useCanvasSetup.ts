@@ -33,6 +33,7 @@ export const useCanvasSetup = ({
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const backgroundLoadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousBackgroundRef = useRef<string>('');
+  const cleanupFunctionRef = useRef<(() => void) | null>(null);
   
   // Use refs to store the latest callback functions
   const onSelectionChangeRef = useRef(onSelectionChange);
@@ -94,46 +95,9 @@ export const useCanvasSetup = ({
     }
   };
 
-  // Enhanced keyboard handler for arrow key movement
+  // Basic delete handler for Delete/Backspace keys
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (!fabricCanvasRef.current) return;
-    
-    const canvas = fabricCanvasRef.current;
-    const activeObject = canvas.getActiveObject();
-    
-    // Arrow key movement
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-      if (activeObject) {
-        e.preventDefault();
-        
-        const step = e.shiftKey ? 10 : 1; // 10px with Shift, 1px without
-        const currentLeft = activeObject.left || 0;
-        const currentTop = activeObject.top || 0;
-        
-        switch (e.key) {
-          case 'ArrowLeft':
-            activeObject.set('left', Math.max(0, currentLeft - step));
-            break;
-          case 'ArrowRight':
-            activeObject.set('left', currentLeft + step);
-            break;
-          case 'ArrowUp':
-            activeObject.set('top', Math.max(0, currentTop - step));
-            break;
-          case 'ArrowDown':
-            activeObject.set('top', currentTop + step);
-            break;
-        }
-        
-        activeObject.setCoords();
-        canvas.fire('object:modified', { target: activeObject });
-        canvas.renderAll();
-        console.log(`Moved element by ${step}px with arrow keys`);
-      }
-    }
-    
-    // Delete/Backspace for deletion
-    if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (['Delete', 'Backspace'].includes(e.key)) {
       e.preventDefault();
       onDeleteSelectedRef.current();
     }
@@ -153,7 +117,7 @@ export const useCanvasSetup = ({
         backgroundColor: '#f5f5f5'
       });
 
-      // Set up basic event listeners for selection
+      // Set up basic selection event listeners
       fabricCanvas.on('selection:created', (e) => {
         onSelectionChangeRef.current(e.selected?.[0]);
       });
@@ -168,10 +132,15 @@ export const useCanvasSetup = ({
 
       // Set up enhanced event handlers if provided
       if (setupEventHandlersRef.current) {
-        setupEventHandlersRef.current(fabricCanvas);
+        const cleanup = setupEventHandlersRef.current(fabricCanvas);
+        if (cleanup && typeof cleanup === 'function') {
+          cleanupFunctionRef.current = cleanup;
+        }
       }
 
+      // Add basic keyboard support
       document.addEventListener('keydown', handleKeyDown);
+      
       fabricCanvasRef.current = fabricCanvas;
       
       // Notify parent that canvas is ready
@@ -187,18 +156,22 @@ export const useCanvasSetup = ({
           onBackgroundLoadedRef.current?.();
         }, 100);
       }
-
-      return () => {
-        document.removeEventListener('keydown', handleKeyDown);
-        if (backgroundLoadTimeoutRef.current) {
-          clearTimeout(backgroundLoadTimeoutRef.current);
-        }
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.dispose();
-          fabricCanvasRef.current = null;
-        }
-      };
     });
+
+    return () => {
+      // Cleanup function
+      document.removeEventListener('keydown', handleKeyDown);
+      if (cleanupFunctionRef.current) {
+        cleanupFunctionRef.current();
+      }
+      if (backgroundLoadTimeoutRef.current) {
+        clearTimeout(backgroundLoadTimeoutRef.current);
+      }
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.dispose();
+        fabricCanvasRef.current = null;
+      }
+    };
   }, []); // Only run once
 
   // Handle background image changes separately with proper change detection

@@ -36,6 +36,7 @@ export const useCanvasEventHandlersWithSnapping = ({
   setLayoutDraft
 }: UseCanvasEventHandlersWithSnappingProps) => {
   const eventListenersAttachedRef = useRef(false);
+  const isDraggingRef = useRef(false);
   const { 
     initializeGuides, 
     applySnapping, 
@@ -64,21 +65,44 @@ export const useCanvasEventHandlersWithSnapping = ({
     fabricCanvas.off('object:modified');
     fabricCanvas.off('object:moving');
     fabricCanvas.off('object:scaling');
+    fabricCanvas.off('mouse:down');
+    fabricCanvas.off('mouse:up');
+
+    // Track dragging state
+    const handleMouseDown = (e: fabric.TEvent) => {
+      if (e.target) {
+        isDraggingRef.current = true;
+        console.log('🖱️ Started dragging element');
+      }
+    };
+
+    const handleMouseUp = (e: fabric.TEvent) => {
+      if (isDraggingRef.current) {
+        isDraggingRef.current = false;
+        clearGuides();
+        console.log('🖱️ Finished dragging element');
+      }
+    };
 
     const handleElementMoving = (e: fabric.ModifiedEvent) => {
       const obj = e.target;
-      if (!obj || !format) return;
+      if (!obj || !format || !isDraggingRef.current) return;
 
-      // Apply snapping if enabled
-      if (isSnappingEnabled) {
+      // Apply snapping only during active dragging and if enabled
+      if (isSnappingEnabled && isDraggingRef.current) {
         const currentPointer = { x: obj.left || 0, y: obj.top || 0 };
         const snappedPosition = applySnapping(fabricCanvas, obj, currentPointer);
         
-        if (snappedPosition.x !== currentPointer.x || snappedPosition.y !== currentPointer.y) {
+        // Only apply snapping if there's a significant change (avoid micro-movements)
+        const deltaX = Math.abs(snappedPosition.x - currentPointer.x);
+        const deltaY = Math.abs(snappedPosition.y - currentPointer.y);
+        
+        if (deltaX > 1 || deltaY > 1) {
           obj.set({
             left: snappedPosition.x,
             top: snappedPosition.y
           });
+          console.log('🧲 Applied snapping:', { from: currentPointer, to: snappedPosition });
         }
       }
 
@@ -105,10 +129,10 @@ export const useCanvasEventHandlersWithSnapping = ({
             left: constrained.position.x * scale,
             top: constrained.position.y * scale
           });
-          console.log(`🚧 Element constrained to boundaries with ${constraintMargin}px margin:`, constrained.position);
         }
       }
 
+      obj.setCoords();
       fabricCanvas.renderAll();
     };
 
@@ -152,6 +176,63 @@ export const useCanvasEventHandlersWithSnapping = ({
       updateLayoutDraft(fabricCanvas, format);
     };
 
+    // Enhanced keyboard handler with snapping support
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeObject = fabricCanvas.getActiveObject();
+      
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        if (activeObject) {
+          e.preventDefault();
+          
+          const step = e.shiftKey ? 10 : 1;
+          const currentLeft = activeObject.left || 0;
+          const currentTop = activeObject.top || 0;
+          let newLeft = currentLeft;
+          let newTop = currentTop;
+          
+          switch (e.key) {
+            case 'ArrowLeft':
+              newLeft = Math.max(0, currentLeft - step);
+              break;
+            case 'ArrowRight':
+              newLeft = currentLeft + step;
+              break;
+            case 'ArrowUp':
+              newTop = Math.max(0, currentTop - step);
+              break;
+            case 'ArrowDown':
+              newTop = currentTop + step;
+              break;
+          }
+          
+          // Apply snapping to keyboard movement if enabled
+          if (isSnappingEnabled) {
+            activeObject.set({ left: newLeft, top: newTop });
+            const snappedPosition = applySnapping(fabricCanvas, activeObject, { x: newLeft, y: newTop });
+            newLeft = snappedPosition.x;
+            newTop = snappedPosition.y;
+          }
+          
+          activeObject.set({
+            left: newLeft,
+            top: newTop
+          });
+          
+          activeObject.setCoords();
+          fabricCanvas.fire('object:modified', { target: activeObject });
+          fabricCanvas.renderAll();
+          
+          // Clear guides after a short delay for keyboard movement
+          setTimeout(() => clearGuides(), 1000);
+          
+          console.log(`⌨️ Moved element by ${step}px with arrow keys (snapping: ${isSnappingEnabled ? 'on' : 'off'})`);
+        }
+      }
+    };
+
+    // Attach event listeners
+    fabricCanvas.on('mouse:down', handleMouseDown);
+    fabricCanvas.on('mouse:up', handleMouseUp);
     fabricCanvas.on('object:modified', handleElementChange);
     fabricCanvas.on('object:moving', handleElementMoving);
     fabricCanvas.on('object:scaling', handleElementChange);
@@ -161,20 +242,22 @@ export const useCanvasEventHandlersWithSnapping = ({
       clearGuides();
     });
 
-    // Clear guides when clicking empty space
-    fabricCanvas.on('mouse:down', (e) => {
-      if (!e.target) {
-        clearGuides();
-      }
-    });
+    // Add keyboard listener
+    document.addEventListener('keydown', handleKeyDown);
 
     eventListenersAttachedRef.current = true;
     console.log(`✅ Enhanced canvas event listeners setup with snapping for ${format}`);
+
+    // Return cleanup function
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [scale, updateLayoutDraft, initializeGuides, applySnapping, clearGuides, isSnappingEnabled]);
 
   const clearEventListeners = useCallback(() => {
     eventListenersAttachedRef.current = false;
     clearGuides();
+    isDraggingRef.current = false;
   }, [clearGuides]);
 
   return {

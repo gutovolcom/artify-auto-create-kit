@@ -30,7 +30,7 @@ export const useCanvasSnapping = () => {
     }
   }, []);
 
-  // Calculate snap position for an object
+  // Calculate snap position for an object with improved logic
   const getSnapPosition = useCallback((
     canvas: fabric.Canvas,
     object: fabric.Object
@@ -40,7 +40,7 @@ export const useCanvasSnapping = () => {
     const snapPoints = getCanvasSnapPoints(canvas, object);
     const snapResult = calculateSnapPosition(object, snapPoints, config.threshold);
 
-    // Show guides if enabled
+    // Show guides if enabled and there are guides to show
     if (config.showGuides && alignmentGuidesRef.current && snapResult.guides.length > 0) {
       alignmentGuidesRef.current.showGuides(snapResult.guides);
     }
@@ -48,7 +48,7 @@ export const useCanvasSnapping = () => {
     return snapResult;
   }, [config]);
 
-  // Apply snapping to an object's position
+  // Apply snapping to an object's position with improved algorithm
   const applySnapping = useCallback((
     canvas: fabric.Canvas,
     object: fabric.Object,
@@ -56,22 +56,30 @@ export const useCanvasSnapping = () => {
   ) => {
     if (!config.enabled) return pointer;
 
-    // Temporarily set object position to calculate snapping
+    // Store original position
     const originalLeft = object.left;
     const originalTop = object.top;
     
+    // Temporarily set object position to calculate snapping
     object.set({ left: pointer.x, top: pointer.y });
     
     const snapResult = getSnapPosition(canvas, object);
     
-    // Restore original position
+    // Restore original position immediately
     object.set({ left: originalLeft, top: originalTop });
 
+    // Return snapped position if snapping occurred
     if (snapResult && (snapResult.snapX !== undefined || snapResult.snapY !== undefined)) {
-      return {
-        x: snapResult.snapX !== undefined ? snapResult.snapX : pointer.x,
-        y: snapResult.snapY !== undefined ? snapResult.snapY : pointer.y
-      };
+      const snappedX = snapResult.snapX !== undefined ? snapResult.snapX : pointer.x;
+      const snappedY = snapResult.snapY !== undefined ? snapResult.snapY : pointer.y;
+      
+      // Only apply if the snap distance is reasonable (avoid micro-snaps)
+      const snapDistanceX = Math.abs(snappedX - pointer.x);
+      const snapDistanceY = Math.abs(snappedY - pointer.y);
+      
+      if (snapDistanceX <= config.threshold || snapDistanceY <= config.threshold) {
+        return { x: snappedX, y: snappedY };
+      }
     }
 
     return pointer;
@@ -87,11 +95,16 @@ export const useCanvasSnapping = () => {
   // Update snapping configuration
   const updateConfig = useCallback((newConfig: Partial<SnappingConfig>) => {
     setConfig(prev => ({ ...prev, ...newConfig }));
+    console.log('🧲 Snapping config updated:', newConfig);
   }, []);
 
   // Toggle snapping on/off
   const toggleSnapping = useCallback(() => {
-    setConfig(prev => ({ ...prev, enabled: !prev.enabled }));
+    setConfig(prev => {
+      const newEnabled = !prev.enabled;
+      console.log(`🧲 Snapping ${newEnabled ? 'enabled' : 'disabled'}`);
+      return { ...prev, enabled: newEnabled };
+    });
   }, []);
 
   return {
