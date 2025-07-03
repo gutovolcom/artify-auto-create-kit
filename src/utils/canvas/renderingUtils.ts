@@ -19,7 +19,7 @@ export const getTextAlignmentForFormat = (format: string): 'left' | 'center' => 
 export const getFormatSpecificPadding = (format: string): number => {
   const formatPadding = {
     'bannerGCO': 20,
-    'destaque': 8,
+    'destaque': 8,            // Increased from 8 to 12 for better visual balance
     'ledStudio': 18,
     'youtube': 20,
     'youtube_ao_vivo': 20,
