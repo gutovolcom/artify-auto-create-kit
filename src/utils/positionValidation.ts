@@ -64,14 +64,14 @@ export const constrainToCanvas = (
 ): ElementBounds => {
   const formatDimensions = getFormatDimensions(format);
   
-  // For small formats (LP, Destaque, bannerGCO, LEDStudio), use ultra-minimal margins
+  // For destaque and bannerGCO, use ultra-minimal margins to preserve user positioning
   let effectiveMargin = margin;
   
-  if (format === 'destaque' || format === 'bannerGCO' || format === 'LP' || format === 'ledStudio') {
+  if (format === 'destaque' || format === 'bannerGCO') {
     effectiveMargin = Math.min(margin, 1); // Ultra-minimal for small formats
     console.log(`📏 [${format}] Using ultra-minimal margin: ${effectiveMargin}px to preserve positioning`);
   } else {
-    // For very small formats by area, ensure margin doesn't make positioning impossible
+    // For very small formats, ensure margin doesn't make positioning impossible
     const area = formatDimensions.width * formatDimensions.height;
     
     if (area < 60000) {
@@ -108,7 +108,7 @@ export const getSafeZone = (format: string, margin: number = 50) => {
   const area = dimensions.width * dimensions.height;
   let effectiveMargin = margin;
   
-  if (area < 60000 || format === 'destaque' || format === 'LP' || format === 'ledStudio') {
+  if (area < 60000 || format === 'destaque') {
     effectiveMargin = Math.min(margin, 10); // Much smaller safe zone for tiny formats
   }
   

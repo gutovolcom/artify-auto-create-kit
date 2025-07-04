@@ -1,39 +1,8 @@
-
-import { EventData } from "@/pages/Index";
-import { getTextContent } from './textUtils';
-import { getUserColors, getStyleForField } from '../formatStyleRules';
-import { breakTextToFitWidthSync } from './smartTextBreaker';
-import { CLASS_THEME_BOX_HEIGHTS } from './lessonThemeUtils';
-
 interface ElementSpacing {
   fromField: string;
   toField: string;
   designSpacing: number;
 }
-
-// Helper function to get max text width for format
-const getMaxTextWidthForFormat = (format: string, canvasWidth: number, x: number, field: string): number => {
-  // Simple calculation - can be refined based on format constraints
-  return canvasWidth - x - 40; // 40px padding from right edge
-};
-
-// Helper function to get vertical padding
-const getVerticalPadding = (format: string): number => {
-  // Format-specific vertical padding
-  const paddingMap: Record<string, number> = {
-    'destaque': 2,
-    'bannerGCO': 4,
-    'ledStudio': 6,
-    'LP': 8,
-    'feed': 10,
-    'stories': 12,
-    'youtube': 15,
-    'youtube_ao_vivo': 15,
-    'youtube_pos_evento': 15
-  };
-  
-  return paddingMap[format] || 10;
-};
 
 export const calculateDesignSpacing = (elements: any[]): Map<string, number> => {
   const spacingMap = new Map<string, number>();
@@ -72,13 +41,6 @@ export const calculateSmartPositionAdjustments = async (
 ): Promise<Map<string, number>> => {
   const adjustments = new Map<string, number>();
   
-  // For small formats (LP, Destaque, LEDStudio), be more conservative with adjustments
-  const isSmallFormat = format === 'LP' || format === 'destaque' || format === 'ledStudio' || format === 'bannerGCO';
-  
-  if (isSmallFormat) {
-    console.log(`📐 Using conservative adjustments for small format: ${format}`);
-  }
-  
   // Get the design spacing from layout
   const designSpacing = calculateDesignSpacing(elements);
   
@@ -115,16 +77,9 @@ export const calculateSmartPositionAdjustments = async (
 
   if (heightIncrease <= 0) return adjustments;
 
-  // For small formats, reduce the adjustment to prevent elements from going off-canvas
-  const adjustmentMultiplier = isSmallFormat ? 0.7 : 1.0;
-  const finalHeightIncrease = heightIncrease * adjustmentMultiplier;
-
   console.log('📐 ClassTheme expanded, calculating smart adjustments using design spacing:', {
     format,
-    isSmallFormat,
-    originalHeightIncrease: heightIncrease,
-    finalHeightIncrease,
-    adjustmentMultiplier,
+    heightIncrease,
     originalSpacing: Array.from(designSpacing.entries())
   });
 
@@ -142,29 +97,30 @@ export const calculateSmartPositionAdjustments = async (
   
   for (let i = classThemeIndex + 1; i < sortedElements.length; i++) {
     const element = sortedElements[i];
+    const previousElement = sortedElements[i - 1];
     
     // For the first element after classTheme, use the height increase
     if (i === classThemeIndex + 1) {
-      cumulativeAdjustment = finalHeightIncrease;
+      cumulativeAdjustment = heightIncrease;
     }
     
     // Get the design spacing for this element
     const originalSpacing = designSpacing.get(element.field);
     
     if (originalSpacing !== undefined) {
-      // Use the calculated adjustment while preserving design spacing intent
+      // Use the original design spacing from layout editor
       const adjustment = cumulativeAdjustment;
       adjustments.set(element.field, adjustment);
       
-      console.log(`📐 Smart adjustment for ${element.field}: +${adjustment}px (preserving ${originalSpacing}px design spacing, format: ${format})`);
+      console.log(`📐 Smart adjustment for ${element.field}: +${adjustment}px (preserving ${originalSpacing}px design spacing)`);
     } else {
       // Fallback to height increase if no design spacing found
       const adjustment = cumulativeAdjustment;
       adjustments.set(element.field, adjustment);
       
-      console.log(`📐 Fallback adjustment for ${element.field}: +${adjustment}px (no design spacing found, format: ${format})`);
+      console.log(`📐 Fallback adjustment for ${element.field}: +${adjustment}px (no design spacing found)`);
     }
   }
 
   return adjustments;
-};
+}; 

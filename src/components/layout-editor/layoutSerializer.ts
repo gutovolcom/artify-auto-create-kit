@@ -1,4 +1,3 @@
-
 import * as fabric from 'fabric';
 import { validateElementPosition, constrainToCanvas, getFormatDimensions } from '@/utils/positionValidation';
 
@@ -9,12 +8,12 @@ const getSerializationMargin = (format: string): number => {
   const dimensions = getFormatDimensions(format);
   const area = dimensions.width * dimensions.height;
   
-  // For very small formats (LP, Destaque, bannerGCO, LEDStudio), use ultra-minimal margins
-  if (format === 'bannerGCO' || format === 'destaque' || format === 'LP' || format === 'ledStudio') {
+  // For bannerGCO, use ultra-minimal margins to preserve user positioning
+  if (format === 'bannerGCO' || format === 'destaque') { // Adicionado 'destaque' aqui por consistência
     return 1;
   }
   
-  // For very small formats by area, use minimal margins
+  // For very small formats, use minimal margins
   if (area < 60000) {
     return 5;
   }
@@ -30,14 +29,15 @@ const getSerializationMargin = (format: string): number => {
 
 // Check if format should use minimal validation
 const shouldUseMinimalValidation = (format: string): boolean => {
-  // Include all problematic small formats
-  return format === 'bannerGCO' || format === 'destaque' || format === 'LP' || format === 'ledStudio';
+  // CORREÇÃO APLICADA AQUI
+  return format === 'bannerGCO' || format === 'destaque';
 };
 
 // Enhanced precision rounding for small formats
 const precisionRound = (value: number, format: string): number => {
-  // Use higher precision for all small formats
-  if (format === 'bannerGCO' || format === 'destaque' || format === 'LP' || format === 'ledStudio') {
+  // CORREÇÃO APLICADA AQUI
+  if (format === 'bannerGCO' || format === 'destaque') {
+    // Use higher precision for small formats
     return Math.round(value * 1000) / 1000;
   }
   return Math.round(value * 100) / 100;
@@ -69,15 +69,9 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
         return !isTeacherPhoto;
       })
       .map((obj: any) => {
-      if (useMinimalValidation) {
-        console.log(`[${format}] Processing element with minimal validation:`, obj.fieldMapping, { 
-          left: obj.left, 
-          top: obj.top, 
-          width: obj.width, 
-          height: obj.height, 
-          scaleX: obj.scaleX, 
-          scaleY: obj.scaleY 
-        });
+      if (format === 'bannerGCO') {
+        console.log('[bannerGCO] Raw Object Props for field:', obj.fieldMapping, { left: obj.left, top: obj.top, width: obj.width, height: obj.height, scaleX: obj.scaleX, scaleY: obj.scaleY });
+        console.log('[bannerGCO] Scale Factor:', scale, 'Serialization Margin:', serializationMargin);
       }
       
       // Calculate UNSCALED position with enhanced precision for small formats
@@ -94,6 +88,9 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
         width = obj.originalWidth || Math.round((obj.width || 200) * (obj.scaleX || 1));
         height = obj.originalHeight || Math.round((obj.height || 200) * (obj.scaleY || 1));
         
+        if (format === 'bannerGCO') {
+          console.log('[bannerGCO] Initial Unscaled for field:', obj.fieldMapping, 'Position', JSON.parse(JSON.stringify(unscaledPosition)), 'Size', { width, height });
+        }
         console.log(`🖼️ Image element ${obj.fieldMapping} dimensions:`, {
           originalWidth: obj.originalWidth,
           originalHeight: obj.originalHeight,
@@ -113,7 +110,7 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
 
       // Enhanced boundary validation with format-specific behavior
       if (format && !useMinimalValidation) {
-        // Standard validation for larger formats
+        // Standard validation for all formats except bannerGCO
         const validation = validateElementPosition(elementBounds, format);
         
         if (!validation.isValid) {
@@ -144,36 +141,31 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
           });
         }
       } else if (format && useMinimalValidation) {
-        // Minimal validation for small formats - preserve user positioning as much as possible
+        // Minimal validation for bannerGCO - only prevent truly invalid positions
         const formatDims = getFormatDimensions(format);
         
-        // Only prevent completely invalid positions (negative or way outside canvas)
-        const originalPosition = { ...unscaledPosition };
-        
-        // Only constrain if element starts at negative positions
+        // Only constrain if element is completely outside canvas or at negative positions
         if (unscaledPosition.x < 0) {
           unscaledPosition.x = 0;
-          console.log(`[${format}] Minimal correction: X position set to 0 (was ${originalPosition.x})`);
+          console.log(`[${format}] Minimal correction: X position set to 0`);
         }
         if (unscaledPosition.y < 0) {
           unscaledPosition.y = 0;
-          console.log(`[${format}] Minimal correction: Y position set to 0 (was ${originalPosition.y})`);
+          console.log(`[${format}] Minimal correction: Y position set to 0`);
         }
         
-        // Only constrain if element starts completely outside canvas (with small tolerance)
-        const tolerance = 50; // Allow elements to extend slightly beyond canvas
-        if (unscaledPosition.x > formatDims.width + tolerance) {
-          unscaledPosition.x = Math.max(0, formatDims.width - width - 1);
-          console.log(`[${format}] Minimal correction: X position constrained (was ${originalPosition.x}, now ${unscaledPosition.x})`);
+        // Only constrain if element starts way beyond canvas boundaries
+        if (unscaledPosition.x > formatDims.width) {
+          unscaledPosition.x = formatDims.width - width - 1;
+          console.log(`[${format}] Minimal correction: X position constrained to canvas`);
         }
-        if (unscaledPosition.y > formatDims.height + tolerance) {
-          unscaledPosition.y = Math.max(0, formatDims.height - height - 1);
-          console.log(`[${format}] Minimal correction: Y position constrained (was ${originalPosition.y}, now ${unscaledPosition.y})`);
+        if (unscaledPosition.y > formatDims.height) {
+          unscaledPosition.y = formatDims.height - height - 1;
+          console.log(`[${format}] Minimal correction: Y position constrained to canvas`);
         }
         
-        // Log if position was preserved
-        if (originalPosition.x === unscaledPosition.x && originalPosition.y === unscaledPosition.y) {
-          console.log(`[${format}] ✅ Position preserved for ${obj.fieldMapping}:`, unscaledPosition);
+        if (format === 'bannerGCO') {
+          console.log('[bannerGCO] Minimal validation applied, preserving user positioning:', unscaledPosition);
         }
       }
 
@@ -194,6 +186,10 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
         position: unscaledPosition
       };
 
+      if (format === 'bannerGCO') {
+        console.log('[bannerGCO] Final BaseElement for Serialization for field:', obj.fieldMapping, JSON.parse(JSON.stringify(baseElement)));
+      }
+
       if (obj.elementType === 'image') {
         const finalImageElement = {
           ...baseElement,
@@ -203,8 +199,8 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
             height
           }
         };
-        if (useMinimalValidation) {
-          console.log(`[${format}] Final Serialized Element (Image) for field:`, obj.fieldMapping, JSON.parse(JSON.stringify(finalImageElement)));
+        if (format === 'bannerGCO') {
+            console.log('[bannerGCO] Final Serialized Element (Image) for field:', obj.fieldMapping, JSON.parse(JSON.stringify(finalImageElement)));
         }
         return finalImageElement;
       } else {
@@ -216,8 +212,8 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
             height
           }
         };
-        if (useMinimalValidation) {
-          console.log(`[${format}] Final Serialized Element (Text) for field:`, obj.fieldMapping, JSON.parse(JSON.stringify(finalTextElement)));
+        if (format === 'bannerGCO') {
+            console.log('[bannerGCO] Final Serialized Element (Text) for field:', obj.fieldMapping, JSON.parse(JSON.stringify(finalTextElement)));
         }
         return finalTextElement;
       }
