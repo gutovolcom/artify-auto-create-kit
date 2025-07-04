@@ -1,3 +1,11 @@
+
+import { EventData } from "@/pages/Index";
+import { getTextContent } from './textUtils';
+import { getUserColors } from '../formatStyleRules';
+import { getStyleForField, getMaxTextWidthForFormat } from './textConstraints';
+import { breakTextToFitWidthSync } from './smartTextBreaker';
+import { CLASS_THEME_BOX_HEIGHTS, getVerticalPadding } from './lessonThemeUtils';
+
 interface ElementSpacing {
   fromField: string;
   toField: string;
@@ -41,6 +49,13 @@ export const calculateSmartPositionAdjustments = async (
 ): Promise<Map<string, number>> => {
   const adjustments = new Map<string, number>();
   
+  // For small formats (LP, Destaque, LEDStudio), be more conservative with adjustments
+  const isSmallFormat = format === 'LP' || format === 'destaque' || format === 'ledStudio' || format === 'bannerGCO';
+  
+  if (isSmallFormat) {
+    console.log(`📐 Using conservative adjustments for small format: ${format}`);
+  }
+  
   // Get the design spacing from layout
   const designSpacing = calculateDesignSpacing(elements);
   
@@ -77,9 +92,16 @@ export const calculateSmartPositionAdjustments = async (
 
   if (heightIncrease <= 0) return adjustments;
 
+  // For small formats, reduce the adjustment to prevent elements from going off-canvas
+  const adjustmentMultiplier = isSmallFormat ? 0.7 : 1.0;
+  const finalHeightIncrease = heightIncrease * adjustmentMultiplier;
+
   console.log('📐 ClassTheme expanded, calculating smart adjustments using design spacing:', {
     format,
-    heightIncrease,
+    isSmallFormat,
+    originalHeightIncrease: heightIncrease,
+    finalHeightIncrease,
+    adjustmentMultiplier,
     originalSpacing: Array.from(designSpacing.entries())
   });
 
@@ -97,30 +119,29 @@ export const calculateSmartPositionAdjustments = async (
   
   for (let i = classThemeIndex + 1; i < sortedElements.length; i++) {
     const element = sortedElements[i];
-    const previousElement = sortedElements[i - 1];
     
     // For the first element after classTheme, use the height increase
     if (i === classThemeIndex + 1) {
-      cumulativeAdjustment = heightIncrease;
+      cumulativeAdjustment = finalHeightIncrease;
     }
     
     // Get the design spacing for this element
     const originalSpacing = designSpacing.get(element.field);
     
     if (originalSpacing !== undefined) {
-      // Use the original design spacing from layout editor
+      // Use the calculated adjustment while preserving design spacing intent
       const adjustment = cumulativeAdjustment;
       adjustments.set(element.field, adjustment);
       
-      console.log(`📐 Smart adjustment for ${element.field}: +${adjustment}px (preserving ${originalSpacing}px design spacing)`);
+      console.log(`📐 Smart adjustment for ${element.field}: +${adjustment}px (preserving ${originalSpacing}px design spacing, format: ${format})`);
     } else {
       // Fallback to height increase if no design spacing found
       const adjustment = cumulativeAdjustment;
       adjustments.set(element.field, adjustment);
       
-      console.log(`📐 Fallback adjustment for ${element.field}: +${adjustment}px (no design spacing found)`);
+      console.log(`📐 Fallback adjustment for ${element.field}: +${adjustment}px (no design spacing found, format: ${format})`);
     }
   }
 
   return adjustments;
-}; 
+};
