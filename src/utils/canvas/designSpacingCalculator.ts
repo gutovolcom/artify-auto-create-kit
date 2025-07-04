@@ -1,16 +1,39 @@
 
 import { EventData } from "@/pages/Index";
 import { getTextContent } from './textUtils';
-import { getUserColors } from '../formatStyleRules';
-import { getStyleForField, getMaxTextWidthForFormat } from './textConstraints';
+import { getUserColors, getStyleForField } from '../formatStyleRules';
 import { breakTextToFitWidthSync } from './smartTextBreaker';
-import { CLASS_THEME_BOX_HEIGHTS, getVerticalPadding } from './lessonThemeUtils';
+import { CLASS_THEME_BOX_HEIGHTS } from './lessonThemeUtils';
 
 interface ElementSpacing {
   fromField: string;
   toField: string;
   designSpacing: number;
 }
+
+// Helper function to get max text width for format
+const getMaxTextWidthForFormat = (format: string, canvasWidth: number, x: number, field: string): number => {
+  // Simple calculation - can be refined based on format constraints
+  return canvasWidth - x - 40; // 40px padding from right edge
+};
+
+// Helper function to get vertical padding
+const getVerticalPadding = (format: string): number => {
+  // Format-specific vertical padding
+  const paddingMap: Record<string, number> = {
+    'destaque': 2,
+    'bannerGCO': 4,
+    'ledStudio': 6,
+    'LP': 8,
+    'feed': 10,
+    'stories': 12,
+    'youtube': 15,
+    'youtube_ao_vivo': 15,
+    'youtube_pos_evento': 15
+  };
+  
+  return paddingMap[format] || 10;
+};
 
 export const calculateDesignSpacing = (elements: any[]): Map<string, number> => {
   const spacingMap = new Map<string, number>();
