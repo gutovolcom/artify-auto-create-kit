@@ -62,12 +62,12 @@ export const getMaxTextWidthForFormat = (format: string, canvasWidth: number, el
   if (field === 'teacherName') {
     const dynamicMargin = getDynamicSafetyMargin(60); // Assume average teacher name font size
     const formatLimits = {
-      'youtube': Math.min(canvasWidth - elementX - dynamicMargin, 700),
-      'youtube_ao_vivo': Math.min(canvasWidth - elementX - dynamicMargin, 700),
-      'youtube_pos_evento': Math.min(canvasWidth - elementX - dynamicMargin, 700),
+      'youtube': Math.min(canvasWidth - elementX - dynamicMargin, 800),
+      'youtube_ao_vivo': Math.min(canvasWidth - elementX - dynamicMargin, 800),
+      'youtube_pos_evento': Math.min(canvasWidth - elementX - dynamicMargin, 800),
       'feed': Math.min(canvasWidth - elementX - dynamicMargin, 580),
-      'stories': Math.min(canvasWidth - elementX - dynamicMargin, 600),
-      'ledStudio': Math.min(canvasWidth - elementX - dynamicMargin, 600),
+      'stories': Math.min(canvasWidth - elementX - dynamicMargin, 740),
+      'ledStudio': Math.min(canvasWidth - elementX - dynamicMargin, 540),
       'bannerGCO': Math.min(canvasWidth - elementX - dynamicMargin, 800),
       'destaque': Math.min(canvasWidth - elementX - dynamicMargin, 500),
       'LP': Math.min(canvasWidth - elementX - dynamicMargin, 550)
@@ -84,7 +84,7 @@ export const getMaxTextWidthForFormat = (format: string, canvasWidth: number, el
       'youtube_pos_evento': Math.min(canvasWidth - elementX - dynamicMargin, 1000),
       'feed': Math.min(canvasWidth - elementX - dynamicMargin, 800),    
       'stories': Math.min(canvasWidth - elementX - dynamicMargin, 900),
-      'ledStudio': Math.min(canvasWidth - elementX - dynamicMargin, 750),
+      'ledStudio': Math.min(canvasWidth - elementX - dynamicMargin, 500),
       'bannerGCO': Math.min(canvasWidth - elementX - dynamicMargin, 1200),
       'destaque': Math.min(canvasWidth - elementX - dynamicMargin, 700),
       'LP': Math.min(canvasWidth - elementX - dynamicMargin, 600)

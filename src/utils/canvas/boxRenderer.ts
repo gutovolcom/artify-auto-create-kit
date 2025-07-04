@@ -1,13 +1,14 @@
 import { EventData } from "@/pages/Index";
 import { Canvas as FabricCanvas, FabricText, Rect, Group } from 'fabric';
 import { getStyleForField, getUserColors } from '../formatStyleRules';
-import { getTextContent } from './textUtils';
+import { getTextContent, shouldCalculatePositionAdjustments } from './textUtils';
 import { getLessonThemeStyle } from './lessonThemeUtils';
 import { breakTextToFitWidthSync } from './smartTextBreaker';
 import { calculatePositionAdjustments } from './positionAdjuster';
 import { measureTextWidthSync } from './textMeasurement';
 import { ensureFontLoaded, FontConfig } from './fontLoader';
 import { getMaxTextWidthForFormat, getTextAlignmentForFormat, getFormatSpecificPadding, getVerticalPadding } from './renderingUtils';
+import { CLASS_THEME_BOX_HEIGHTS } from './lessonThemeUtils';
 
 // Format-specific border radius
 const getBorderRadius = (format: string): number => {
@@ -155,22 +156,26 @@ export const renderTextBoxElement = async (
         });
       }
 
-      // Calculate position adjustments if text broke into multiple lines
-      if (textBreakResult.needsLineBreak && allElements) {
-        const heightIncrease = boxHeight - themeStyle.fixedBoxHeight;
+      // Calculate position adjustments - ALWAYS check if text breaks into multiple lines
+      if (shouldCalculatePositionAdjustments(textBreakResult, allElements)) {
         const adjustments = calculatePositionAdjustments(
           { x: elementX, y: elementY },
           themeStyle.fixedBoxHeight,
           boxHeight,
-          allElements.map(el => ({ field: el.field, position: el.position }))
+          allElements.map(el => ({ field: el.field, position: el.position })),
+          format
         );
 
-        // Store adjustments for other elements
         adjustments.forEach(adj => {
           globalPositionAdjustments.set(adj.field, adj.adjustment.adjustment);
         });
 
-        console.log('📏 Position adjustments calculated:', adjustments);
+        console.log('📏 Position adjustments calculated (main path):', {
+          format,
+          textLines: textBreakResult.lines.length,
+          heightIncrease: boxHeight - themeStyle.fixedBoxHeight,
+          adjustments
+        });
       }
 
       // Enhanced logging for transparent detection  
@@ -232,6 +237,31 @@ export const renderTextBoxElement = async (
       const actualHorizontalPadding = isTransparentBox ? 0 : horizontalPadding;
       const actualTextWidth = text.width || 0;
       const boxWidth = actualTextWidth + (actualHorizontalPadding * 2);
+      const boxHeight = textBreakResult.totalHeight + (verticalPadding * 2);
+
+      // ADD this logic after calculating boxHeight:
+      if (shouldCalculatePositionAdjustments(textBreakResult, allElements)) {
+        const fixedBoxHeight = CLASS_THEME_BOX_HEIGHTS[format as keyof typeof CLASS_THEME_BOX_HEIGHTS] || CLASS_THEME_BOX_HEIGHTS.default;
+        const adjustments = calculatePositionAdjustments(
+          { x: elementX, y: elementY },
+          fixedBoxHeight,
+          boxHeight,
+          allElements.map(el => ({ field: el.field, position: el.position })),
+          format
+        );
+
+        adjustments.forEach(adj => {
+          globalPositionAdjustments.set(adj.field, adj.adjustment.adjustment);
+        });
+
+        console.log('📏 Position adjustments calculated (fallback path):', {
+          format,
+          textLines: textBreakResult.lines.length,
+          fixedBoxHeight,
+          actualBoxHeight: boxHeight,
+          adjustments
+        });
+      }
 
       // Only create background if not transparent
       let background;
@@ -240,7 +270,7 @@ export const renderTextBoxElement = async (
           left: 0,
           top: 0,
           width: boxWidth,
-          height: textBreakResult.totalHeight + (verticalPadding * 2),
+          height: boxHeight,
           fill: backgroundColor,
           rx: borderRadius,
           ry: borderRadius,

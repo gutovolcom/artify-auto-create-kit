@@ -124,28 +124,31 @@ export const renderCanvasWithTemplate = async (
     // Preload fonts before rendering
     await preloadAllFonts(eventData, format, layoutConfig);
     
-    // Reset position adjustments
+    // Reset position adjustments BEFORE processing elements
     resetPositionAdjustments();
+    console.log('🧹 Starting new generation - position adjustments reset');
 
     // Load background image
     await loadBackgroundImageToCanvas(fabricCanvas, backgroundImageUrl, width, height);
 
     // Process elements
     if (layoutConfig?.elements && layoutConfig.elements.length > 0) {
-      console.log(`🎯 Processing ${layoutConfig.elements.length} layout elements`);
+      // Ensure classTheme is processed first for position adjustments
+      const sortedElements = [...layoutConfig.elements].sort((a, b) => {
+        if (a.field === 'classTheme') return -1;
+        if (b.field === 'classTheme') return 1;
+        return 0;
+      });
       
-      // Process elements sequentially to avoid race conditions
-      for (const [index, element] of layoutConfig.elements.entries()) {
-        console.log(`📍 Processing element ${index + 1}/${layoutConfig.elements.length}: ${element.field}`);
-        
+      // Process elements sequentially
+      for (const element of sortedElements) {
         // Skip teacher image elements - handled by placement rules
         if (element.type === 'image' && (element.field === 'teacherImages' || element.field === 'professorPhotos')) {
-          console.log('🖼️ Skipping teacher image element - handled by placement rules');
           continue;
         }
         
         try {
-          await addElementToCanvas(fabricCanvas, element, eventData, width, height, format, layoutConfig.elements);
+          await addElementToCanvas(fabricCanvas, element, eventData, width, height, format, sortedElements);
         } catch (elementError) {
           console.error(`Error processing element ${element.field}:`, elementError);
           // Continue with other elements
@@ -158,9 +161,7 @@ export const renderCanvasWithTemplate = async (
       } catch (photoError) {
         console.error('Error adding teacher photos:', photoError);
       }
-      
     } else {
-      console.log('⚠️ No layout configuration found, using default layout');
       await addDefaultElements(fabricCanvas, eventData, format, width, height);
     }
 

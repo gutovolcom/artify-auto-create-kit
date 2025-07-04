@@ -115,3 +115,15 @@ export const getTextContent = (field: string, eventData: EventData): string => {
   
   return content;
 };
+
+// Add this helper function
+export const hasMultipleLines = (textBreakResult: any): boolean => {
+  return textBreakResult.lines.length > 1;
+};
+
+export const shouldCalculatePositionAdjustments = (
+  textBreakResult: any, 
+  allElements: any[]
+): boolean => {
+  return hasMultipleLines(textBreakResult) && allElements && allElements.length > 0;
+};
