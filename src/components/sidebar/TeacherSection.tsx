@@ -1,10 +1,18 @@
+import * as React from "react";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { useSupabaseTeachers } from "@/hooks/useSupabaseTeachers";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { Search } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import { ErrorBadge } from "@/components/ui/error-badge";
 
 interface TeacherSectionProps {
@@ -19,6 +27,7 @@ export const TeacherSection = ({
   error,
 }: TeacherSectionProps) => {
   const { teachers } = useSupabaseTeachers();
+  const [open, setOpen] = React.useState(false);
 
   const handleToggle = (teacherId: string) => {
     const isSelected = selectedTeacherIds.includes(teacherId);
@@ -52,87 +61,96 @@ export const TeacherSection = ({
       </Label>
 
       <div className="relative">
-        <Popover>
+        {/* Selected teachers display */}
+        {selectedTeachers.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-2">
+            {selectedTeachers.map((teacher) => (
+              <div
+                key={teacher.id}
+                className="flex items-center bg-muted rounded-full pl-1 pr-2 py-1 relative"
+              >
+                <img
+                  src={teacher.image_url}
+                  alt={teacher.name}
+                  className="w-6 h-6 rounded-full object-cover object-top"
+                />
+                {/* Only show name when there's a single teacher selected */}
+                {selectedTeachers.length === 1 && (
+                  <span className="ml-2 text-sm text-foreground whitespace-nowrap">
+                    {teacher.name}
+                  </span>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemove(teacher.id);
+                  }}
+                  className="ml-1 hover:bg-destructive/20 rounded-full p-0.5 transition-colors"
+                >
+                  <X className="w-3 h-3 text-muted-foreground hover:text-destructive" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
-            <div
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
               className={cn(
-                "border rounded-md flex items-center justify-between px-3 py-2 h-11 bg-background w-full cursor-pointer",
+                "w-full justify-between",
                 error ? "border-destructive" : "border-border"
               )}
             >
-              <div className="flex items-center gap-2 overflow-hidden">
-                {selectedTeachers.length === 1 && (
-                  <div className="flex items-center bg-muted rounded-full pl-1 pr-2 py-1 relative">
-                    <img
-                      src={selectedTeachers[0].image_url}
-                      alt={selectedTeachers[0].name}
-                      className="w-8 h-8 rounded-full object-cover object-top"
-                    />
-                    <span className="ml-2 text-sm text-foreground whitespace-nowrap">{selectedTeachers[0].name}</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemove(selectedTeachers[0].id);
-                      }}
-                      className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-4 h-4 text-xs flex items-center justify-center"
-                    >
-                      ×
-                    </button>
-                  </div>
-                )}
-
-                {selectedTeachers.length > 1 && (
-                  <div className="flex items-center gap-2">
-                    {selectedTeachers.map((teacher) => (
-                      <div key={teacher.id} className="relative">
-                        <img
-                          src={teacher.image_url}
-                          alt={teacher.name}
-                          className="w-8 h-8 rounded-full object-cover object-top"
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemove(teacher.id);
-                          }}
-                          className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-4 h-4 text-xs flex items-center justify-center"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {selectedTeachers.length === 0 && (
-                  <span className="text-sm text-muted-foreground">Adicionar professor</span>
-                )}
-              </div>
-
-              <Search className="w-4 h-4 text-muted-foreground" />
-            </div>
+              {selectedTeachers.length === 0 ? (
+                <span className="text-muted-foreground">Adicionar professor</span>
+              ) : (
+                <span>
+                  {selectedTeachers.length === 1 
+                    ? `${selectedTeachers[0].name} selecionado`
+                    : `${selectedTeachers.length} professores selecionados`
+                  }
+                </span>
+              )}
+              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
           </PopoverTrigger>
-
-          <PopoverContent className="w-64 p-4 space-y-2 z-50">
-            <ScrollArea className="max-h-64">
-              {teachers.map(teacher => (
-                <div key={teacher.id} className="flex items-center space-x-3 py-1">
-                  <Checkbox
-                    id={`teacher-${teacher.id}`}
-                    checked={selectedTeacherIds.includes(teacher.id)}
-                    onCheckedChange={() => handleToggle(teacher.id)}
-                  />
-                  <img
-                    src={teacher.image_url}
-                    alt={teacher.name}
-                    className="w-6 h-6 rounded-full object-cover"
-                  />
-                  <label htmlFor={`teacher-${teacher.id}`} className="text-sm">
-                    {teacher.name}
-                  </label>
-                </div>
-              ))}
-            </ScrollArea>
+          <PopoverContent className="w-80 p-0" side="right" align="start">
+            <Command>
+              <CommandInput placeholder="Buscar professor..." />
+              <CommandList className="max-h-48">
+                <CommandEmpty>Nenhum professor encontrado.</CommandEmpty>
+                <CommandGroup>
+                  {teachers.map((teacher) => (
+                    <CommandItem
+                      key={teacher.id}
+                      value={teacher.name}
+                      onSelect={() => {
+                        handleToggle(teacher.id);
+                        // Keep popover open for multiple selection
+                        // setOpen(false);
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <img
+                        src={teacher.image_url}
+                        alt={teacher.name}
+                        className="w-6 h-6 rounded-full object-cover"
+                      />
+                      <span className="flex-1">{teacher.name}</span>
+                      {selectedTeacherIds.includes(teacher.id) && (
+                        <div className="w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">
+                          ✓
+                        </div>
+                      )}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
           </PopoverContent>
         </Popover>
         

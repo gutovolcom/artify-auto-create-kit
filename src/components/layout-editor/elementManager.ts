@@ -1,4 +1,3 @@
-
 import { Canvas, Text, Image, Rect, Group } from 'fabric';
 import { CanvasElementConfig } from './types';
 import { constrainToCanvas } from '@/utils/positionValidation';
@@ -363,3 +362,43 @@ export const addElementToCanvas = (
     console.error('Error adding element to canvas:', error);
   }
 };
+
+export interface ElementRenderContext {
+  mode: 'layout-editor' | 'art-generation';
+  canvas: FabricCanvas;
+  scale: number;
+  format?: string;
+  eventData?: EventData;
+}
+
+export interface ElementRenderer {
+  render(element: CanvasElementConfig, context: ElementRenderContext): Promise<void>;
+  canHandle(element: CanvasElementConfig): boolean;
+}
+
+export class UnifiedElementSystem {
+  private renderers: Map<string, ElementRenderer> = new Map();
+  
+  registerRenderer(type: string, renderer: ElementRenderer) {
+    this.renderers.set(type, renderer);
+  }
+  
+  async addElementToCanvas(
+    element: CanvasElementConfig, 
+    context: ElementRenderContext
+  ) {
+    const renderer = this.findRenderer(element);
+    if (renderer) {
+      await renderer.render(element, context);
+    }
+  }
+  
+  private findRenderer(element: CanvasElementConfig): ElementRenderer | null {
+    for (const [_, renderer] of this.renderers) {
+      if (renderer.canHandle(element)) {
+        return renderer;
+      }
+    }
+    return null;
+  }
+}

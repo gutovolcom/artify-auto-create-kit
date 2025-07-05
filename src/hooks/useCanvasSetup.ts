@@ -1,4 +1,3 @@
-
 import { useRef, useEffect } from 'react';
 import * as fabric from 'fabric';
 import { loadBackgroundImage } from '@/components/layout-editor/backgroundLoader';
@@ -29,6 +28,7 @@ export const useCanvasSetup = ({
 }: UseCanvasSetupProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const canvasElementRef = useRef<HTMLCanvasElement | null>(null);
   const backgroundLoadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousBackgroundRef = useRef<string>('');
   
@@ -92,12 +92,13 @@ export const useCanvasSetup = ({
 
   // Enhanced keyboard handler for arrow key movement
   const handleKeyDown = (e: KeyboardEvent) => {
+    // Only handle events when canvas is active and focused
     if (!fabricCanvasRef.current) return;
     
     const canvas = fabricCanvasRef.current;
     const activeObject = canvas.getActiveObject();
     
-    // Arrow key movement
+    // Arrow key movement - only when object is selected
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       if (activeObject) {
         e.preventDefault();
@@ -128,8 +129,8 @@ export const useCanvasSetup = ({
       }
     }
     
-    // Delete/Backspace for deletion
-    if (e.key === 'Delete' || e.key === 'Backspace') {
+    // Delete/Backspace for deletion - only when object is selected
+    if ((e.key === 'Delete' || e.key === 'Backspace') && activeObject) {
       e.preventDefault();
       onDeleteSelectedRef.current();
     }
@@ -170,7 +171,12 @@ export const useCanvasSetup = ({
         });
       });
 
-      document.addEventListener('keydown', handleKeyDown);
+      // Set up canvas-specific keyboard events instead of document-wide
+      const canvasElement = fabricCanvas.upperCanvasEl as HTMLCanvasElement;
+      canvasElement.tabIndex = 0; // Make canvas focusable
+      canvasElement.addEventListener('keydown', handleKeyDown);
+      canvasElementRef.current = canvasElement;
+      
       fabricCanvasRef.current = fabricCanvas;
       
       // Notify parent that canvas is ready
@@ -188,7 +194,11 @@ export const useCanvasSetup = ({
       }
 
       return () => {
-        document.removeEventListener('keydown', handleKeyDown);
+        // Clean up canvas-specific event listener
+        if (canvasElementRef.current) {
+          canvasElementRef.current.removeEventListener('keydown', handleKeyDown);
+          canvasElementRef.current = null;
+        }
         if (backgroundLoadTimeoutRef.current) {
           clearTimeout(backgroundLoadTimeoutRef.current);
         }

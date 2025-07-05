@@ -1,5 +1,6 @@
 import * as fabric from 'fabric';
 import { validateElementPosition, constrainToCanvas, getFormatDimensions } from '@/utils/positionValidation';
+import { usePositionSystem } from '@/hooks/usePositionSystem';
 
 type FabricCanvas = fabric.Canvas;
 
@@ -110,7 +111,7 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
 
       // Enhanced boundary validation with format-specific behavior
       if (format && !useMinimalValidation) {
-        // Standard validation for all formats except bannerGCO
+        // Standard validation for all formats except bannerGCO and destaque
         const validation = validateElementPosition(elementBounds, format);
         
         if (!validation.isValid) {
@@ -141,7 +142,7 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
           });
         }
       } else if (format && useMinimalValidation) {
-        // Minimal validation for bannerGCO - only prevent truly invalid positions
+        // Minimal validation for bannerGCO and destaque - but still validate sizes
         const formatDims = getFormatDimensions(format);
         
         // Only constrain if element is completely outside canvas or at negative positions
@@ -162,6 +163,34 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
         if (unscaledPosition.y > formatDims.height) {
           unscaledPosition.y = formatDims.height - height - 1;
           console.log(`[${format}] Minimal correction: Y position constrained to canvas`);
+        }
+        
+        // CORREÇÃO CRÍTICA: Validar tamanhos mesmo com validação mínima
+        // Constrain size if element is too large for format
+        const maxWidth = formatDims.width - unscaledPosition.x - serializationMargin;
+        const maxHeight = formatDims.height - unscaledPosition.y - serializationMargin;
+        
+        if (width > maxWidth) {
+          const oldWidth = width;
+          width = Math.max(50, maxWidth);
+          console.log(`[${format}] Size correction: Width constrained from ${oldWidth} to ${width} (max available: ${maxWidth})`);
+        }
+        if (height > maxHeight) {
+          const oldHeight = height;
+          height = Math.max(30, maxHeight);
+          console.log(`[${format}] Size correction: Height constrained from ${oldHeight} to ${height} (max available: ${maxHeight})`);
+        }
+        
+        // Additional validation for elements that are simply too large for the format
+        if (width > formatDims.width - serializationMargin) {
+          const oldWidth = width;
+          width = Math.max(50, formatDims.width - serializationMargin);
+          console.log(`[${format}] Size correction: Width too large for format, constrained from ${oldWidth} to ${width}`);
+        }
+        if (height > formatDims.height - serializationMargin) {
+          const oldHeight = height;
+          height = Math.max(30, formatDims.height - serializationMargin);
+          console.log(`[${format}] Size correction: Height too large for format, constrained from ${oldHeight} to ${height}`);
         }
         
         if (format === 'bannerGCO') {
