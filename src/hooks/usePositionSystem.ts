@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useCallback } from 'react';
-import { LayoutManager } from '../utils/positioning/LayoutManager';
-import { NormalizedPosition, NormalizedElement, FormatDimensions } from '../utils/positioning/PositionSystem';
+import { useRef, useEffect, useCallback } from 'react';
+import { LayoutManager } from '@/utils/positioning/LayoutManager';
+import { NormalizedPosition, NormalizedElement, FormatDimensions } from '@/utils/positioning/PositionSystem';
 
 // Hook to use the position system
 export const usePositionSystem = (
@@ -12,10 +12,14 @@ export const usePositionSystem = (
   // Initialize layout manager
   useEffect(() => {
     layoutManagerRef.current = new LayoutManager(formatDimensions, scale);
+    console.log('🎯 PositionSystem initialized:', { formatDimensions, scale });
   }, [formatDimensions, scale]);
 
   const addElement = useCallback((element: Omit<NormalizedElement, 'id'>) => {
-    if (!layoutManagerRef.current) return;
+    if (!layoutManagerRef.current) {
+      console.error('LayoutManager not initialized');
+      return null;
+    }
     
     const elementWithId: NormalizedElement = {
       ...element,
@@ -23,37 +27,95 @@ export const usePositionSystem = (
     };
     
     layoutManagerRef.current.addElement(elementWithId);
+    console.log('➕ Element added to position system:', elementWithId);
     return elementWithId.id;
   }, []);
 
   const updateElementPosition = useCallback((elementId: string, position: NormalizedPosition) => {
-    if (!layoutManagerRef.current) return;
+    if (!layoutManagerRef.current) {
+      console.error('LayoutManager not initialized');
+      return;
+    }
     layoutManagerRef.current.updateElementPosition(elementId, position);
+    console.log('📍 Element position updated:', { elementId, position });
   }, []);
 
   const updateFromCanvas = useCallback((fabricObject: any) => {
-    if (!layoutManagerRef.current) return;
+    if (!layoutManagerRef.current) {
+      console.error('LayoutManager not initialized');
+      return;
+    }
     layoutManagerRef.current.updateFromCanvas(fabricObject);
+    console.log('🎨 Element updated from canvas:', fabricObject.elementId);
   }, []);
 
   const serializeLayout = useCallback(() => {
-    if (!layoutManagerRef.current) return [];
-    return layoutManagerRef.current.serializeLayout();
+    if (!layoutManagerRef.current) {
+      console.error('LayoutManager not initialized');
+      return [];
+    }
+    const serialized = layoutManagerRef.current.serializeLayout();
+    console.log('💾 Layout serialized:', serialized);
+    return serialized;
   }, []);
 
   const deserializeLayout = useCallback((layoutData: any[]) => {
-    if (!layoutManagerRef.current) return;
+    if (!layoutManagerRef.current) {
+      console.error('LayoutManager not initialized');
+      return;
+    }
     layoutManagerRef.current.deserializeLayout(layoutData);
+    console.log('📂 Layout deserialized:', layoutData);
   }, []);
 
   const getElementForCanvas = useCallback((elementId: string) => {
-    if (!layoutManagerRef.current) return null;
+    if (!layoutManagerRef.current) {
+      console.error('LayoutManager not initialized');
+      return null;
+    }
     return layoutManagerRef.current.getElementForCanvas(elementId);
   }, []);
 
   const getElementForGeneration = useCallback((elementId: string) => {
-    if (!layoutManagerRef.current) return null;
+    if (!layoutManagerRef.current) {
+      console.error('LayoutManager not initialized');
+      return null;
+    }
     return layoutManagerRef.current.getElementForGeneration(elementId);
+  }, []);
+
+  const getAllElements = useCallback(() => {
+    if (!layoutManagerRef.current) {
+      console.error('LayoutManager not initialized');
+      return [];
+    }
+    return layoutManagerRef.current.getAllElements();
+  }, []);
+
+  const getElement = useCallback((elementId: string) => {
+    if (!layoutManagerRef.current) {
+      console.error('LayoutManager not initialized');
+      return undefined;
+    }
+    return layoutManagerRef.current.getElement(elementId);
+  }, []);
+
+  const removeElement = useCallback((elementId: string) => {
+    if (!layoutManagerRef.current) {
+      console.error('LayoutManager not initialized');
+      return;
+    }
+    layoutManagerRef.current.removeElement(elementId);
+    console.log('🗑️ Element removed:', elementId);
+  }, []);
+
+  const clear = useCallback(() => {
+    if (!layoutManagerRef.current) {
+      console.error('LayoutManager not initialized');
+      return;
+    }
+    layoutManagerRef.current.clear();
+    console.log('🧹 All elements cleared');
   }, []);
 
   return {
@@ -64,6 +126,11 @@ export const usePositionSystem = (
     deserializeLayout,
     getElementForCanvas,
     getElementForGeneration,
-    layoutManager: layoutManagerRef.current
+    getAllElements,
+    getElement,
+    removeElement,
+    clear,
+    layoutManager: layoutManagerRef.current,
+    isReady: layoutManagerRef.current !== null
   };
 }; 
