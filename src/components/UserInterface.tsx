@@ -201,7 +201,13 @@ export const UserInterface = ({ userEmail, isAdmin, onLogout }: UserInterfacePro
 
   // Show admin panel for admin users
   if (isAdmin && userType === 'admin') {
-    return <AdminPanel onLogout={onLogout} onSwitchToUser={handleSwitchToUser} />;  
+    return (
+      <AdminPanel 
+        userEmail={userEmail}
+        onLogout={onLogout} 
+        onSwitchToUser={handleSwitchToUser}
+      />
+    );  
   }
 
   // Show user interface with sidebar layout
