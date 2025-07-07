@@ -1,6 +1,5 @@
 import * as fabric from 'fabric';
 import { validateElementPosition, constrainToCanvas, getFormatDimensions } from '@/utils/positionValidation';
-import { usePositionSystem } from '@/hooks/usePositionSystem';
 
 type FabricCanvas = fabric.Canvas;
 
