@@ -66,6 +66,19 @@ export const KVSelectorModal = ({
     setSelectedTags([]);
   };
 
+  // Get primary career tag for display next to status badge
+  const getPrimaryCareerTag = (template: any) => {
+    if (!template.tags?.length) return null;
+    
+    // Prefer predefined career tags first
+    const careerTag = template.tags.find((tag: any) => 
+      PREDEFINED_TAGS.includes(tag.tag_name)
+    );
+    
+    // Fallback to first tag if no predefined career tag
+    return careerTag || template.tags[0];
+  };
+
   const handleRefresh = async () => {
     await refreshAll();
   };
@@ -307,39 +320,30 @@ export const KVSelectorModal = ({
                       </div>
                       
                       <div className="p-3">
-                        <div className="font-medium text-sm text-center">
+                        <div className="font-medium text-sm text-center mb-2">
                           {template.name}
                         </div>
-                        {template.layouts && template.layouts.length > 0 && (
-                          <div className="text-xs text-blue-600 mt-1 text-center">
-                            Layout personalizado
-                          </div>
-                        )}
-                        {/* Template Tags */}
-                        {template.tags && template.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2 justify-center">
-                            {template.tags.slice(0, 3).map((tag) => (
-                              <Badge 
-                                key={tag.id} 
-                                variant="secondary" 
-                                className={cn(
-                                  "text-xs border",
-                                  getTagColor(tag.tag_name)
-                                )}
-                              >
-                                {tag.tag_name}
-                              </Badge>
-                            ))}
-                            {template.tags.length > 3 && (
-                              <Badge 
-                                variant="outline" 
-                                className="text-xs"
-                              >
-                                +{template.tags.length - 3}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
+                        
+                        {/* Status and Career Tag Row */}
+                        <div className="flex items-center justify-center gap-2 flex-wrap">
+                          {getPrimaryCareerTag(template) && (
+                            <Badge 
+                              variant="secondary" 
+                              className={cn(
+                                "text-xs border",
+                                getTagColor(getPrimaryCareerTag(template).tag_name)
+                              )}
+                            >
+                              {getPrimaryCareerTag(template).tag_name}
+                            </Badge>
+                          )}
+                          
+                          {template.layouts && template.layouts.length > 0 && (
+                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-300">
+                              Layout personalizado
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );

@@ -218,6 +218,19 @@ export const TemplateManager = () => {
     return TAG_COLORS[tagName as keyof typeof TAG_COLORS] || "bg-gray-100 text-gray-800 border-gray-300";
   };
 
+  // Get primary career tag for display next to status badge
+  const getPrimaryCareerTag = (template: any) => {
+    if (!template.tags?.length) return null;
+    
+    // Prefer predefined career tags first
+    const careerTag = template.tags.find((tag: any) => 
+      PREDEFINED_TAGS.includes(tag.tag_name)
+    );
+    
+    // Fallback to first tag if no predefined career tag
+    return careerTag || template.tags[0];
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -451,6 +464,7 @@ export const TemplateManager = () => {
         {filteredTemplates.map((template) => {
           const missingFormats = getMissingFormats(template);
           const isComplete = missingFormats.length === 0;
+          const primaryTag = getPrimaryCareerTag(template);
           
           return (
             <Card key={template.id} className="overflow-hidden">
@@ -458,31 +472,38 @@ export const TemplateManager = () => {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <CardTitle className="text-lg">{template.name}</CardTitle>
-                    {/* Template Tags */}
-                    {template.tags && template.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {template.tags.map((tag) => (
-                          <Badge 
-                            key={tag.id} 
-                            variant="secondary" 
-                            className={cn(
-                              "text-xs border",
-                              getTagColor(tag.tag_name)
-                            )}
-                          >
-                            {tag.tag_name}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
                   </div>
-                  <Badge variant={isComplete ? "default" : "destructive"} className="text-xs ml-2">
-                    {isComplete ? (
-                      <><CheckCircle className="h-3 w-3 mr-1" />Completo</>
-                    ) : (
-                      <><AlertCircle className="h-3 w-3 mr-1" />{missingFormats.length} faltando</>
+                  <div className="flex items-center gap-2 ml-2">
+                    {/* Primary Career Tag */}
+                    {primaryTag && (
+                      <Badge 
+                        variant="secondary" 
+                        className={cn(
+                          "text-xs border",
+                          getTagColor(primaryTag.tag_name)
+                        )}
+                      >
+                        {primaryTag.tag_name}
+                      </Badge>
                     )}
-                  </Badge>
+                    
+                    {/* Status Badge */}
+                    <Badge 
+                      variant={isComplete ? "default" : "destructive"} 
+                      className={cn(
+                        "text-xs",
+                        isComplete 
+                          ? "bg-green-100 text-green-800 border-green-300" 
+                          : "bg-red-100 text-red-800 border-red-300"
+                      )}
+                    >
+                      {isComplete ? (
+                        <><CheckCircle className="h-3 w-3 mr-1" />Completo</>
+                      ) : (
+                        <><AlertCircle className="h-3 w-3 mr-1" />{missingFormats.length} faltando</>
+                      )}
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
