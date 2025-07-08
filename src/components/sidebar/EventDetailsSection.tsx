@@ -32,14 +32,23 @@ export const EventDetailsSection = ({
 }: EventDetailsSectionProps) => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
-  // Convert date string to Date object for calendar
-  const selectedDate = date ? new Date(date) : undefined;
+  // Convert date string to Date object for calendar - treating as local time
+  const selectedDate = date ? (() => {
+    const parts = date.split('-');
+    if (parts.length === 3) {
+      return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    }
+    return undefined;
+  })() : undefined;
   
   // Handle date selection from calendar
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (selectedDate) {
-      // Format date as YYYY-MM-DD for input compatibility
-      const formattedDate = selectedDate.toISOString().split('T')[0];
+      // Format date as YYYY-MM-DD using local time methods
+      const year = selectedDate.getFullYear();
+      const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+      const day = selectedDate.getDate().toString().padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
       onUpdate({ date: formattedDate });
       setIsCalendarOpen(false);
     }

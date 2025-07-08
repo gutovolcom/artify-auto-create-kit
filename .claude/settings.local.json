@@ -18,7 +18,9 @@
       "Bash(npm run dev:*)",
       "Bash(npx tsc:*)",
       "Bash(npm run build:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npx eslint:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }
