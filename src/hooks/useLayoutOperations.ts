@@ -29,6 +29,7 @@ interface UseLayoutOperationsProps {
   formatName: string;
   onSave?: () => void;
   updateLayoutDraft: (fabricCanvas: FabricCanvas, format?: string) => void;
+  updateLayoutDraftImmediate?: (fabricCanvas: FabricCanvas, format?: string) => void;
   addDeletedElement: (elementId: string) => void;
   isElementDeleted: (elementId: string) => boolean;
 }
@@ -49,6 +50,7 @@ export const useLayoutOperations = (props: UseLayoutOperationsProps) => {
     formatName,
     onSave,
     updateLayoutDraft,
+    updateLayoutDraftImmediate,
     addDeletedElement,
     isElementDeleted
   } = props;
@@ -130,13 +132,28 @@ export const useLayoutOperations = (props: UseLayoutOperationsProps) => {
     try {
       console.log('💾 Saving layout configuration...');
       
-      // *** A CORREÇÃO ESTÁ AQUI ***
-      // Em vez de serializar o canvas novamente (o que pode usar uma versão obsoleta),
-      // nós usamos o 'layoutDraft', que é o estado mais recente e confiável do layout,
-      // pois ele é atualizado a cada modificação.
-      const elementsToSave = layoutDraft;
+      // CRITICAL FIX: Ensure any pending layout updates are completed before save
+      if (updateLayoutDraftImmediate) {
+        updateLayoutDraftImmediate(canvas, formatName);
+        console.log('🔄 Forced immediate layout draft update before save');
+      }
       
-      console.log('📄 Layout to be saved:', elementsToSave);
+      // Small delay to ensure state synchronization
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
+      // CRITICAL FIX: Serialize canvas directly at save time to ensure most current positions
+      // This fixes the main issue where layoutDraft might be stale or out of sync
+      const elementsToSave = serializeCanvasLayout(canvas, scale, formatName);
+      
+      console.log('📄 Fresh layout serialized for save:', elementsToSave);
+      console.log('🔍 Save operation - Scale factor:', scale, 'Format:', formatName);
+      
+      // Validate that we have elements to save
+      if (!elementsToSave || elementsToSave.length === 0) {
+        console.warn('⚠️ No elements to save, keeping existing layout');
+        toast.warning('Nenhum elemento para salvar');
+        return;
+      }
       
       const layoutConfig = {
         template_id: templateId,
@@ -146,22 +163,23 @@ export const useLayoutOperations = (props: UseLayoutOperationsProps) => {
         }
       };
 
+      // Save with proper error handling
       await saveLayout(layoutConfig);
       
-      // A chamada para `setLayoutDraft(elements)` foi removida pois o `layoutDraft` já está correto.
+      // Update layoutDraft to match what was just saved
+      setLayoutDraft(elementsToSave);
       
       if (onSave) {
         onSave();
       }
       
-      console.log('✅ Layout saved successfully');
-      toast.success('Layout salvo com sucesso!'); // Movido para o final do try para garantir
+      console.log('✅ Layout saved successfully with fresh serialization and proper synchronization');
+      toast.success('Layout salvo com sucesso!');
     } catch (error) {
       console.error('❌ Error saving layout:', error);
       toast.error('Erro ao salvar layout');
     }
-  // As dependências continuam corretas, garantindo que a função seja recriada quando necessário.
-  }, [canvas, layoutDraft, templateId, formatName, saveLayout, onSave]);
+  }, [canvas, scale, formatName, templateId, saveLayout, setLayoutDraft, onSave, updateLayoutDraftImmediate]);
 
   return {
     handleAddElement,

@@ -64,11 +64,11 @@ export const constrainToCanvas = (
 ): ElementBounds => {
   const formatDimensions = getFormatDimensions(format);
   
-  // For destaque and bannerGCO, use ultra-minimal margins to preserve user positioning
+  // For destaque, bannerGCO, and LP, use ultra-minimal margins to preserve user positioning
   let effectiveMargin = margin;
   
-  if (format === 'destaque' || format === 'bannerGCO') {
-    effectiveMargin = Math.min(margin, 1); // Ultra-minimal for small formats
+  if (format === 'destaque' || format === 'bannerGCO' || format === 'LP') {
+    effectiveMargin = Math.min(margin, 1); // Ultra-minimal for special formats
     console.log(`📏 [${format}] Using ultra-minimal margin: ${effectiveMargin}px to preserve positioning`);
   } else {
     // For very small formats, ensure margin doesn't make positioning impossible

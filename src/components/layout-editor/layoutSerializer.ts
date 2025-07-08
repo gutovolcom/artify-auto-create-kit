@@ -8,8 +8,8 @@ const getSerializationMargin = (format: string): number => {
   const dimensions = getFormatDimensions(format);
   const area = dimensions.width * dimensions.height;
   
-  // For bannerGCO, use ultra-minimal margins to preserve user positioning
-  if (format === 'bannerGCO' || format === 'destaque') { // Adicionado 'destaque' aqui por consistência
+  // For bannerGCO, destaque, and LP, use ultra-minimal margins to preserve user positioning
+  if (format === 'bannerGCO' || format === 'destaque' || format === 'LP') {
     return 1;
   }
   
@@ -29,15 +29,15 @@ const getSerializationMargin = (format: string): number => {
 
 // Check if format should use minimal validation
 const shouldUseMinimalValidation = (format: string): boolean => {
-  // CORREÇÃO APLICADA AQUI
-  return format === 'bannerGCO' || format === 'destaque';
+  // CRITICAL FIX: Add LP to special handling to prevent position validation issues
+  return format === 'bannerGCO' || format === 'destaque' || format === 'LP';
 };
 
 // Enhanced precision rounding for small formats
 const precisionRound = (value: number, format: string): number => {
-  // CORREÇÃO APLICADA AQUI
-  if (format === 'bannerGCO' || format === 'destaque') {
-    // Use higher precision for small formats
+  // CRITICAL FIX: Add LP to precision handling for consistent coordinate accuracy
+  if (format === 'bannerGCO' || format === 'destaque' || format === 'LP') {
+    // Use higher precision for formats with special positioning requirements
     return Math.round(value * 1000) / 1000;
   }
   return Math.round(value * 100) / 100;
@@ -49,10 +49,16 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
     return [];
   }
 
+  // CRITICAL FIX: Validate and normalize scale factor to prevent division errors
+  const normalizedScale = scale && scale > 0 ? scale : 1;
+  if (scale !== normalizedScale) {
+    console.warn(`⚠️ Invalid scale factor ${scale}, using normalized value: ${normalizedScale}`);
+  }
+
   try {
     console.log('🚫 Serializing canvas layout with format-specific boundary validation');
     console.log('Canvas objects to serialize:', canvas.getObjects().length);
-    console.log('Scale factor:', scale, 'Format:', format);
+    console.log('Original scale factor:', scale, 'Normalized scale:', normalizedScale, 'Format:', format);
     
     const serializationMargin = format ? getSerializationMargin(format) : 20;
     const useMinimalValidation = format ? shouldUseMinimalValidation(format) : false;
@@ -75,9 +81,10 @@ export const serializeCanvasLayout = (canvas: FabricCanvas, scale: number, forma
       }
       
       // Calculate UNSCALED position with enhanced precision for small formats
+      // Use normalized scale to prevent division by zero or invalid scale factors
       const unscaledPosition = {
-        x: precisionRound((obj.left || 0) / scale, format || ''),
-        y: precisionRound((obj.top || 0) / scale, format || '')
+        x: precisionRound((obj.left || 0) / normalizedScale, format || ''),
+        y: precisionRound((obj.top || 0) / normalizedScale, format || '')
       };
 
       // Enhanced dimension calculation with fallback chain

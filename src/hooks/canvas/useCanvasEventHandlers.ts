@@ -3,6 +3,7 @@ import { useCallback, useRef } from 'react';
 import * as fabric from 'fabric';
 import { serializeCanvasLayout } from '@/components/layout-editor/layoutSerializer';
 import { constrainToCanvas, getFormatDimensions } from '@/utils/positionValidation';
+import { useDebounce } from '@/hooks/useDebounce';
 
 type FabricCanvas = fabric.Canvas;
 
@@ -30,9 +31,10 @@ const getConstraintMargin = (format: string): number => {
   return 10;
 };
 
-// Check if format should skip real-time constraining (bannerGCO specific fix)
+// Check if format should skip real-time constraining to preserve user positioning
 const shouldSkipRealTimeConstraining = (format: string): boolean => {
-  return format === 'bannerGCO';
+  // CRITICAL FIX: Add LP and destaque to prevent real-time position drift
+  return format === 'bannerGCO' || format === 'destaque' || format === 'LP';
 };
 
 export const useCanvasEventHandlers = ({
@@ -40,11 +42,37 @@ export const useCanvasEventHandlers = ({
   setLayoutDraft
 }: UseCanvasEventHandlersProps) => {
   const eventListenersAttachedRef = useRef(false);
+  const pendingUpdateRef = useRef<NodeJS.Timeout | null>(null);
 
+  // CRITICAL FIX: Debounced update to prevent too many rapid updates during dragging
   const updateLayoutDraft = useCallback((fabricCanvas: FabricCanvas, format?: string) => {
+    // Clear any pending update
+    if (pendingUpdateRef.current) {
+      clearTimeout(pendingUpdateRef.current);
+    }
+    
+    // Immediate update for critical operations, debounced for frequent operations
+    const performUpdate = () => {
+      const elements = serializeCanvasLayout(fabricCanvas, scale, format);
+      setLayoutDraft(elements);
+      console.log("📝 Layout updated with boundary validation for format:", format, elements.length, "elements");
+      pendingUpdateRef.current = null;
+    };
+    
+    // Small debounce to prevent excessive updates during dragging
+    pendingUpdateRef.current = setTimeout(performUpdate, 50);
+  }, [scale, setLayoutDraft]);
+
+  // Immediate update for critical operations (like save)
+  const updateLayoutDraftImmediate = useCallback((fabricCanvas: FabricCanvas, format?: string) => {
+    if (pendingUpdateRef.current) {
+      clearTimeout(pendingUpdateRef.current);
+      pendingUpdateRef.current = null;
+    }
+    
     const elements = serializeCanvasLayout(fabricCanvas, scale, format);
     setLayoutDraft(elements);
-    console.log("📝 Layout updated immediately with boundary validation for format:", format, elements.length, "elements");
+    console.log("📝 Layout updated IMMEDIATELY for format:", format, elements.length, "elements");
   }, [scale, setLayoutDraft]);
 
   const setupCanvasEventListeners = useCallback((fabricCanvas: FabricCanvas, format?: string) => {
@@ -115,6 +143,7 @@ export const useCanvasEventHandlers = ({
   return {
     setupCanvasEventListeners,
     updateLayoutDraft,
+    updateLayoutDraftImmediate,
     clearEventListeners
   };
 };

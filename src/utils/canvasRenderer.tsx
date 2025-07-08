@@ -128,11 +128,17 @@ export const renderCanvasWithTemplate = async (
     resetPositionAdjustments();
     console.log('🧹 Starting new generation - position adjustments reset');
 
-    // Load background image
+    // CRITICAL FIX: Load background image and wait for proper initialization
     await loadBackgroundImageToCanvas(fabricCanvas, backgroundImageUrl, width, height);
+    
+    // Additional delay to ensure background is fully loaded and positioned
+    await new Promise(resolve => setTimeout(resolve, 100));
+    console.log('🖼️ Background loaded, proceeding with layout elements');
 
-    // Process elements
+    // Process elements with improved timing
     if (layoutConfig?.elements && layoutConfig.elements.length > 0) {
+      console.log(`📐 Loading saved layout with ${layoutConfig.elements.length} elements for format: ${format}`);
+      
       // Ensure classTheme is processed first for position adjustments
       const sortedElements = [...layoutConfig.elements].sort((a, b) => {
         if (a.field === 'classTheme') return -1;
@@ -140,7 +146,9 @@ export const renderCanvasWithTemplate = async (
         return 0;
       });
       
-      // Process elements sequentially
+      console.log('🔄 Processing elements in order:', sortedElements.map(e => `${e.field}(${e.position?.x},${e.position?.y})`));
+      
+      // Process elements sequentially with proper delays
       for (const element of sortedElements) {
         // Skip teacher image elements - handled by placement rules
         if (element.type === 'image' && (element.field === 'teacherImages' || element.field === 'professorPhotos')) {
@@ -148,7 +156,11 @@ export const renderCanvasWithTemplate = async (
         }
         
         try {
+          console.log(`📍 Processing element ${element.field} at position:`, element.position);
           await addElementToCanvas(fabricCanvas, element, eventData, width, height, format, sortedElements);
+          
+          // Small delay between elements to ensure proper positioning
+          await new Promise(resolve => setTimeout(resolve, 25));
         } catch (elementError) {
           console.error(`Error processing element ${element.field}:`, elementError);
           // Continue with other elements
@@ -161,12 +173,26 @@ export const renderCanvasWithTemplate = async (
       } catch (photoError) {
         console.error('Error adding teacher photos:', photoError);
       }
+      
+      // CRITICAL VALIDATION: Log final element positions for debugging
+      console.log('🔍 Final validation - Element positions after load:');
+      fabricCanvas.getObjects().forEach((obj: any) => {
+        if (obj.fieldMapping) {
+          console.log(`  📍 ${obj.fieldMapping}: (${obj.left}, ${obj.top}) - Size: ${obj.getScaledWidth()}x${obj.getScaledHeight()}`);
+        }
+      });
+      
     } else {
+      console.log('📋 No saved layout found, using default elements');
       await addDefaultElements(fabricCanvas, eventData, format, width, height);
     }
 
-    // Final render
+    // Final render and validation
     fabricCanvas.renderAll();
+    
+    // Position validation summary
+    const elementCount = fabricCanvas.getObjects().filter((obj: any) => obj.fieldMapping).length;
+    console.log(`✅ Canvas generation completed for ${format} with ${elementCount} positioned elements`);
 
     // Export canvas
     const dataURL = await exportCanvasToDataURL(fabricCanvas);

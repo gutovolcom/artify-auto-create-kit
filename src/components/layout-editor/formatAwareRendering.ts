@@ -30,8 +30,8 @@ const getSampleEventData = () => ({
 
 // Get format-specific text alignment
 const getTextAlignmentForFormat = (format: string): 'left' | 'center' => {
-  const leftAlignedFormats = ['youtube', 'youtube_ao_vivo', 'youtube_pos_evento', 'feed', 'stories', 'ledStudio', 'LP']; // Added LP
-  const centerAlignedFormats = ['bannerGCO', 'destaque'];
+  const leftAlignedFormats = ['youtube', 'youtube_ao_vivo', 'youtube_pos_evento', 'feed', 'stories', 'ledStudio']; // Removed LP
+  const centerAlignedFormats = ['bannerGCO', 'destaque', 'LP']; // Added LP to center-aligned
   
   if (leftAlignedFormats.includes(format)) {
     return 'left';

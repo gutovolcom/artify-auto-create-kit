@@ -31,7 +31,7 @@ export const LayoutEditorContainer: React.FC<LayoutEditorProps> = (props) => {
   const displayHeight = formatDimensions.height * scale;
 
   const manager = useCanvasManager({ ...state, displayWidth, displayHeight, scale, getLayout });
-  const operations = useLayoutOperations({ ...props, ...state, displayWidth, displayHeight, scale, layoutElements, saveLayout, updateLayoutDraft: manager.updateLayoutDraft });
+  const operations = useLayoutOperations({ ...props, ...state, displayWidth, displayHeight, scale, layoutElements, saveLayout, updateLayoutDraft: manager.updateLayoutDraft, updateLayoutDraftImmediate: manager.updateLayoutDraftImmediate });
 
   if (elementsLoading || error) {
     return <LayoutEditorLoadingStates elementsLoading={elementsLoading} error={error} />;

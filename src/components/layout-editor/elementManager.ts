@@ -122,9 +122,10 @@ const addTextElement = (
         });
       }
 
-      // Create group with background and text
+      // REVERT: Remove center position adjustment to fix double adjustment issue
+      // Let users position elements exactly where they click - center alignment handled by text properties
       const group = new Group([background, text], {
-        left: elementX,
+        left: elementX,  // Use exact user positioning
         top: elementY,
         selectable: true,
         evented: true

@@ -86,10 +86,16 @@ export const useLayoutEditor = () => {
         throw error;
       }
       
-      // Invalidate sophisticated cache
+      // CRITICAL FIX: Ensure cache invalidation happens after database save
+      // and add delay to prevent race conditions with generator cache access
+      await new Promise(resolve => setTimeout(resolve, 100)); // Small delay to ensure DB consistency
+      
       layoutCache.invalidate(layoutConfig.template_id, layoutConfig.format_name);
       
-      console.log('Layout saved successfully and cache invalidated');
+      // Additional cache invalidation for related entries
+      layoutCache.invalidate(); // Clear all to prevent stale data
+      
+      console.log('Layout saved successfully with enhanced cache invalidation');
       toast.success('Layout salvo com sucesso!');
     } catch (error) {
       console.error('Error saving layout:', error);
@@ -100,16 +106,25 @@ export const useLayoutEditor = () => {
 
   const getLayout = async (templateId: string, formatName: string, forceRefresh: boolean = false): Promise<LayoutConfig | null> => {
     try {
-      // Try sophisticated cache first
-      if (!forceRefresh) {
+      // CRITICAL FIX: When force refresh is true (from generator), ensure we get the absolute latest data
+      if (forceRefresh) {
+        console.log('Force refresh requested - bypassing cache and adding delay for DB consistency');
+        
+        // Small delay to ensure database has fully committed the save operation
+        await new Promise(resolve => setTimeout(resolve, 150));
+        
+        // Clear specific cache entry to prevent any cached data
+        layoutCache.invalidate(templateId, formatName);
+      } else {
+        // Try cache first for normal operations
         const cached = layoutCache.get(templateId, formatName);
         if (cached) {
-          console.log('Returning sophisticated cached layout for:', templateId, formatName);
+          console.log('Returning cached layout for:', templateId, formatName);
           return cached;
         }
       }
       
-      console.log('Fetching fresh layout for template:', templateId, 'format:', formatName);
+      console.log(`Fetching fresh layout from DB for template: ${templateId}, format: ${formatName}, forceRefresh: ${forceRefresh}`);
       
       const { data, error } = await supabase
         .from('template_layouts')
@@ -125,7 +140,7 @@ export const useLayoutEditor = () => {
       
       let result: LayoutConfig | null = null;
       if (data) {
-        console.log('Layout found:', data);
+        console.log('Fresh layout fetched from DB:', data);
         result = {
           id: data.id,
           template_id: data.template_id,
@@ -133,11 +148,14 @@ export const useLayoutEditor = () => {
           layout_config: data.layout_config as LayoutConfig['layout_config']
         };
       } else {
-        console.log('No existing layout found');
+        console.log('No existing layout found in DB');
       }
       
-      // Cache with sophisticated cache
-      layoutCache.set(templateId, formatName, result);
+      // Cache the fresh result (even if null)
+      if (!forceRefresh) {
+        layoutCache.set(templateId, formatName, result);
+      }
+      
       return result;
     } catch (error) {
       console.error('Error fetching layout:', error);

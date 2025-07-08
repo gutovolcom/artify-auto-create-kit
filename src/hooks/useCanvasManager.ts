@@ -37,7 +37,7 @@ export const useCanvasManager = (props: UseCanvasManagerProps) => {
     loadingTimeoutRef
   } = props;
 
-  const { setupCanvasEventListeners, updateLayoutDraft, clearEventListeners } = useCanvasEventHandlers({
+  const { setupCanvasEventListeners, updateLayoutDraft, updateLayoutDraftImmediate, clearEventListeners } = useCanvasEventHandlers({
     scale: props.scale,
     setLayoutDraft: props.setLayoutDraft
   });
@@ -115,6 +115,7 @@ export const useCanvasManager = (props: UseCanvasManagerProps) => {
     handleManualReload: (templateId: string, formatName: string) => 
       handleManualReload(templateId, formatName, loadLayoutElementsWithListeners, clearEventListeners),
     loadLayoutIfReady: loadLayoutIfReadyWrapper,
-    updateLayoutDraft
+    updateLayoutDraft,
+    updateLayoutDraftImmediate
   };
 };
