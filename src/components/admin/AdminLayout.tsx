@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
@@ -28,19 +27,21 @@ export const AdminLayout = ({ userEmail, onLogout, onSwitchToUser }: AdminLayout
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-white">
+      <div className="min-h-screen flex flex-col w-full bg-background">
         {/* NAVBAR */}
         <Navbar
           userEmail={userEmail}
           isAdmin={true}
+          isAdminPanel={true}
           onAdminPanel={() => {}}
+          onUserPanel={onSwitchToUser}
           onLogout={onLogout}
         />
 
         {/* CONTENT WITH SIDEBAR LAYOUT */}
         <div className="flex flex-1 overflow-hidden">
           {/* FIXED SIDEBAR */}
-          <div className="w-[360px] shrink-0 border-r bg-white">
+          <div className="w-[360px] shrink-0 border-r bg-background">
             <AdminSidebar
               activeSection={activeSection}
               onSectionChange={setActiveSection}
@@ -48,19 +49,9 @@ export const AdminLayout = ({ userEmail, onLogout, onSwitchToUser }: AdminLayout
           </div>
 
           {/* MAIN CONTENT */}
-          <div className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-hidden flex flex-col bg-background">
             <div className="flex-1 overflow-auto">
-              <div className="container mx-auto px-6 py-8">
-                {onSwitchToUser && (
-                  <div className="mb-6">
-                    <button
-                      onClick={onSwitchToUser}
-                      className="text-sm text-blue-600 hover:text-blue-800 underline"
-                    >
-                      ← Voltar ao Painel do Usuário
-                    </button>
-                  </div>
-                )}
+              <div className="container mx-auto px-6 pt-8 pb-0">
                 {renderContent()}
               </div>
             </div>

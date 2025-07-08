@@ -6,14 +6,18 @@ import { FC, useEffect, useState } from "react";
 interface NavbarProps {
   userEmail: string;
   isAdmin: boolean;
+  isAdminPanel?: boolean;
   onAdminPanel: () => void;
+  onUserPanel?: () => void;
   onLogout: () => void;
 }
 
 export const Navbar: FC<NavbarProps> = ({
   userEmail,
   isAdmin,
+  isAdminPanel = false,
   onAdminPanel,
+  onUserPanel,
   onLogout
 }) => {
   const [isDark, setIsDark] = useState(false);
@@ -63,7 +67,9 @@ export const Navbar: FC<NavbarProps> = ({
         <UserDropdown
           userEmail={userEmail}
           isAdmin={isAdmin}
+          isAdminPanel={isAdminPanel}
           onAdminPanel={onAdminPanel}
+          onUserPanel={onUserPanel}
           onSettings={() => {}}
           onSupport={() => {}}
           onLogout={onLogout}

@@ -7,12 +7,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Settings, HelpCircle, Shield, LogOut, ChevronDown } from "lucide-react";
+import { Settings, HelpCircle, Shield, User, LogOut } from "lucide-react";
 
 interface UserDropdownProps {
   userEmail: string;
   isAdmin: boolean;
+  isAdminPanel?: boolean;
   onAdminPanel: () => void;
+  onUserPanel?: () => void;
   onSettings: () => void;
   onSupport: () => void;
   onLogout: () => void;
@@ -21,7 +23,9 @@ interface UserDropdownProps {
 export const UserDropdown = ({
   userEmail,
   isAdmin,
+  isAdminPanel = false,
   onAdminPanel,
+  onUserPanel,
   onSettings,
   onSupport,
   onLogout,
@@ -66,10 +70,17 @@ export const UserDropdown = ({
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onAdminPanel} className="cursor-pointer">
-              <Shield className="mr-2 h-4 w-4" />
-              <span>Painel Admin</span>
-            </DropdownMenuItem>
+            {isAdminPanel ? (
+              <DropdownMenuItem onClick={onUserPanel} className="cursor-pointer">
+                <User className="mr-2 h-4 w-4" />
+                <span>Painel Usuário</span>
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onClick={onAdminPanel} className="cursor-pointer">
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Painel Admin</span>
+              </DropdownMenuItem>
+            )}
           </>
         )}
         

@@ -99,6 +99,37 @@ export const useSupabaseTeachers = () => {
     }
   };
 
+  const updateTeacher = async (id: string, name: string, imageFile?: File) => {
+    if (!user) throw new Error('User not authenticated');
+
+    try {
+      let imageUrl: string | undefined;
+      
+      if (imageFile) {
+        imageUrl = await uploadTeacherImage(imageFile, id);
+      }
+
+      const updateData: { name: string; image_url?: string } = { name };
+      if (imageUrl) {
+        updateData.image_url = imageUrl;
+      }
+
+      const { error } = await supabase
+        .from('teachers')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      await fetchTeachers();
+      toast.success('Professor atualizado com sucesso!');
+    } catch (error) {
+      console.error('Error updating teacher:', error);
+      toast.error('Erro ao atualizar professor');
+      throw error;
+    }
+  };
+
   const deleteTeacher = async (id: string) => {
     try {
       const { error } = await supabase
@@ -120,6 +151,7 @@ export const useSupabaseTeachers = () => {
     teachers,
     loading,
     createTeacher,
+    updateTeacher,
     deleteTeacher,
     refetch: fetchTeachers
   };

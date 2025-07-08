@@ -1,4 +1,3 @@
-
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { MainContent } from "@/components/MainContent";
@@ -16,13 +15,13 @@ interface MainLayoutProps {
   onGenerate: () => void;
   isGenerating: boolean;
   generationProgress: number;
-  currentGeneratingFormat: string;
-  generatedImages: GeneratedImage[];
+  currentGeneratingFormat: string | null;
+  generatedImages: { url: string; format: string }[];
   onExport: () => void;
   hasStartedGeneration: boolean;
   onAdminPanel: () => void;
   onLogout: () => void;
-  form: UseFormReturn<EventFormValues>;
+  form: any;
   isFormValid: boolean;
   formErrors: any;
 }
@@ -47,39 +46,39 @@ export const MainLayout = ({
 }: MainLayoutProps) => {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex flex-col w-full bg-white">
+      <div className="min-h-screen flex flex-col w-full">
         {/* NAVBAR */}
         <Navbar
           userEmail={userEmail}
           isAdmin={isAdmin}
+          isAdminPanel={false}
           onAdminPanel={onAdminPanel}
           onLogout={onLogout}
         />
 
-        {/* CONTEÚDO COM LAYOUT FIXO */}
+        {/* CONTENT WITH SIDEBAR LAYOUT */}
         <div className="flex flex-1 overflow-hidden">
-          {/* SIDEBAR FIXA */}
-          <div className="w-[360px] shrink-0 border-r bg-white">
+          {/* FIXED SIDEBAR */}
+          <div className="w-[360px] shrink-0 border-r bg-background">
             <AppSidebar
-              userEmail={userEmail}
-              isAdmin={isAdmin}
               eventData={eventData}
               updateEventData={updateEventData}
               onGenerate={onGenerate}
               isGenerating={isGenerating}
-              onAdminPanel={onAdminPanel}
-              onLogout={onLogout}
+              generationProgress={generationProgress}
+              currentGeneratingFormat={currentGeneratingFormat}
               form={form}
               isFormValid={isFormValid}
               formErrors={formErrors}
+              onAdminPanel={onAdminPanel}
             />
           </div>
 
-          {/* MAIN CONTENT ao lado da sidebar */}
+          {/* MAIN CONTENT */}
           <div className="flex-1 overflow-hidden flex flex-col">
             <MainContent
-              generatedImages={generatedImages}
               eventData={eventData}
+              generatedImages={generatedImages}
               onExport={onExport}
               hasStartedGeneration={hasStartedGeneration}
               isGenerating={isGenerating}

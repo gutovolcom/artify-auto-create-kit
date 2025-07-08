@@ -1,6 +1,4 @@
-
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,10 +6,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useSupabaseTeachers } from "@/hooks/useSupabaseTeachers";
+import { ExpandableTeacherCards } from "@/components/ExpandableTeacherCards";
 import { Loader2 } from "lucide-react";
 
 export const TeacherManager = () => {
-  const { teachers, loading, createTeacher, deleteTeacher } = useSupabaseTeachers();
+  const { teachers, loading, createTeacher, updateTeacher, deleteTeacher } = useSupabaseTeachers();
   const [isCreating, setIsCreating] = useState(false);
   const [newTeacherName, setNewTeacherName] = useState("");
   const [newTeacherFile, setNewTeacherFile] = useState<File | null>(null);
@@ -46,16 +45,8 @@ export const TeacherManager = () => {
     setNewTeacherFile(null);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Professores Cadastrados</h2>
         <Dialog open={isCreating} onOpenChange={setIsCreating}>
@@ -97,7 +88,7 @@ export const TeacherManager = () => {
                   }}
                 />
                 {newTeacherFile && (
-                  <div className="mt-2 text-sm text-green-600">
+                  <div className="mt-2 text-sm text-green-600 dark:text-green-400">
                     ✓ {newTeacherFile.name}
                   </div>
                 )}
@@ -123,34 +114,12 @@ export const TeacherManager = () => {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {teachers.map((teacher) => (
-          <Card key={teacher.id}>
-            <CardHeader>
-              <CardTitle className="text-lg">{teacher.name}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-center">
-                <img
-                  src={teacher.image_url}
-                  alt={teacher.name}
-                  className="w-24 h-24 object-cover rounded-full"
-                />
-              </div>
-              
-              <div className="flex gap-2">
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => deleteTeacher(teacher.id)}
-                >
-                  Excluir
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <ExpandableTeacherCards
+        teachers={teachers}
+        onUpdateTeacher={updateTeacher}
+        onDeleteTeacher={deleteTeacher}
+        loading={loading}
+      />
     </div>
   );
 };
