@@ -13,6 +13,7 @@ interface Template {
   updated_at: string;
   formats: TemplateFormat[];
   layouts?: TemplateLayout[];
+  tags?: TemplateTag[];
 }
 
 interface TemplateFormat {
@@ -30,6 +31,14 @@ interface TemplateLayout {
   layout_config: any;
   created_at: string;
   updated_at: string;
+}
+
+interface TemplateTag {
+  id: string;
+  template_id: string;
+  tag_name: string;
+  created_at: string;
+  created_by: string | null;
 }
 
 export const useSupabaseTemplates = () => {
@@ -50,18 +59,38 @@ export const useSupabaseTemplates = () => {
       const timestamp = Date.now();
       console.log(`Fetching templates at ${timestamp}`);
       
-      const { data: templatesData, error: templatesError } = await supabase
-        .from('templates')
-        .select(`
-          *,
-          formats:template_formats(*),
-          layouts:template_layouts(*)
-        `)
-        .order('updated_at', { ascending: false });
+      // First, try to fetch templates with tags
+      let templatesData;
+      try {
+        const { data, error } = await supabase
+          .from('templates')
+          .select(`
+            *,
+            formats:template_formats(*),
+            layouts:template_layouts(*),
+            tags:template_tags(*)
+          `)
+          .order('updated_at', { ascending: false });
 
-      if (templatesError) throw templatesError;
+        if (error) throw error;
+        templatesData = data;
+      } catch (tagsError) {
+        console.log('Tags table not found, fetching without tags:', tagsError);
+        // Fallback: fetch without tags if template_tags table doesn't exist
+        const { data, error } = await supabase
+          .from('templates')
+          .select(`
+            *,
+            formats:template_formats(*),
+            layouts:template_layouts(*)
+          `)
+          .order('updated_at', { ascending: false });
 
-      console.log('Fetched fresh templates with layouts:', templatesData);
+        if (error) throw error;
+        templatesData = data;
+      }
+
+      console.log('Fetched fresh templates:', templatesData);
       setTemplates(templatesData || []);
     } catch (error) {
       console.error('Error fetching templates:', error);
@@ -237,6 +266,103 @@ export const useSupabaseTemplates = () => {
     return requiredFormats.filter(format => !existingFormats.includes(format));
   };
 
+  const addTagToTemplate = async (templateId: string, tagName: string) => {
+    if (!user) throw new Error('User not authenticated');
+
+    try {
+      // First check if template_tags table exists by trying a simple select
+      const { error: checkError } = await supabase
+        .from('template_tags')
+        .select('id')
+        .limit(1);
+
+      if (checkError) {
+        console.log('Table check error:', checkError);
+        toast.error('A tabela de tags ainda não foi criada no banco de dados. Por favor, execute a migração primeiro.');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('template_tags')
+        .insert({
+          template_id: templateId,
+          tag_name: tagName,
+          created_by: user.id
+        });
+
+      if (error) {
+        console.log('Insert error:', error);
+        // Check for duplicate tag error
+        if (error.code === '23505' || error.message?.includes('duplicate')) {
+          toast.error('Esta tag já existe neste template.');
+          return;
+        }
+        throw error;
+      }
+
+      await fetchTemplates();
+      toast.success('Tag adicionada com sucesso!');
+    } catch (error) {
+      console.error('Error adding tag:', error);
+      if (typeof error === 'object' && Object.keys(error as object).length === 0) {
+        toast.error('A tabela de tags ainda não foi criada no banco de dados. Por favor, execute a migração primeiro.');
+      } else {
+        toast.error('Erro ao adicionar tag');
+      }
+    }
+  };
+
+  const removeTagFromTemplate = async (templateId: string, tagName: string) => {
+    try {
+      // First check if template_tags table exists
+      const { error: checkError } = await supabase
+        .from('template_tags')
+        .select('id')
+        .limit(1);
+
+      if (checkError) {
+        console.log('Table check error:', checkError);
+        toast.error('A tabela de tags ainda não foi criada no banco de dados.');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('template_tags')
+        .delete()
+        .eq('template_id', templateId)
+        .eq('tag_name', tagName);
+
+      if (error) {
+        console.log('Delete error:', error);
+        throw error;
+      }
+
+      await fetchTemplates();
+      toast.success('Tag removida com sucesso!');
+    } catch (error) {
+      console.error('Error removing tag:', error);
+      if (typeof error === 'object' && Object.keys(error as object).length === 0) {
+        toast.error('A tabela de tags ainda não foi criada no banco de dados.');
+      } else {
+        toast.error('Erro ao remover tag');
+      }
+    }
+  };
+
+  const getAllTags = () => {
+    const allTags = new Set<string>();
+    templates.forEach(template => {
+      template.tags?.forEach(tag => allTags.add(tag.tag_name));
+    });
+    return Array.from(allTags).sort();
+  };
+
+  const getTemplatesByTag = (tagName: string) => {
+    return templates.filter(template => 
+      template.tags?.some(tag => tag.tag_name === tagName)
+    );
+  };
+
   return {
     templates,
     loading,
@@ -246,6 +372,10 @@ export const useSupabaseTemplates = () => {
     deleteTemplate,
     getMissingFormats,
     getAllRequiredFormats,
+    addTagToTemplate,
+    removeTagFromTemplate,
+    getAllTags,
+    getTemplatesByTag,
     refetch: fetchTemplates
   };
 };

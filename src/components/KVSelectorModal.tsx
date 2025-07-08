@@ -9,10 +9,16 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RefreshCw, Search, FileImage, Loader2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RefreshCw, Search, FileImage, Loader2, Filter, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
 import { useDataRefresh } from "@/hooks/useDataRefresh";
+import { TAG_COLORS, PREDEFINED_TAGS } from "@/constants/tags";
 
 interface KVSelectorModalProps {
   isOpen: boolean;
@@ -27,13 +33,38 @@ export const KVSelectorModal = ({
   selectedImageId,
   onSelect,
 }: KVSelectorModalProps) => {
-  const { templates, loading } = useSupabaseTemplates();
+  const { templates, loading, getAllTags } = useSupabaseTemplates();
   const { refreshAll, isRefreshing } = useDataRefresh();
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [showTagFilter, setShowTagFilter] = useState(false);
 
-  const filteredTemplates = templates.filter((template) =>
-    template.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const getTagColor = (tagName: string) => {
+    return TAG_COLORS[tagName as keyof typeof TAG_COLORS] || "bg-gray-100 text-gray-800 border-gray-300";
+  };
+
+  const filteredTemplates = templates.filter((template) => {
+    const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTags = selectedTags.length === 0 || 
+      selectedTags.some(selectedTag => 
+        template.tags?.some(tag => tag.tag_name === selectedTag)
+      );
+    return matchesSearch && matchesTags;
+  });
+
+  // Helper functions for tag filter
+  const handleTagToggle = (tagName: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tagName) 
+        ? prev.filter(t => t !== tagName)
+        : [...prev, tagName]
+    );
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setSelectedTags([]);
+  };
 
   const handleRefresh = async () => {
     await refreshAll();
@@ -52,7 +83,8 @@ export const KVSelectorModal = ({
         
         <div className="space-y-4">
           {/* Search and Filter Bar */}
-          <div className="flex gap-2">
+          <div className="flex gap-3 items-center">
+            {/* Search Bar */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -62,6 +94,114 @@ export const KVSelectorModal = ({
                 className="pl-9"
               />
             </div>
+
+            {/* Tag Filter Popover */}
+            <Popover open={showTagFilter} onOpenChange={setShowTagFilter}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "flex items-center gap-2",
+                    (selectedTags.length > 0 || showTagFilter) && "bg-blue-50 border-blue-300"
+                  )}
+                >
+                  <Filter className="h-4 w-4" />
+                  Tags
+                  {selectedTags.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">
+                      {selectedTags.length}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-4" align="start">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-sm">Filtrar por Tags</h4>
+                    {selectedTags.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedTags([])}
+                        className="h-6 px-2 text-xs"
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Limpar
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Predefined Tags */}
+                  {PREDEFINED_TAGS.some(tag => getAllTags().includes(tag)) && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-gray-600">Tags Predefinidas</Label>
+                      <div className="space-y-2">
+                        {PREDEFINED_TAGS.filter(tag => getAllTags().includes(tag)).map((tag) => (
+                          <div key={tag} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={tag}
+                              checked={selectedTags.includes(tag)}
+                              onCheckedChange={() => handleTagToggle(tag)}
+                            />
+                            <label
+                              htmlFor={tag}
+                              className="text-sm cursor-pointer flex items-center gap-2"
+                            >
+                              <div className={cn("w-3 h-3 rounded-full border", getTagColor(tag))} />
+                              {tag}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Custom Tags */}
+                  {getAllTags().filter(tag => !PREDEFINED_TAGS.includes(tag)).length > 0 && (
+                    <>
+                      <Separator />
+                      <div className="space-y-2">
+                        <Label className="text-xs text-gray-600">Tags Personalizadas</Label>
+                        <div className="space-y-2">
+                          {getAllTags().filter(tag => !PREDEFINED_TAGS.includes(tag)).map((tag) => (
+                            <div key={tag} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={tag}
+                                checked={selectedTags.includes(tag)}
+                                onCheckedChange={() => handleTagToggle(tag)}
+                              />
+                              <label
+                                htmlFor={tag}
+                                className="text-sm cursor-pointer"
+                              >
+                                {tag}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Quick Actions */}
+                  <div className="flex gap-2 pt-2 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const predefinedInSystem = PREDEFINED_TAGS.filter(tag => getAllTags().includes(tag));
+                        setSelectedTags(predefinedInSystem);
+                      }}
+                      className="text-xs h-7"
+                      disabled={PREDEFINED_TAGS.filter(tag => getAllTags().includes(tag)).every(tag => selectedTags.includes(tag))}
+                    >
+                      Todas Predefinidas
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
             <Button 
               variant="outline" 
               onClick={handleRefresh}
@@ -74,6 +214,19 @@ export const KVSelectorModal = ({
               )}
               {isRefreshing ? 'Atualizando...' : 'Atualizar'}
             </Button>
+
+            {/* Clear All Filters Button */}
+            {(searchTerm || selectedTags.length > 0) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAllFilters}
+                className="text-xs h-8 px-3"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Limpar Filtros
+              </Button>
+            )}
           </div>
 
           {/* Templates Grid */}
@@ -86,11 +239,21 @@ export const KVSelectorModal = ({
               <div className="text-center py-8 text-gray-500">
                 <FileImage className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>
-                  {searchTerm ? "Nenhum template encontrado" : "Nenhum template disponível"}
+                  {searchTerm || selectedTags.length > 0 ? "Nenhum template encontrado" : "Nenhum template disponível"}
                 </p>
                 <p className="text-sm">
-                  {searchTerm ? "Tente alterar o termo de busca" : "Templates devem ser criados no painel administrativo"}
+                  {searchTerm || selectedTags.length > 0 ? "Tente alterar os filtros" : "Templates devem ser criados no painel administrativo"}
                 </p>
+                {(searchTerm || selectedTags.length > 0) && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={clearAllFilters}
+                    className="mt-3"
+                  >
+                    Limpar Filtros
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-4 p-2">
@@ -150,6 +313,31 @@ export const KVSelectorModal = ({
                         {template.layouts && template.layouts.length > 0 && (
                           <div className="text-xs text-blue-600 mt-1 text-center">
                             Layout personalizado
+                          </div>
+                        )}
+                        {/* Template Tags */}
+                        {template.tags && template.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2 justify-center">
+                            {template.tags.slice(0, 3).map((tag) => (
+                              <Badge 
+                                key={tag.id} 
+                                variant="secondary" 
+                                className={cn(
+                                  "text-xs border",
+                                  getTagColor(tag.tag_name)
+                                )}
+                              >
+                                {tag.tag_name}
+                              </Badge>
+                            ))}
+                            {template.tags.length > 3 && (
+                              <Badge 
+                                variant="outline" 
+                                className="text-xs"
+                              >
+                                +{template.tags.length - 3}
+                              </Badge>
+                            )}
                           </div>
                         )}
                       </div>

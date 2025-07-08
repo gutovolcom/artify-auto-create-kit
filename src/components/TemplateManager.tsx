@@ -5,12 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { useSupabaseTemplates } from "@/hooks/useSupabaseTemplates";
 import { LayoutEditor } from "@/components/LayoutEditor";
-import { Loader2, Edit, Palette, Plus, AlertCircle, CheckCircle } from "lucide-react";
+import { TagManager } from "@/components/TagManager";
+import { TAG_COLORS, PREDEFINED_TAGS } from "@/constants/tags";
+import { Loader2, Edit, Palette, Plus, AlertCircle, CheckCircle, Tag, Search, Filter, X } from "lucide-react";
 import { platformConfigs } from "@/lib/platformConfigs";
+import { cn } from "@/lib/utils";
 
 const formatSpecs = {
   youtube: { width: 1920, height: 1080, label: "YouTube" },
@@ -33,7 +39,10 @@ export const TemplateManager = () => {
     updateTemplateFormat,
     addMissingFormatsToTemplate,
     getMissingFormats,
-    getAllRequiredFormats
+    getAllRequiredFormats,
+    addTagToTemplate,
+    removeTagFromTemplate,
+    getAllTags
   } = useSupabaseTemplates();
   
   const [isCreating, setIsCreating] = useState(false);
@@ -56,6 +65,10 @@ export const TemplateManager = () => {
   const [editTemplateFiles, setEditTemplateFiles] = useState<Record<string, File>>({});
   const [missingFormatFiles, setMissingFormatFiles] = useState<Record<string, File>>({});
   const [creating, setCreatingState] = useState(false);
+  const [selectedTagsFilter, setSelectedTagsFilter] = useState<string[]>([]);
+  const [managingTags, setManagingTags] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showTagFilter, setShowTagFilter] = useState(false);
 
   const handleCreateTemplate = async () => {
     if (!newTemplateName.trim()) {
@@ -173,6 +186,38 @@ export const TemplateManager = () => {
     setMissingFormatFiles({});
   };
 
+  const openTagManager = (templateId: string) => {
+    setManagingTags(templateId);
+  };
+
+  // Filter templates based on search term and selected tags
+  const filteredTemplates = templates.filter(template => {
+    const matchesSearch = template.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTags = selectedTagsFilter.length === 0 || 
+      selectedTagsFilter.some(selectedTag => 
+        template.tags?.some(tag => tag.tag_name === selectedTag)
+      );
+    return matchesSearch && matchesTags;
+  });
+
+  // Helper functions for tag filter
+  const handleTagToggle = (tagName: string) => {
+    setSelectedTagsFilter(prev => 
+      prev.includes(tagName) 
+        ? prev.filter(t => t !== tagName)
+        : [...prev, tagName]
+    );
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setSelectedTagsFilter([]);
+  };
+
+  const getTagColor = (tagName: string) => {
+    return TAG_COLORS[tagName as keyof typeof TAG_COLORS] || "bg-gray-100 text-gray-800 border-gray-300";
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -183,12 +228,20 @@ export const TemplateManager = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Templates Disponíveis</h2>
-        <Dialog open={isCreating} onOpenChange={setIsCreating}>
-          <DialogTrigger asChild>
-            <Button>Criar Novo Template</Button>
-          </DialogTrigger>
+      {/* Header */}
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-semibold">Templates Disponíveis</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              {filteredTemplates.length} de {templates.length} template(s)
+              {(searchTerm || selectedTagsFilter.length > 0) && " - filtrado(s)"}
+            </p>
+          </div>
+          <Dialog open={isCreating} onOpenChange={setIsCreating}>
+            <DialogTrigger asChild>
+              <Button>Criar Novo Template</Button>
+            </DialogTrigger>
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Criar Novo Template</DialogTitle>
@@ -256,11 +309,146 @@ export const TemplateManager = () => {
               </div>
             </div>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
+        
+        {/* Search and Filter Bar */}
+        <div className="flex gap-3 items-center">
+          {/* Search Bar */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Buscar templates..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          {/* Tag Filter Popover */}
+          <Popover open={showTagFilter} onOpenChange={setShowTagFilter}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "flex items-center gap-2",
+                  (selectedTagsFilter.length > 0 || showTagFilter) && "bg-blue-50 border-blue-300"
+                )}
+              >
+                <Filter className="h-4 w-4" />
+                Tags
+                {selectedTagsFilter.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 px-1.5 py-0.5 text-xs">
+                    {selectedTagsFilter.length}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-4" align="start">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm">Filtrar por Tags</h4>
+                  {selectedTagsFilter.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedTagsFilter([])}
+                      className="h-6 px-2 text-xs"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Limpar
+                    </Button>
+                  )}
+                </div>
+
+                {/* Predefined Tags */}
+                {PREDEFINED_TAGS.some(tag => getAllTags().includes(tag)) && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-gray-600">Tags Predefinidas</Label>
+                    <div className="space-y-2">
+                      {PREDEFINED_TAGS.filter(tag => getAllTags().includes(tag)).map((tag) => (
+                        <div key={tag} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={tag}
+                            checked={selectedTagsFilter.includes(tag)}
+                            onCheckedChange={() => handleTagToggle(tag)}
+                          />
+                          <label
+                            htmlFor={tag}
+                            className="text-sm cursor-pointer flex items-center gap-2"
+                          >
+                            <div className={cn("w-3 h-3 rounded-full border", getTagColor(tag))} />
+                            {tag}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Custom Tags */}
+                {getAllTags().filter(tag => !PREDEFINED_TAGS.includes(tag)).length > 0 && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <Label className="text-xs text-gray-600">Tags Personalizadas</Label>
+                      <div className="space-y-2">
+                        {getAllTags().filter(tag => !PREDEFINED_TAGS.includes(tag)).map((tag) => (
+                          <div key={tag} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={tag}
+                              checked={selectedTagsFilter.includes(tag)}
+                              onCheckedChange={() => handleTagToggle(tag)}
+                            />
+                            <label
+                              htmlFor={tag}
+                              className="text-sm cursor-pointer"
+                            >
+                              {tag}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Quick Actions */}
+                <div className="flex gap-2 pt-2 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const predefinedInSystem = PREDEFINED_TAGS.filter(tag => getAllTags().includes(tag));
+                      setSelectedTagsFilter(predefinedInSystem);
+                    }}
+                    className="text-xs h-7"
+                    disabled={PREDEFINED_TAGS.filter(tag => getAllTags().includes(tag)).every(tag => selectedTagsFilter.includes(tag))}
+                  >
+                    Todas Predefinidas
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Clear All Filters Button */}
+          {(searchTerm || selectedTagsFilter.length > 0) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAllFilters}
+              className="text-xs h-8 px-3"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Limpar Filtros
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {templates.map((template) => {
+        {filteredTemplates.map((template) => {
           const missingFormats = getMissingFormats(template);
           const isComplete = missingFormats.length === 0;
           
@@ -268,8 +456,27 @@ export const TemplateManager = () => {
             <Card key={template.id} className="overflow-hidden">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{template.name}</CardTitle>
-                  <Badge variant={isComplete ? "default" : "destructive"} className="text-xs">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg">{template.name}</CardTitle>
+                    {/* Template Tags */}
+                    {template.tags && template.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {template.tags.map((tag) => (
+                          <Badge 
+                            key={tag.id} 
+                            variant="secondary" 
+                            className={cn(
+                              "text-xs border",
+                              getTagColor(tag.tag_name)
+                            )}
+                          >
+                            {tag.tag_name}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <Badge variant={isComplete ? "default" : "destructive"} className="text-xs ml-2">
                     {isComplete ? (
                       <><CheckCircle className="h-3 w-3 mr-1" />Completo</>
                     ) : (
@@ -337,6 +544,16 @@ export const TemplateManager = () => {
                   >
                     <Edit className="h-3 w-3" />
                     Editar
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openTagManager(template.id)}
+                    className="flex items-center gap-1"
+                  >
+                    <Tag className="h-3 w-3" />
+                    Tags
                   </Button>
                   
                   {!isComplete && (
@@ -524,6 +741,38 @@ export const TemplateManager = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Tag Management Dialog */}
+      <Dialog open={!!managingTags} onOpenChange={() => setManagingTags(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Gerenciar Tags</DialogTitle>
+            <DialogDescription>
+              Adicione ou remova tags do template selecionado.
+            </DialogDescription>
+          </DialogHeader>
+          {managingTags && (
+            <div className="space-y-4">
+              <TagManager
+                templateId={managingTags}
+                currentTags={templates.find(t => t.id === managingTags)?.tags?.map(t => t.tag_name) || []}
+                onAddTag={addTagToTemplate}
+                onRemoveTag={removeTagFromTemplate}
+                allTags={getAllTags()}
+              />
+              <div className="flex justify-end">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setManagingTags(null)}
+                >
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
     </div>
   );
 };

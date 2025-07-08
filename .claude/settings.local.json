@@ -20,7 +20,9 @@
       "Bash(npm run build:*)",
       "Bash(grep:*)",
       "Bash(npx eslint:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(sed:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }
