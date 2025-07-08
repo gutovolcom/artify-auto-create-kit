@@ -118,7 +118,7 @@ export const renderCanvasWithTemplate = async (
   }
 
   const tempCanvas = setupCanvasContainer(width, height);
-  const fabricCanvas = createFabricCanvas(tempCanvas, width, height);
+  const fabricCanvas = createFabricCanvas(tempCanvas, width, height, format);
 
   try {
     // Preload fonts before rendering

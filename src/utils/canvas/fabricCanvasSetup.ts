@@ -7,13 +7,21 @@ const CONTAINER_ID = 'temp-canvas-generation-container';
 export const createFabricCanvas = (
   tempCanvas: HTMLCanvasElement,
   width: number,
-  height: number
+  height: number,
+  format?: string
 ): FabricCanvas => {
-  return new FabricCanvas(tempCanvas, {
+  // For LP format, don't set backgroundColor to preserve transparency
+  const canvasOptions: any = {
     width: width,
     height: height,
-    backgroundColor: '#ffffff'
-  });
+  };
+  
+  // Only set backgroundColor for non-LP formats
+  if (format !== 'LP') {
+    canvasOptions.backgroundColor = '#ffffff';
+  }
+  
+  return new FabricCanvas(tempCanvas, canvasOptions);
 };
 
 export const loadBackgroundImageToCanvas = async (

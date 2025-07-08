@@ -10,6 +10,7 @@ interface UseCanvasSetupProps {
   displayHeight: number;
   backgroundImageUrl: string;
   scale: number;
+  format?: string;
   onCanvasReady: (canvas: FabricCanvas) => void;
   onSelectionChange: (object: any) => void;
   onDeleteSelected: () => void;
@@ -21,6 +22,7 @@ export const useCanvasSetup = ({
   displayHeight,
   backgroundImageUrl,
   scale,
+  format,
   onCanvasReady,
   onSelectionChange,
   onDeleteSelected,
@@ -144,11 +146,18 @@ export const useCanvasSetup = ({
 
     // Preload fonts before creating canvas
     preloadFonts().then(() => {
-      const fabricCanvas = new fabric.Canvas(canvasRef.current!, {
+      // For LP format, don't set backgroundColor to preserve transparency
+      const canvasOptions: any = {
         width: displayWidth,
         height: displayHeight,
-        backgroundColor: '#f5f5f5'
-      });
+      };
+      
+      // Only set backgroundColor for non-LP formats
+      if (format !== 'LP') {
+        canvasOptions.backgroundColor = '#f5f5f5';
+      }
+      
+      const fabricCanvas = new fabric.Canvas(canvasRef.current!, canvasOptions);
 
       // Set up event listeners
       fabricCanvas.on('selection:created', (e) => {

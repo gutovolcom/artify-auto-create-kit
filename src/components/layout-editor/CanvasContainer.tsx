@@ -12,6 +12,7 @@ interface CanvasContainerProps {
   displayHeight: number;
   backgroundImageUrl: string;
   scale: number;
+  format?: string;
   onCanvasReady: (canvas: FabricCanvas) => void;
   onSelectionChange: (object: any) => void;
   onDeleteSelected: () => void;
@@ -23,6 +24,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
   displayHeight,
   backgroundImageUrl,
   scale,
+  format,
   onCanvasReady,
   onSelectionChange,
   onDeleteSelected,
@@ -33,6 +35,7 @@ export const CanvasContainer: React.FC<CanvasContainerProps> = ({
     displayHeight,
     backgroundImageUrl,
     scale,
+    format,
     onCanvasReady,
     onSelectionChange,
     onDeleteSelected,

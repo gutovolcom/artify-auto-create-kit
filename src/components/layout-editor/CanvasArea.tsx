@@ -52,12 +52,12 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
         </CardHeader>
         
         <CardContent className="p-4 sm:p-6 flex items-center justify-center">
-          {/* O CanvasContainer agora é um wrapper simples */}
           <CanvasContainer
             displayWidth={displayWidth}
             displayHeight={displayHeight}
             backgroundImageUrl={backgroundImageUrl}
             scale={scale}
+            format={formatName}
             onCanvasReady={onCanvasReady}
             onSelectionChange={onSelectionChange}
             onDeleteSelected={onDeleteSelected}
